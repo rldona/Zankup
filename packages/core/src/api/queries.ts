@@ -283,6 +283,7 @@ export type StatsSummary = Json<'/api/stats/summary', 'get'>;
 export type VolumeBucket = Json<'/api/stats/volume', 'get'>[number];
 export type CurvePoint = Json<'/api/stats/curves', 'get'>[number];
 export type Records = Json<'/api/stats/records', 'get'>;
+export type DeviceUse = Json<'/api/stats/devices', 'get'>[number];
 export type EstimateOut = Json<'/api/stats/estimates', 'get'>[number];
 export type YearLine = Json<'/api/stats/progress', 'get'>[number];
 export type CalendarDay = Json<'/api/stats/calendar', 'get'>[number];
@@ -408,6 +409,15 @@ export function recentBestsQuery(api: ApiClient, days = 30) {
     queryKey: stats('bests-recent', { days }),
     queryFn: async ({ signal }: { signal?: AbortSignal }) =>
       unwrap(await api.GET('/api/stats/bests/recent', { params: { query: { days } }, signal })),
+  };
+}
+
+/** The devices and services that recorded something in the last days (Progress → Data sources). */
+export function devicesUsedQuery(api: ApiClient, days = 30) {
+  return {
+    queryKey: stats('devices-used', { days }),
+    queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+      unwrap(await api.GET('/api/stats/devices', { params: { query: { days } }, signal })),
   };
 }
 

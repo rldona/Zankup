@@ -4505,6 +4505,56 @@
         }
       }
     },
+    "/api/stats/devices": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Devices",
+        "description": "The devices and services that recorded activities or health data in the last days, the most\nrecently used first (Progress → Data sources).",
+        "operationId": "getDevices",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceUse"
+                  },
+                  "title": "Response Getdevices"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/routes": {
       "get": {
         "tags": [
@@ -7886,6 +7936,48 @@
           "current"
         ],
         "title": "DeviceOut"
+      },
+      "DeviceUse": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "The device (fēnix 6X Pro, Rouvy…); null when the source names none"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Where it came from: garmin, strava, file, google_health, health_connect"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "activity",
+              "health"
+            ],
+            "title": "Kind"
+          },
+          "last_used": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "source",
+          "kind",
+          "last_used"
+        ],
+        "title": "DeviceUse"
       },
       "EditedActivity": {
         "properties": {

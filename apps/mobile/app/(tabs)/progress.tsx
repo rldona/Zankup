@@ -1,6 +1,6 @@
 /**
  * Progress: how your training is going, as Strava's: this week and the last 12 (volume) first, then
- * Series (the weekly streak) beside the Training log, then Fitness, Relative Effort, race predictions, goals, training zones, skills and best times.
+ * Series (the weekly streak) beside the Training log, then Fitness, Relative Effort, race predictions, goals, training zones, skills, best times, monthly activities and data sources.
  */
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -9,6 +9,8 @@ import { t } from '../../src/i18n';
 import { EffortCard } from '../../src/progress/EffortCard';
 import { FitnessCard } from '../../src/progress/FitnessCard';
 import { BestsCard } from '../../src/progress/BestsCard';
+import { DataSourcesCard } from '../../src/progress/DataSources';
+import { MonthlyCard } from '../../src/progress/Monthly';
 import { GoalsCard } from '../../src/progress/GoalsCard';
 import { PredictionsCard } from '../../src/progress/Predictions';
 import { LogCard } from '../../src/progress/Log';
@@ -34,6 +36,8 @@ export default function ProgressScreen() {
       <ZonesCard />
       <SkillsCard />
       <BestsCard />
+      <MonthlyCard />
+      <DataSourcesCard />
       <SeriesPanel open={series} onClose={() => setSeries(false)} />
     </Screen>
   );

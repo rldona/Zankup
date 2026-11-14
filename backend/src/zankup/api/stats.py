@@ -676,3 +676,52 @@ def recent_bests(
                 )
     medals.sort(key=lambda x: (x.scope != "all", x.rank, -x.day.toordinal()))
     return medals
+
+
+# --- data sources ----------------------------------------------------------------------------------
+
+
+class DeviceUse(BaseModel):
+    name: str | None = Field(description="The device (fēnix 6X Pro, Rouvy…); null when the source names none")
+    source: str = Field(description="Where it came from: garmin, strava, file, google_health, health_connect")
+    kind: Literal["activity", "health"]
+    last_used: datetime
+
+
+@router.get("/devices", operation_id="getDevices")
+def devices(
+    db: DbSession, user: CurrentUser, days: Annotated[int, Query(ge=1, le=365)] = 30
+) -> list[DeviceUse]:
+    """The devices and services that recorded activities or health data in the last days, the most
+    recently used first (Progress → Data sources)."""
+    from zankup.db.models import DailyHealth, SleepSession
+
+    since = datetime.now(UTC) - timedelta(days=days)
+    out: dict[tuple[str, str | None], DeviceUse] = {}
+    for device, source, last in db.execute(
+        select(Activity.device, Activity.source, func.max(Activity.start_utc))
+        .where(Activity.user_id == user.id, Activity.start_utc >= since)
+        .group_by(Activity.device, Activity.source)
+    ):
+        key = ("activity", (device or source).strip().lower())
+        if key not in out or out[key].last_used < last:
+            out[key] = DeviceUse(name=device, source=source, kind="activity", last_used=last)
+    # Health data: the app that recorded the sleep when Health Connect says (no package names).
+    for origin, source, last in db.execute(
+        select(SleepSession.origin, SleepSession.source, func.max(SleepSession.end_utc))
+        .where(SleepSession.user_id == user.id, SleepSession.end_utc >= since)
+        .group_by(SleepSession.origin, SleepSession.source)
+    ):
+        name = origin if origin and "." not in origin else None
+        key = ("health", (name or source).lower())
+        if key not in out or out[key].last_used < last:
+            out[key] = DeviceUse(name=name, source=source, kind="health", last_used=last)
+    for source, day in db.execute(
+        select(DailyHealth.source, func.max(DailyHealth.day))
+        .where(DailyHealth.user_id == user.id, DailyHealth.day >= since.date())
+        .group_by(DailyHealth.source)
+    ):
+        moment = datetime.combine(day, datetime.min.time(), UTC)
+        if not any(d.source == source and d.kind == "health" for d in out.values()):
+            out[("health", source)] = DeviceUse(name=None, source=source, kind="health", last_used=moment)
+    return sorted(out.values(), key=lambda d: d.last_used, reverse=True)

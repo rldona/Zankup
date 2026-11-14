@@ -24,16 +24,28 @@ function useGoalLine() {
   };
 }
 
-/** On the feed's card: a trophy and the goal, small. */
+/** On the feed's card: a capsule with a trophy and the goal, so it stands out. */
 export function GoalReachedLine({ goals }: { goals: Reached[] | undefined }) {
   const c = useTheme();
   const line = useGoalLine();
   if (!goals?.length) return null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+    <View
+      style={{
+        alignSelf: 'flex-start',
+        maxWidth: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 999,
+        backgroundColor: c.surface2,
+      }}
+    >
       <Icon name="trophy" color={accent(c)} size={16} />
-      <Text numberOfLines={1} style={{ flex: 1, color: c.fg, fontSize: 13, fontWeight: '600' }}>
-        {t('goal.reached')} · {goals.map(line).join(' · ')}
+      <Text numberOfLines={1} style={{ flexShrink: 1, color: c.fg, fontSize: 13, fontWeight: '600' }}>
+        <Text style={{ fontWeight: '800' }}>{t('goal.reached')}</Text> · {goals.map(line).join(' · ')}
       </Text>
     </View>
   );
