@@ -1339,5 +1339,7 @@
   "detail.paceZonesNote": "Based on your threshold pace of {pace}.",
   "detail.analysis": "Training analysis",
   "detail.analysisAverage": "Average {pace}",
-  "detail.analysisFastest": "Fastest {pace}"
+  "detail.analysisFastest": "Fastest {pace}",
+  "detail.exercises": "Exercises",
+  "detail.exerciseLine": "{sets, plural, one {# set} other {# sets}} · {reps, plural, one {# rep} other {# reps}}"
 }

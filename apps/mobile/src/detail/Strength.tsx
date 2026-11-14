@@ -23,6 +23,7 @@ import {
 import { Canvas, Group, Path, RadialGradient, Skia, vec } from '@shopify/react-native-skia';
 import { Text, View } from 'react-native';
 
+import { Icon } from '../Icon';
 import { locale, t } from '../i18n';
 import { useTheme } from '../theme';
 import { Card, CardTitle, Muted } from '../ui';
@@ -376,5 +377,54 @@ export function BodyThumb({ worked }: { worked: Map<Muscle, number> }) {
         </Canvas>
       ))}
     </View>
+  );
+}
+
+/**
+ * The workout's exercises at a glance, near the top (as Strava's "Exercises"): each one once, with its
+ * sets and reps (and weight lifted, if any). The full sets, with their weights and rests, come lower.
+ */
+export function ExercisesBlock({ sets, device }: { sets: StrengthSet[]; device?: string | null }) {
+  const c = useTheme();
+  const byExercise = new Map<string, { sets: number; reps: number; volume: number }>();
+  for (const group of groupSets(sets)) {
+    const key = group.category ?? 'unknown';
+    const row = byExercise.get(key) ?? { sets: 0, reps: 0, volume: 0 };
+    row.sets += group.sets.length;
+    row.reps += group.reps;
+    row.volume += group.volume_kg;
+    byExercise.set(key, row);
+  }
+  if (!byExercise.size) return null;
+  return (
+    <Card style={{ gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ flex: 1, color: c.fg, fontSize: 17, fontWeight: '800' }}>{t('detail.exercises')}</Text>
+        {device ? <Muted style={{ fontSize: 13 }}>{device}</Muted> : null}
+      </View>
+      {[...byExercise].map(([category, row]) => (
+        <View key={category} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: c.surface2,
+            }}
+          >
+            <Icon name="fitness_center" color={c.strength} size={22} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.fg, fontSize: 15 }}>{t(`exercise.${category}` as MessageKey)}</Text>
+            <Muted style={{ fontSize: 13 }}>
+              {t('detail.exerciseLine', { sets: row.sets, reps: row.reps })}
+              {row.volume ? ` · ${Math.round(row.volume).toLocaleString(locale)} kg` : ''}
+            </Muted>
+          </View>
+        </View>
+      ))}
+    </Card>
   );
 }

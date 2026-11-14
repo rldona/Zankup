@@ -1339,5 +1339,7 @@
   "detail.paceZonesNote": "Basado en tu ritmo umbral de {pace}.",
   "detail.analysis": "Análisis del entrenamiento",
   "detail.analysisAverage": "Media {pace}",
-  "detail.analysisFastest": "Más rápido {pace}"
+  "detail.analysisFastest": "Más rápido {pace}",
+  "detail.exercises": "Ejercicios",
+  "detail.exerciseLine": "{sets, plural, one {# serie} other {# series}} · {reps, plural, one {# repetición} other {# repeticiones}}"
 }
