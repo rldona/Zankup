@@ -10429,7 +10429,8 @@
               "highContrast",
               "forest",
               "ocean",
-              "sunset"
+              "sunset",
+              "strava"
             ],
             "title": "Theme"
           },
@@ -10573,7 +10574,8 @@
                   "highContrast",
                   "forest",
                   "ocean",
-                  "sunset"
+                  "sunset",
+                  "strava"
                 ]
               },
               {

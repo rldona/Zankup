@@ -24,7 +24,7 @@ from zankup.privacy import clean_zones
 router = protected_router(prefix="/api/settings", tags=["settings"])
 
 # The themes in packages/core/src/tokens/tokens.json, plus "system" (light or dark from the device).
-Theme = Literal["system", "light", "dark", "oled", "highContrast", "forest", "ocean", "sunset"]
+Theme = Literal["system", "light", "dark", "oled", "highContrast", "forest", "ocean", "sunset", "strava"]
 
 
 Language = Literal["en", "es"]

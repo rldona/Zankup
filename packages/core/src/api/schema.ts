@@ -3841,7 +3841,7 @@ export interface components {
        * Theme
        * @enum {string}
        */
-      theme: 'system' | 'light' | 'dark' | 'oled' | 'highContrast' | 'forest' | 'ocean' | 'sunset';
+      theme: 'system' | 'light' | 'dark' | 'oled' | 'highContrast' | 'forest' | 'ocean' | 'sunset' | 'strava';
       /**
        * Language
        * @description Null until picked: clients use the device's language
@@ -3897,7 +3897,9 @@ export interface components {
      */
     PreferencesUpdate: {
       /** Theme */
-      theme?: ('system' | 'light' | 'dark' | 'oled' | 'highContrast' | 'forest' | 'ocean' | 'sunset') | null;
+      theme?:
+        | ('system' | 'light' | 'dark' | 'oled' | 'highContrast' | 'forest' | 'ocean' | 'sunset' | 'strava')
+        | null;
       /** Language */
       language?: ('en' | 'es') | null;
       /** Units */
