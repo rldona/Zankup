@@ -55,6 +55,7 @@ import {
   SplitBars,
   useActivityContext,
 } from '../../src/detail/Context';
+import { GoalReachedBanner } from '../../src/detail/GoalReached';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
 import { ExercisesBlock, MuscleCover, Strength } from '../../src/detail/Strength';
 import { MapControls } from '../../src/detail/MapControls';
@@ -273,8 +274,14 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
     </View>
   );
   const chartCard = (key: string) => {
-    const chart = charts.find((x) => x.key === key || (key === 'speed' && x.key === 'pace'));
-    if (!chart || !track) return null;
+    const found = charts.find((x) => x.key === key || (key === 'speed' && x.key === 'pace'));
+    if (!found || !track) return null;
+    // As Strava's, the elevation in grey behind power, heart rate, speed or pace and cadence.
+    const alt = charts.find((x) => x.key === 'alt')?.values;
+    const chart =
+      alt && ['power', 'hr', 'speed', 'pace', 'gap', 'cad'].includes(found.key)
+        ? { ...found, backdrop: alt }
+        : found;
     // A ride's power chart also gets its work, intensity and training load (the server's).
     const fastestSplit = Math.max(0, ...a.splits.map((x) => (x.time_s ? x.distance_m / x.time_s : 0)));
     const runExtra: [string, string][] =
@@ -399,6 +406,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
           </View>
           <Figures main={main} more={more} />
           <SummaryCard activityId={a.id} />
+          <GoalReachedBanner goals={context?.goals_reached} />
           {sport === 'ride' ? (
             // A ride as Strava's: fitness, the same route, effort, goals and results first, then each
             // chart with what belongs to it (the power curve and zones round power, HR zones after HR).
@@ -436,6 +444,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               <Splits activity={a} format={format} pace={pace} />
               {track && track.n > 1 && charts.length > 0 && chartsHeading}
               {chartCard('speed')}
+              {chartCard('gap')}
               {context && <PaceZonesBlock context={context} series={series ?? null} />}
               {chartCard('hr')}
               {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}

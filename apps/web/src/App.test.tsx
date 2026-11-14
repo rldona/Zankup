@@ -310,7 +310,8 @@ describe('app skeleton', () => {
     const hr = kpis.getByRole('heading', { name: 'Heart rate' }).closest('article');
     expect(hr).toHaveTextContent('Maximum171 bpm');
     expect(kpis.getByRole('heading', { name: 'Pace' })).toBeInTheDocument();
-    expect(kpis.getByRole('heading', { name: 'Altitude' }).closest('article')).toHaveTextContent('Ascent');
+    expect(kpis.getByRole('heading', { name: 'Grade-adjusted pace' })).toBeInTheDocument();
+    expect(kpis.getByRole('heading', { name: 'Elevation' }).closest('article')).toHaveTextContent('Ascent');
 
     // Without WebGL (jsdom), the route's shape stands in for the map.
     expect(await kpis.findByText(/The map needs WebGL/)).toBeInTheDocument();

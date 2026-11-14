@@ -72,6 +72,8 @@ export type ChartSeries = {
   fromZero?: boolean;
   /** Figures under the chart on its own card: average, maximum, NP, ascent… */
   footer?: [string, string][];
+  /** The elevation drawn in grey behind the series, on its own scale (as Strava combines them). */
+  backdrop?: (number | null)[];
 };
 
 type Props = {
@@ -148,6 +150,37 @@ export const MetricChart = memo(function MetricChart({
     // yOf and base follow from the scale.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track, series.values, plotW, plotH, lo, hi, series.inverted]);
+
+  // The elevation behind, filling the plot from its own lowest to its highest point.
+  const behind = useMemo(() => {
+    const values = series.backdrop;
+    if (!values) return null;
+    const known = values.filter((v): v is number => v != null);
+    if (known.length < 2) return null;
+    const low = Math.min(...known);
+    const span = Math.max(...known) - low || 1;
+    const area = Skia.PathBuilder.Make();
+    const columns = Math.max(2, Math.round(plotW));
+    let started = false;
+    let lastX = 0;
+    for (let x = 0; x < columns; x++) {
+      const v = values[indexAtDistance(track.x, (x / (columns - 1)) * track.totalX)];
+      if (v == null) continue;
+      const y = PAD + plotH * (1 - 0.92 * ((v - low) / span));
+      if (!started) {
+        area.moveTo(x, base);
+        area.lineTo(x, y);
+        started = true;
+      } else area.lineTo(x, y);
+      lastX = x;
+    }
+    if (!started) return null;
+    area.lineTo(lastX, base);
+    area.close();
+    return area.build();
+    // base follows from plotH.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track, series.backdrop, plotW, plotH]);
 
   const dist = track.x;
   const total = track.totalX;
@@ -312,6 +345,7 @@ export const MetricChart = memo(function MetricChart({
             ))}
             <Group transform={[{ translateX: left }]}>
               <Rect x={bandX} y={0} width={bandW} height={height} color={colors.band} />
+              {behind && <Path path={behind} color={colors.muted} opacity={0.3} />}
               <Path path={fill} color={series.color} opacity={0.75} />
               <Line p1={p1} p2={p2} color={colors.cursor} strokeWidth={1.5} />
             </Group>

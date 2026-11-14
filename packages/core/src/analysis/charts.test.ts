@@ -19,7 +19,7 @@ describe('the activity charts (OS-907)', () => {
     cad: [85, 90, 90, 88],
   };
 
-  it('gives a ride its power, speed, cadence and altitude, in that order, and no heart rate', () => {
+  it('gives a ride its power, speed, cadence, altitude and heart rate, in that order', () => {
     const charts = activityCharts(series, {
       sport: 'ride',
       pace: false,
@@ -28,7 +28,7 @@ describe('the activity charts (OS-907)', () => {
       t,
       locale: 'en',
     });
-    expect(charts.map((c) => c.key)).toEqual(['power', 'speed', 'cad', 'alt']);
+    expect(charts.map((c) => c.key)).toEqual(['power', 'speed', 'cad', 'alt', 'hr']);
     expect(charts[0]?.colour).toBe('power');
     expect(charts[1]?.values[0]).toBe(18); // 5 m/s in km/h
   });
@@ -54,6 +54,13 @@ describe('the activity charts (OS-907)', () => {
       'Minimum',
       'Maximum',
     ]);
+    // Grade-adjusted pace right after pace: climbing, it reads faster than the pace itself.
+    const keys = charts.map((c) => c.key);
+    expect(keys.indexOf('gap')).toBe(keys.indexOf('pace') + 1);
+    const gap = charts.find((c) => c.key === 'gap');
+    expect(gap?.inverted).toBe(true);
+    expect(gap?.values[1] ?? 0).toBeLessThan(pace?.values[1] ?? 0);
+    expect(charts.find((c) => c.key === 'alt')?.label).toBe('Elevation');
   });
 
   it('writes a value as its readout does', () => {

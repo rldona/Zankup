@@ -2199,6 +2199,11 @@ export interface components {
       power: components['schemas']['PowerOut'] | null;
       /** @description On a run, the zones its pace is read against */
       pace_zones: components['schemas']['PaceZonesOut'] | null;
+      /**
+       * Goals Reached
+       * @description The goals this activity completed (took over the target)
+       */
+      goals_reached?: components['schemas']['ReachedGoal'][];
     };
     /** ActivityDetail */
     ActivityDetail: {
@@ -2261,6 +2266,11 @@ export interface components {
       exercises?: {
         [key: string]: number;
       } | null;
+      /**
+       * Goals Reached
+       * @description The goals this activity completed (took over the target)
+       */
+      goals_reached?: components['schemas']['ReachedGoal'][];
       /** Description */
       description: string | null;
       gear: components['schemas']['GearRef'] | null;
@@ -2511,6 +2521,11 @@ export interface components {
       exercises?: {
         [key: string]: number;
       } | null;
+      /**
+       * Goals Reached
+       * @description The goals this activity completed (took over the target)
+       */
+      goals_reached?: components['schemas']['ReachedGoal'][];
     };
     /** AiBudget */
     AiBudget: {
@@ -3963,6 +3978,19 @@ export interface components {
        * @description VAPID application server key (base64url)
        */
       public_key: string;
+    };
+    /** ReachedGoal */
+    ReachedGoal: {
+      /** Goal Id */
+      goal_id: number;
+      /** Period */
+      period: string;
+      /** Metric */
+      metric: string;
+      /** Sport */
+      sport: string | null;
+      /** Target */
+      target: number;
     };
     /** ReadinessOut */
     ReadinessOut: {

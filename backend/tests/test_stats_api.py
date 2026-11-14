@@ -223,3 +223,18 @@ def test_effort_against_the_weeks_before_and_power_figures() -> None:
     assert figures.work_kj == 1061 and figures.intensity == 90 and 130 <= (figures.load or 0) <= 136
     no_ftp = power_figures(181, 181, 5861, None)
     assert no_ftp is not None and no_ftp.intensity is None and no_ftp.work_kj == 1061
+
+
+def test_the_activity_that_completes_a_goal_shows_it(ctx: Ctx) -> None:  # noqa: F811
+    ready(ctx)
+    runs = ctx.http.post(
+        "/api/goals", json={"period": "year", "metric": "count", "sport": "run", "target": 1}
+    ).json()
+    far = ctx.http.post("/api/goals", json={"period": "year", "metric": "distance", "target": 10**9}).json()
+    context = ctx.http.get(f"/api/activities/{ctx.ids['run']}/context").json()
+    assert [g["goal_id"] for g in context["goals_reached"]] == [runs["id"]]
+    assert ctx.http.get(f"/api/activities/{ctx.ids['ride-power']}/context").json()["goals_reached"] == []
+    feed = {a["id"]: a["goals_reached"] for a in ctx.http.get("/api/activities").json()["items"]}
+    assert [g["metric"] for g in feed[ctx.ids["run"]]] == ["count"]
+    assert all(not v for k, v in feed.items() if k != ctx.ids["run"])
+    assert far["id"] not in {g["goal_id"] for v in feed.values() for g in v}
