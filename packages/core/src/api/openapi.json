@@ -10430,7 +10430,8 @@
               "forest",
               "ocean",
               "sunset",
-              "strava"
+              "strava",
+              "stravaDark"
             ],
             "title": "Theme"
           },
@@ -10575,7 +10576,8 @@
                   "forest",
                   "ocean",
                   "sunset",
-                  "strava"
+                  "strava",
+                  "stravaDark"
                 ]
               },
               {

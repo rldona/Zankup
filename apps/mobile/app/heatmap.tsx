@@ -35,7 +35,7 @@ export default function HeatmapScreen() {
     borderRadius: 999,
   } as const;
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View style={{ flex: 1, backgroundColor: c.page }}>
       <Stack.Screen options={{ headerShown: false, title: t('heatmap.title') }} />
       {routes.isPending ? (
         <View style={{ flex: 1, justifyContent: 'center' }}>

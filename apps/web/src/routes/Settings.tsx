@@ -41,6 +41,7 @@ const NOTES: Partial<Record<ThemeChoice, MessageKey>> = {
   oled: 'theme.oledNote',
   highContrast: 'theme.highContrastNote',
   strava: 'theme.stravaNote',
+  stravaDark: 'theme.stravaDarkNote',
 };
 
 const day = (iso: string) =>

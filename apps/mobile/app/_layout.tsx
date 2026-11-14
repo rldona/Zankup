@@ -126,9 +126,9 @@ export default function Root() {
               <AuthContext.Provider value={auth}>
                 <Stack
                   screenOptions={{
-                    headerStyle: { backgroundColor: c.bg },
+                    headerStyle: { backgroundColor: c.page },
                     headerTintColor: c.fg,
-                    contentStyle: { backgroundColor: c.bg },
+                    contentStyle: { backgroundColor: c.page },
                     headerShadowVisible: false,
                   }}
                 >

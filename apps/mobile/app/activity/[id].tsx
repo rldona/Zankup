@@ -347,10 +347,10 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
     ) : null;
   const title = a.name ?? t(`sport.${sport}`);
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View style={{ flex: 1, backgroundColor: c.page }}>
       <Stack.Screen options={{ headerShown: false, title }} />
       <Animated.ScrollView
-        style={{ backgroundColor: c.bg }}
+        style={{ backgroundColor: c.page }}
         contentContainerStyle={{ paddingBottom: 32, paddingTop: map ? 0 : header }}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -515,7 +515,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundColor: c.bg,
+            backgroundColor: c.page,
             opacity: solid,
           }}
         />

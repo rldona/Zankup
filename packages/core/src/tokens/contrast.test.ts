@@ -15,7 +15,7 @@ function contrast(a: string, b: string): number {
 }
 
 type Colour = Exclude<keyof Theme, 'scheme' | 'shadow'>;
-const BACKGROUNDS: Colour[] = ['bg', 'surface', 'surface2'];
+const BACKGROUNDS: Colour[] = ['bg', 'page', 'surface', 'surface2'];
 const SPORTS: Colour[] = ['run', 'ride', 'strength', 'walk', 'row', 'swim', 'other'];
 
 /** Every pair the interface draws, with the WCAG AA minimum: 4.5:1 for text, 3:1 for graphics. */
@@ -33,7 +33,7 @@ const PAIRS: [fg: Colour, bg: Colour, min: number][] = [
  * Strava's orange is the theme: on white it reaches 3:1, AA for bold and large text and for controls,
  * which is how the theme uses it (buttons, links, the selected chip), not the 4.5:1 of body text.
  */
-const BRAND_ACCENT: Partial<Record<(typeof THEMES)[number], number>> = { strava: 3 };
+const BRAND_ACCENT: Partial<Record<(typeof THEMES)[number], number>> = { strava: 3, stravaDark: 3 };
 
 describe('theme contrast (WCAG AA)', () => {
   it.each(THEMES)('%s passes', (name) => {

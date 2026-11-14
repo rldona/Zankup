@@ -15,6 +15,7 @@ const NOTES: Partial<Record<ThemeChoice, MessageKey>> = {
   oled: 'theme.oledNote',
   highContrast: 'theme.highContrastNote',
   strava: 'theme.stravaNote',
+  stravaDark: 'theme.stravaDarkNote',
 };
 
 /** "System": light above the diagonal, dark below, as the PWA's gradient draws it. */

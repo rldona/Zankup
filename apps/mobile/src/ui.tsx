@@ -62,7 +62,8 @@ export function Screen({
   const keyboard = useFieldAboveKeyboard();
   const top = useTopInset(!header);
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: top }}>
+    // Sub-screens (under a stack header) take the page colour: white in Strava's theme.
+    <View style={{ flex: 1, backgroundColor: header ? c.page : c.bg, paddingTop: top }}>
       {title ? (
         <View style={styles.headerBar}>
           <View style={{ flex: 1 }}>

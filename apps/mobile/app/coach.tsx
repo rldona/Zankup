@@ -48,10 +48,10 @@ export default function CoachScreen() {
   const status = useQuery({ ...aiStatusQuery(api), retry: false });
   const info = status.data;
   const c = useTheme();
-  if (!info) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
+  if (!info) return <View style={{ flex: 1, backgroundColor: c.page }} />;
   if (!info.available || !info.enabled)
     return (
-      <View style={[ui.page, { flex: 1, backgroundColor: c.bg }]}>
+      <View style={[ui.page, { flex: 1, backgroundColor: c.page }]}>
         <Body>{info.available ? t('coach.off') : t('coach.unavailable')}</Body>
         {info.available && <Button onPress={() => router.push('/settings')}>{t('nav.settings')}</Button>}
       </View>
@@ -239,7 +239,7 @@ function Chat({ weekly, budgetSpent }: { weekly: boolean; budgetSpent: boolean }
   };
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
+    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.page }}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={90}>
         <ScrollView
           ref={scroll}

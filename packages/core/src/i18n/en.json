@@ -129,6 +129,8 @@
   "theme.sunset": "Sunset",
   "theme.strava": "Strava",
   "theme.stravaNote": "Orange on white, flat",
+  "theme.stravaDark": "Strava dark",
+  "theme.stravaDarkNote": "Orange on black",
   "activity.elapsed": "Elapsed",
   "activity.maxHr": "Max HR",
   "activity.power": "Avg power",
