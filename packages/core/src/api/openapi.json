@@ -5864,6 +5864,17 @@
                 "type": "null"
               }
             ]
+          },
+          "pace_zones": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaceZonesOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "On a run, the zones its pace is read against"
           }
         },
         "type": "object",
@@ -5874,7 +5885,8 @@
           "matches",
           "medals",
           "segments",
-          "power"
+          "power",
+          "pace_zones"
         ],
         "title": "ActivityContext"
       },
@@ -10091,6 +10103,29 @@
         ],
         "title": "Options",
         "description": "`publicKey` options for navigator.credentials.create() or .get(), as JSON (binary as base64url)."
+      },
+      "PaceZonesOut": {
+        "properties": {
+          "threshold_mps": {
+            "type": "number",
+            "title": "Threshold Mps",
+            "description": "Threshold speed: the engine's critical speed estimate"
+          },
+          "bounds": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Bounds",
+            "description": "Each zone's lower bound as a speed (m/s), Z1 from 0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "threshold_mps",
+          "bounds"
+        ],
+        "title": "PaceZonesOut"
       },
       "PasskeyOut": {
         "properties": {

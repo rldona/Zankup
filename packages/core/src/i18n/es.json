@@ -1331,5 +1331,13 @@
   "detail.segments": "Segmentos",
   "detail.work": "Trabajo total",
   "detail.intensity": "Intensidad",
-  "detail.load": "Carga de entrenamiento"
+  "detail.load": "Carga de entrenamiento",
+  "detail.moving": "Tiempo en movimiento",
+  "detail.elapsed": "Tiempo transcurrido",
+  "detail.fastestSplit": "Parcial más rápido",
+  "detail.paceZones": "Ritmo por zonas",
+  "detail.paceZonesNote": "Basado en tu ritmo umbral de {pace}.",
+  "detail.analysis": "Análisis del entrenamiento",
+  "detail.analysisAverage": "Media {pace}",
+  "detail.analysisFastest": "Más rápido {pace}"
 }

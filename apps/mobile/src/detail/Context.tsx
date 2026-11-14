@@ -4,7 +4,7 @@
  * before, the goals it counts for and its results (medals in best times and power, and on segments).
  * Each block hides itself when it has nothing to say; the page puts them in the sport's order.
  */
-import { activityContextQuery, type ActivityContext } from '@zankup/core';
+import { activityContextQuery, metricValues, type ActivityContext, type Series } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -22,6 +22,7 @@ import { type GoalMetric } from '../progress/goals';
 import { useVolumeFormat } from '../progress/VolumeCard';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
+import { paceRange, paceZoneSeconds } from './paceZones';
 
 export function useActivityContext(activityId: number) {
   const api = useApi();
@@ -292,4 +293,127 @@ export function clock(seconds: number): string {
   const m = Math.floor((s % 3600) / 60);
   const pad = (n: number) => String(n).padStart(2, '0');
   return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+}
+
+/** A run's pace zones: the share of moving time in each, its range as paces, the fastest on top. */
+export function PaceZonesBlock({ context, series }: { context: ActivityContext; series: Series | null }) {
+  const c = useTheme();
+  const imperial = useUnits() === 'imperial';
+  const zones = context.pace_zones;
+  if (!zones || !series) return null;
+  const seconds = paceZoneSeconds(metricValues(series, 'speed') ?? [], series.t, zones.bounds);
+  const total = seconds.reduce((a, b) => a + b, 0);
+  if (!total) return null;
+  const unit = imperial ? 1609.344 : 1000;
+  const shades = zoneShades(String(c.fitness), seconds.length);
+  return (
+    <Card style={{ gap: 10 }}>
+      <Text style={{ color: c.fg, fontSize: 17, fontWeight: '800' }}>{t('detail.paceZones')}</Text>
+      <Muted style={{ fontSize: 13 }}>
+        {t('detail.paceZonesNote', { pace: speedText(zones.threshold_mps, true, imperial) })}
+      </Muted>
+      {seconds
+        .map((s, i) => ({ s, i }))
+        .reverse()
+        .map(({ s, i }) => {
+          const share = Math.round((s / total) * 100);
+          return (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ width: 24, color: c.fg, fontSize: 14, fontWeight: '800' }}>Z{i + 1}</Text>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View
+                  style={{
+                    width: `${Math.max(2, share * 0.62)}%`,
+                    minWidth: 8,
+                    height: 20,
+                    borderRadius: 6,
+                    backgroundColor: shades[i],
+                  }}
+                />
+                <Text style={{ color: c.fg, fontSize: 14, fontWeight: '700' }}>{share}%</Text>
+              </View>
+              <Muted style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                {paceRange(zones.bounds, i, unit)}
+              </Muted>
+            </View>
+          );
+        })}
+    </Card>
+  );
+}
+
+/** One colour in lighter to darker steps (the slow zones light, the fast ones deep). */
+function zoneShades(colour: string, count: number): string[] {
+  return Array.from({ length: count }, (_, i) => {
+    const alpha = Math.round((0.35 + (0.65 * i) / Math.max(1, count - 1)) * 255);
+    return `${colour.slice(0, 7)}${alpha.toString(16).padStart(2, '0')}`;
+  });
+}
+
+/**
+ * "Training analysis": a bar per split, taller the faster, against the average (dashed), as Strava's.
+ * The splits' table follows it on the page.
+ */
+export function SplitBars({
+  splits,
+  pace,
+}: {
+  splits: { distance_m: number; time_s: number | null }[];
+  pace: boolean;
+}) {
+  const c = useTheme();
+  const imperial = useUnits() === 'imperial';
+  if (splits.length < 2) return null;
+  const speeds = splits.map((s) => (s.time_s ? s.distance_m / s.time_s : 0));
+  const usable = speeds.filter((v) => v > 0);
+  const lo = Math.min(...usable) * 0.9;
+  const hi = Math.max(...usable);
+  const total = splits.reduce((a, s) => a + s.distance_m, 0);
+  const time = splits.reduce((a, s) => a + (s.time_s ?? 0), 0);
+  const mean = time ? total / time : 0;
+  const height = 150;
+  const h = (v: number) => (v > 0 ? 12 + ((v - lo) / (hi - lo || 1)) * (height - 12) : 4);
+  return (
+    <Card style={{ gap: 8 }}>
+      <Text style={{ color: c.fg, fontSize: 17, fontWeight: '800' }}>{t('detail.analysis')}</Text>
+      <View style={{ height, flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
+        {splits.map((s, i) => (
+          <View
+            key={i}
+            accessible
+            accessibilityLabel={`${i + 1}: ${speedText(speeds[i], pace, imperial)}`}
+            style={{
+              flex: Math.max(0.2, s.distance_m / (total / splits.length)),
+              height: h(speeds[i]),
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor: String(c.fitness),
+            }}
+          />
+        ))}
+        {mean > 0 && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: h(mean),
+              borderTopWidth: 1.5,
+              borderStyle: 'dashed',
+              borderColor: c.fg,
+            }}
+          />
+        )}
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Muted style={{ fontSize: 12 }}>
+          {t('detail.analysisAverage', { pace: speedText(mean, pace, imperial) })}
+        </Muted>
+        <Muted style={{ fontSize: 12 }}>
+          {t('detail.analysisFastest', { pace: speedText(hi, pace, imperial) })}
+        </Muted>
+      </View>
+    </Card>
+  );
 }

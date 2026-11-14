@@ -204,6 +204,9 @@ def test_an_activitys_context_fitness_effort_results_and_power(ctx: Ctx) -> None
     assert ride["matches"] == []  # no route done before
     run = ctx.http.get(f"/api/activities/{ctx.ids['run']}/context").json()
     assert any(m["key"] == "5k" for m in run["medals"]) and run["power"] is None
+    zones = run["pace_zones"]  # from the critical speed, when the engine has one
+    assert zones is None or (len(zones["bounds"]) == 5 and zones["bounds"][0] == 0)
+    assert ride["pace_zones"] is None  # only on a run
     assert ctx.http.get("/api/activities/999999/context").status_code == 404
 
 

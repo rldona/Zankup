@@ -14,10 +14,19 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
+import zankup_metrics as m
 from zankup.api.routing import protected_router
 from zankup.api.stats import BEST_KEYS, _bests, lower_is_better, medal_of
 from zankup.auth.deps import CurrentUser, DbSession
-from zankup.db.models import Activity, ActivityMetrics, DailyLoad, Goal, Segment, SegmentEffort
+from zankup.db.models import (
+    Activity,
+    ActivityMetrics,
+    DailyLoad,
+    EstimateRow,
+    Goal,
+    Segment,
+    SegmentEffort,
+)
 from zankup.engine.athlete import athlete
 from zankup.engine.user import local_day
 
@@ -81,6 +90,11 @@ class PowerOut(BaseModel):
     ftp: float | None
 
 
+class PaceZonesOut(BaseModel):
+    threshold_mps: float = Field(description="Threshold speed: the engine's critical speed estimate")
+    bounds: list[float] = Field(description="Each zone's lower bound as a speed (m/s), Z1 from 0")
+
+
 class ActivityContext(BaseModel):
     fitness: FitnessOut | None
     effort: EffortOut | None
@@ -89,6 +103,7 @@ class ActivityContext(BaseModel):
     medals: list[Medal]
     segments: list[SegmentResult]
     power: PowerOut | None
+    pace_zones: PaceZonesOut | None = Field(description="On a run, the zones its pace is read against")
 
 
 def _fitness(db: DbSession, user_id: int, day: date) -> FitnessOut | None:
@@ -223,6 +238,21 @@ def _segments(db: DbSession, activity: Activity) -> list[SegmentResult]:
     return sorted(out, key=lambda s: (s.rank, s.name))
 
 
+def _pace_zones(db: DbSession, user_id: int) -> PaceZonesOut | None:
+    """Pace zones over the threshold speed (zankup_metrics' five), from the latest critical speed."""
+    threshold = db.scalar(
+        select(EstimateRow.value)
+        .where(EstimateRow.user_id == user_id, EstimateRow.kind == "critical_speed")
+        .order_by(EstimateRow.day.desc())
+        .limit(1)
+    )
+    if not threshold:
+        return None
+    return PaceZonesOut(
+        threshold_mps=round(threshold, 3), bounds=[round(b, 3) for b in m.pace_zones(threshold)]
+    )
+
+
 def power_figures(
     avg_power: float | None, normalized: float | None, moving_s: float, ftp: float | None
 ) -> PowerOut | None:
@@ -259,6 +289,7 @@ def activity_context(activity_id: int, db: DbSession, user: CurrentUser) -> Acti
         matches=_matches(db, activity, metrics.route_group if metrics else None),
         medals=_medals(db, activity),
         segments=_segments(db, activity),
+        pace_zones=_pace_zones(db, user.id) if activity.sport == "run" else None,
         power=power_figures(
             activity.avg_power,
             activity.normalized_power,

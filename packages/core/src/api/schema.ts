@@ -2197,6 +2197,8 @@ export interface components {
       /** Segments */
       segments: components['schemas']['SegmentResult'][];
       power: components['schemas']['PowerOut'] | null;
+      /** @description On a run, the zones its pace is read against */
+      pace_zones: components['schemas']['PaceZonesOut'] | null;
     };
     /** ActivityDetail */
     ActivityDetail: {
@@ -3698,6 +3700,19 @@ export interface components {
       options: {
         [key: string]: unknown;
       };
+    };
+    /** PaceZonesOut */
+    PaceZonesOut: {
+      /**
+       * Threshold Mps
+       * @description Threshold speed: the engine's critical speed estimate
+       */
+      threshold_mps: number;
+      /**
+       * Bounds
+       * @description Each zone's lower bound as a speed (m/s), Z1 from 0
+       */
+      bounds: number[];
     };
     /** PasskeyOut */
     PasskeyOut: {
