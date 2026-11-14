@@ -50,7 +50,9 @@ import {
   FitnessBlock,
   GoalsBlock,
   MatchesBlock,
+  PaceZonesBlock,
   ResultsBlock,
+  SplitBars,
   useActivityContext,
 } from '../../src/detail/Context';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
@@ -274,8 +276,20 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
     const chart = charts.find((x) => x.key === key || (key === 'speed' && x.key === 'pace'));
     if (!chart || !track) return null;
     // A ride's power chart also gets its work, intensity and training load (the server's).
-    const extra: [string, string][] =
-      key === 'power' && context?.power
+    const fastestSplit = Math.max(0, ...a.splits.map((x) => (x.time_s ? x.distance_m / x.time_s : 0)));
+    const runExtra: [string, string][] =
+      key === 'speed' && sport === 'run'
+        ? [
+            [t('detail.moving'), formatDuration(a.moving_s ?? a.duration_s)],
+            [t('detail.elapsed'), formatDuration(a.duration_s)],
+            ...(fastestSplit
+              ? ([[t('detail.fastestSplit'), format.speedFor(fastestSplit, true)]] as [string, string][])
+              : []),
+          ]
+        : [];
+    const extra: [string, string][] = runExtra.length
+      ? runExtra
+      : key === 'power' && context?.power
         ? [
             [t('detail.work'), `${context.power.work_kj.toLocaleString(locale)} kJ`],
             ...(context.power.intensity != null
@@ -409,6 +423,29 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               <Laps activity={a} format={format} pace={pace} />
               <Splits activity={a} format={format} pace={pace} />
             </>
+          ) : sport === 'run' ? (
+            // A run as Strava's: the same blocks, then the training analysis and splits, pace with its
+            // zones, heart rate with its zones, cadence and elevation.
+            <>
+              {context && <FitnessBlock context={context} />}
+              {context && <MatchesBlock context={context} activityId={a.id} pace={pace} />}
+              {context && <EffortBlock context={context} />}
+              {context && <GoalsBlock context={context} />}
+              {context && <ResultsBlock context={context} ride={false} />}
+              <SplitBars splits={a.splits} pace={pace} />
+              <Splits activity={a} format={format} pace={pace} />
+              {track && track.n > 1 && charts.length > 0 && chartsHeading}
+              {chartCard('speed')}
+              {context && <PaceZonesBlock context={context} series={series ?? null} />}
+              {chartCard('hr')}
+              {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}
+              {chartCard('cad')}
+              {chartCard('alt')}
+              {sectionCard}
+              <Photos activity={a} />
+              <RouteAndSegments activity={a} />
+              <Laps activity={a} format={format} pace={pace} />
+            </>
           ) : (
             <>
               {track && track.n > 1 && (
@@ -420,13 +457,11 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               )}
               <Photos activity={a} />
               {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}
-              {/* On a run, the splits follow the heart-rate zones. */}
-              {sport === 'run' && <Splits activity={a} format={format} pace={pace} />}
               {(a.sets ?? []).length > 0 && <Strength sets={a.sets} cover={muscleCover} />}
               <RouteAndSegments activity={a} />
               <Power activity={a} />
               <Laps activity={a} format={format} pace={pace} />
-              {sport !== 'run' && <Splits activity={a} format={format} pace={pace} />}
+              <Splits activity={a} format={format} pace={pace} />
             </>
           )}
           {a.description ? (

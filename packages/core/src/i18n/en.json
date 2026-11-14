@@ -1331,5 +1331,13 @@
   "detail.segments": "Segments",
   "detail.work": "Total work",
   "detail.intensity": "Intensity",
-  "detail.load": "Training load"
+  "detail.load": "Training load",
+  "detail.moving": "Moving time",
+  "detail.elapsed": "Elapsed time",
+  "detail.fastestSplit": "Fastest split",
+  "detail.paceZones": "Pace zones",
+  "detail.paceZonesNote": "Based on your threshold pace of {pace}.",
+  "detail.analysis": "Training analysis",
+  "detail.analysisAverage": "Average {pace}",
+  "detail.analysisFastest": "Fastest {pace}"
 }
