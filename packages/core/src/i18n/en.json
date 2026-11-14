@@ -127,6 +127,8 @@
   "theme.forest": "Forest",
   "theme.ocean": "Ocean",
   "theme.sunset": "Sunset",
+  "theme.strava": "Strava",
+  "theme.stravaNote": "Orange on white, flat",
   "activity.elapsed": "Elapsed",
   "activity.maxHr": "Max HR",
   "activity.power": "Avg power",
