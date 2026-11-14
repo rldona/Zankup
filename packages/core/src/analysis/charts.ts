@@ -7,6 +7,7 @@ import type { ActivityDetail } from '../api/queries';
 import type { Sport } from '../domain/sports';
 import type { formatters } from '../format';
 import type { MessageKey } from '../i18n';
+import { gapSpeeds } from './gap';
 import { metricValues, smooth, type Series } from './streams';
 
 type Format = ReturnType<typeof formatters>;
@@ -15,7 +16,7 @@ type Translate = (key: MessageKey, values?: Record<string, string | number>) => 
 /** Power in a light violet on every theme: the ride's blue and speed's accent can both be blue (Ocean). */
 export const POWER_COLOUR = '#b197fc';
 
-export type ChartKey = 'power' | 'speed' | 'pace' | 'cad' | 'alt' | 'hr';
+export type ChartKey = 'power' | 'speed' | 'pace' | 'gap' | 'cad' | 'alt' | 'hr';
 
 /** A theme token, or `power` for POWER_COLOUR. */
 export type ChartColour = 'muted' | 'accent' | 'zone5' | 'zone4' | 'power';
@@ -37,11 +38,11 @@ export type ActivityChart = {
 };
 
 /** The order the cards come in. */
-const ORDER: ChartKey[] = ['power', 'speed', 'pace', 'cad', 'alt', 'hr'];
+const ORDER: ChartKey[] = ['power', 'speed', 'pace', 'gap', 'cad', 'alt', 'hr'];
 
 /**
- * The charts an activity has data for: power, speed (or pace), cadence, altitude and heart rate (left
- * out of a ride, which has its zones).
+ * The charts an activity has data for: power, speed (or pace and, on a run, grade-adjusted pace),
+ * cadence, altitude and heart rate.
  */
 export function activityCharts(
   series: Series,
@@ -81,7 +82,8 @@ export function activityCharts(
     const highest = Math.max(...alt.filter((v): v is number => v != null));
     out.push({
       key: 'alt',
-      label: t('metric.alt'),
+      // A run reads it as Strava's "Elevation" (desnivel).
+      label: t(sport === 'run' ? 'metric.elevation' : 'metric.alt'),
       colour: 'muted',
       values: alt.map((v) => (v == null ? null : v * feet)),
       readout: { kind: 'int', suffix: units === 'imperial' ? ' ft' : ' m' },
@@ -134,6 +136,24 @@ export function activityCharts(
             ],
           },
     );
+  }
+
+  // A run's pace adjusted for the gradient (Minetti's cost, as the engine's average), after its pace.
+  if (pace && sport === 'run' && has(speed) && series.dist && series.alt?.some((v) => v != null)) {
+    const gap = gapSpeeds(speed, series.dist, series.alt);
+    const moving = gap.filter((v): v is number => v != null && v > 0.5);
+    const mean = moving.length ? moving.reduce((x, y) => x + y, 0) / moving.length : 0;
+    const average = a?.metrics?.gap_speed ?? mean;
+    if (moving.length)
+      out.push({
+        key: 'gap',
+        label: t('chart.gapFull'),
+        colour: 'accent',
+        values: gap.map((v) => (v == null || v < 0.5 ? null : unit / v / 60)),
+        readout: { kind: 'pace', suffix: units === 'imperial' ? ' /mi' : ' /km' },
+        inverted: true,
+        footer: [[t('chart.gapAvg'), average ? format.pace(average) : '–']],
+      });
   }
 
   const hr = series.hr;
@@ -202,9 +222,7 @@ export function activityCharts(
     });
   }
 
-  return out
-    .filter((chart) => sport !== 'ride' || chart.key !== 'hr')
-    .sort((x, y) => ORDER.indexOf(x.key) - ORDER.indexOf(y.key));
+  return out.sort((x, y) => ORDER.indexOf(x.key) - ORDER.indexOf(y.key));
 }
 
 /**

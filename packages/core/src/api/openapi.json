@@ -5875,6 +5875,14 @@
               }
             ],
             "description": "On a run, the zones its pace is read against"
+          },
+          "goals_reached": {
+            "items": {
+              "$ref": "#/components/schemas/ReachedGoal"
+            },
+            "type": "array",
+            "title": "Goals Reached",
+            "description": "The goals this activity completed (took over the target)"
           }
         },
         "type": "object",
@@ -6050,6 +6058,14 @@
             ],
             "title": "Exercises",
             "description": "Strength sets per FIT exercise category (OS-225), for the card's body map; null without sets"
+          },
+          "goals_reached": {
+            "items": {
+              "$ref": "#/components/schemas/ReachedGoal"
+            },
+            "type": "array",
+            "title": "Goals Reached",
+            "description": "The goals this activity completed (took over the target)"
           },
           "description": {
             "anyOf": [
@@ -6945,6 +6961,14 @@
             ],
             "title": "Exercises",
             "description": "Strength sets per FIT exercise category (OS-225), for the card's body map; null without sets"
+          },
+          "goals_reached": {
+            "items": {
+              "$ref": "#/components/schemas/ReachedGoal"
+            },
+            "type": "array",
+            "title": "Goals Reached",
+            "description": "The goals this activity completed (took over the target)"
           }
         },
         "type": "object",
@@ -10918,6 +10942,46 @@
           "public_key"
         ],
         "title": "PushKey"
+      },
+      "ReachedGoal": {
+        "properties": {
+          "goal_id": {
+            "type": "integer",
+            "title": "Goal Id"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "sport": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport"
+          },
+          "target": {
+            "type": "number",
+            "title": "Target"
+          }
+        },
+        "type": "object",
+        "required": [
+          "goal_id",
+          "period",
+          "metric",
+          "sport",
+          "target"
+        ],
+        "title": "ReachedGoal"
       },
       "ReadinessOut": {
         "properties": {

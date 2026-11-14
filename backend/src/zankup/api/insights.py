@@ -17,6 +17,7 @@ from sqlalchemy import select
 import zankup_metrics as m
 from zankup.api.routing import protected_router
 from zankup.api.stats import BEST_KEYS, _bests, lower_is_better, medal_of
+from zankup.api.training import ReachedGoal, reached_goals
 from zankup.auth.deps import CurrentUser, DbSession
 from zankup.db.models import (
     Activity,
@@ -104,6 +105,9 @@ class ActivityContext(BaseModel):
     segments: list[SegmentResult]
     power: PowerOut | None
     pace_zones: PaceZonesOut | None = Field(description="On a run, the zones its pace is read against")
+    goals_reached: list[ReachedGoal] = Field(
+        default_factory=list, description="The goals this activity completed (took over the target)"
+    )
 
 
 def _fitness(db: DbSession, user_id: int, day: date) -> FitnessOut | None:
@@ -290,6 +294,7 @@ def activity_context(activity_id: int, db: DbSession, user: CurrentUser) -> Acti
         medals=_medals(db, activity),
         segments=_segments(db, activity),
         pace_zones=_pace_zones(db, user.id) if activity.sport == "run" else None,
+        goals_reached=reached_goals(db, user.id, [activity]).get(activity.id, []),
         power=power_figures(
             activity.avg_power,
             activity.normalized_power,

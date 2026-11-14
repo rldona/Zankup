@@ -254,9 +254,18 @@ class GoalOut(BaseModel):
     projection: float = Field(description="Where the current pace ends the period")
 
 
-def _goal_out(db: DbSession, goal: Goal, today: date) -> GoalOut:
-    start = _bucket(today, goal.period)
-    end = _next(start, goal.period)
+def _amount(goal: Goal, a: Activity) -> float:
+    """What one activity adds to a goal."""
+    return {
+        "distance": a.distance_m or 0,
+        "time": a.moving_s or a.duration_s,
+        "ascent": a.ascent_m or 0,
+        "count": 1,
+    }[goal.metric]
+
+
+def _period_activities(db: DbSession, goal: Goal, start: date, end: date) -> list[Activity]:
+    """The activities a goal counts in its period from start to end, in the order they were done."""
     query = select(Activity).where(
         Activity.user_id == goal.user_id,
         Activity.start_utc >= datetime.combine(start - timedelta(days=1), datetime.min.time(), UTC),
@@ -264,16 +273,57 @@ def _goal_out(db: DbSession, goal: Goal, today: date) -> GoalOut:
     )
     if goal.sport:
         query = query.where(Activity.sport == goal.sport)
-    current = 0.0
-    for a in db.scalars(query):
-        if not start <= local_day(a.start_utc, a.timezone) < end:
+    rows = [a for a in db.scalars(query) if start <= local_day(a.start_utc, a.timezone) < end]
+    return sorted(rows, key=lambda a: (a.start_utc, a.id))
+
+
+class ReachedGoal(BaseModel):
+    goal_id: int
+    period: str
+    metric: str
+    sport: str | None
+    target: float
+
+
+def reached_goals(db: DbSession, user_id: int, activities: list[Activity]) -> dict[int, list[ReachedGoal]]:
+    """The goals each activity completed: its period's total was under the target before it and at or
+    over it with it. One query per goal and period, so a page of the feed costs a few."""
+    out: dict[int, list[ReachedGoal]] = defaultdict(list)
+    if not activities:
+        return out
+    goals = list(db.scalars(select(Goal).where(Goal.user_id == user_id).order_by(Goal.id)))
+    for goal in goals:
+        if goal.target <= 0:
             continue
-        current += {
-            "distance": a.distance_m or 0,
-            "time": a.moving_s or a.duration_s,
-            "ascent": a.ascent_m or 0,
-            "count": 1,
-        }[goal.metric]
+        starts = {
+            _bucket(local_day(a.start_utc, a.timezone), goal.period)
+            for a in activities
+            if not goal.sport or a.sport == goal.sport
+        }
+        wanted = {a.id for a in activities}
+        for start in starts:
+            total = 0.0
+            for a in _period_activities(db, goal, start, _next(start, goal.period)):
+                before, total = total, total + _amount(goal, a)
+                if before < goal.target <= total:
+                    if a.id in wanted:
+                        out[a.id].append(
+                            ReachedGoal(
+                                goal_id=goal.id,
+                                period=goal.period,
+                                metric=goal.metric,
+                                sport=goal.sport,
+                                target=goal.target,
+                            )
+                        )
+                    break
+    return out
+
+
+def _goal_out(db: DbSession, goal: Goal, today: date) -> GoalOut:
+    start = _bucket(today, goal.period)
+    end = _next(start, goal.period)
+    current = sum(_amount(goal, a) for a in _period_activities(db, goal, start, end))
     elapsed = (today - start).days + 1
     length = (end - start).days
     return GoalOut(

@@ -21,6 +21,7 @@ from sqlalchemy import Interval, case, cast, exists, func, literal, select, tupl
 from sqlalchemy.orm import defer
 
 from zankup.api.routing import protected_router
+from zankup.api.training import ReachedGoal, reached_goals
 from zankup.auth.deps import AppSettings, CurrentUser, DbSession
 from zankup.db.models import Activity, BestEffort, Lap, Stream
 from zankup.storage import RawStore, StorageError, get_raw_store
@@ -68,6 +69,9 @@ class ActivitySummary(BaseModel):
         default=None,
         description="Strength sets per FIT exercise category (OS-225), for the card's body map; "
         "null without sets",
+    )
+    goals_reached: list[ReachedGoal] = Field(
+        default_factory=list, description="The goals this activity completed (took over the target)"
     )
 
 
@@ -311,9 +315,13 @@ def _summaries(db: DbSession, activities: list[Activity]) -> list[ActivitySummar
             .group_by(Photo.activity_id)
         ):
             photos[activity_id] = (first, count)
+    reached = reached_goals(db, activities[0].user_id, activities) if activities else {}
     return [
         ActivitySummary(
-            **_summary_fields(a), photo=photos.get(a.id, (None, 0))[0], photos=photos.get(a.id, (None, 0))[1]
+            **_summary_fields(a),
+            photo=photos.get(a.id, (None, 0))[0],
+            photos=photos.get(a.id, (None, 0))[1],
+            goals_reached=reached.get(a.id, []),
         )
         for a in activities
     ]

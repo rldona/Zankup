@@ -28,6 +28,7 @@ import { BodyThumb } from './detail/Strength';
 import { locale, t } from './i18n';
 import { Icon, SportIcon } from './Icon';
 import { asSport, useFormat } from './prefs';
+import { GoalReachedLine } from './detail/GoalReached';
 import { useTheme } from './theme';
 import { Badge, Card, Empty, Muted, Stat, styles as ui } from './ui';
 import { FeedSkeleton, WeekSkeleton } from './Skeleton';
@@ -197,6 +198,7 @@ export const ActivityCard = memo(function ActivityCard({
             <BodyThumb worked={muscles} />
           ) : null}
         </View>
+        <GoalReachedLine goals={a.goals_reached} />
       </Card>
     </Pressable>
   );

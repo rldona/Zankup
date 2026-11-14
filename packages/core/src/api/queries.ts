@@ -658,6 +658,7 @@ export function activitySummaryQuery(api: ApiClient, activityId: number) {
 }
 
 export type ActivityContext = Json<'/api/activities/{activity_id}/context', 'get'>;
+export type ReachedGoal = NonNullable<ActivityContext['goals_reached']>[number];
 
 /** What an activity's page shows around its numbers: fitness, effort, goals, the same route, results. */
 export function activityContextQuery(api: ApiClient, activityId: number) {

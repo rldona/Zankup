@@ -8,6 +8,7 @@ export * from './tokens';
 export * from './geo/route';
 export * from './analysis/streams';
 export * from './analysis/charts';
+export * from './analysis/gap';
 export * from './map/colour';
 export * from './map/style';
 export * from './charts/theme';
