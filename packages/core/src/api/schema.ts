@@ -1669,6 +1669,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/stats/devices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Devices
+     * @description The devices and services that recorded activities or health data in the last days, the most
+     *     recently used first (Progress → Data sources).
+     */
+    get: operations['getDevices'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/routes': {
     parameters: {
       query?: never;
@@ -2896,6 +2917,29 @@ export interface components {
        * @description The session making this request
        */
       current: boolean;
+    };
+    /** DeviceUse */
+    DeviceUse: {
+      /**
+       * Name
+       * @description The device (fēnix 6X Pro, Rouvy…); null when the source names none
+       */
+      name: string | null;
+      /**
+       * Source
+       * @description Where it came from: garmin, strava, file, google_health, health_connect
+       */
+      source: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'activity' | 'health';
+      /**
+       * Last Used
+       * Format: date-time
+       */
+      last_used: string;
     };
     /** EditedActivity */
     EditedActivity: {
@@ -8125,6 +8169,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['zankup__api__stats__Medal'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  getDevices: {
+    parameters: {
+      query?: {
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeviceUse'][];
         };
       };
       /** @description Validation Error */

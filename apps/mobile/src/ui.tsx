@@ -551,6 +551,7 @@ export function MenuRow({
   note,
   onPress,
   last,
+  end,
 }: {
   icon?: ReactNode;
   label: string;
@@ -558,6 +559,8 @@ export function MenuRow({
   onPress: () => void;
   /** The last row of its card: no line under it. */
   last?: boolean;
+  /** In place of the chevron (a connected source's check). */
+  end?: ReactNode;
 }) {
   const c = useTheme();
   return (
@@ -576,7 +579,7 @@ export function MenuRow({
         <Text style={{ color: c.fg, fontSize: 16, fontWeight: '600' }}>{label}</Text>
         {note ? <Text style={{ color: c.muted, fontSize: 13 }}>{note}</Text> : null}
       </View>
-      <Text style={{ color: c.muted, fontSize: 20 }}>›</Text>
+      {end ?? <Text style={{ color: c.muted, fontSize: 20 }}>›</Text>}
     </Pressable>
   );
 }

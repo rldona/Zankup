@@ -238,3 +238,12 @@ def test_the_activity_that_completes_a_goal_shows_it(ctx: Ctx) -> None:  # noqa:
     assert [g["metric"] for g in feed[ctx.ids["run"]]] == ["count"]
     assert all(not v for k, v in feed.items() if k != ctx.ids["run"])
     assert far["id"] not in {g["goal_id"] for v in feed.values() for g in v}
+
+
+def test_devices_used_lately(ctx: Ctx) -> None:  # noqa: F811
+    ready(ctx)
+    used = ctx.http.get("/api/stats/devices").json()
+    assert used and all(d["kind"] == "activity" for d in used)
+    assert used == sorted(used, key=lambda d: d["last_used"], reverse=True)
+    assert len({(d["name"] or d["source"]) for d in used}) == len(used)
+    assert ctx.http.get("/api/stats/devices", params={"days": 0}).status_code == 422

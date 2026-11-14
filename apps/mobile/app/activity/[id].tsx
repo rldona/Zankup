@@ -405,8 +405,8 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
             </View>
           </View>
           <Figures main={main} more={more} />
-          <SummaryCard activityId={a.id} />
           <GoalReachedBanner goals={context?.goals_reached} />
+          <SummaryCard activityId={a.id} />
           {sport === 'ride' ? (
             // A ride as Strava's: fitness, the same route, effort, goals and results first, then each
             // chart with what belongs to it (the power curve and zones round power, HR zones after HR).
