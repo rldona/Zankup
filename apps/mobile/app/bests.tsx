@@ -72,7 +72,7 @@ export default function BestsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View style={{ flex: 1, backgroundColor: c.page }}>
       <Stack.Screen
         options={{ title: bestName(key), headerRight: () => <InfoButton text={t('progress.bestsInfo')} /> }}
       />
