@@ -56,7 +56,7 @@ import {
   useActivityContext,
 } from '../../src/detail/Context';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
-import { MuscleCover, Strength } from '../../src/detail/Strength';
+import { ExercisesBlock, MuscleCover, Strength } from '../../src/detail/Strength';
 import { MapControls } from '../../src/detail/MapControls';
 import { ActivitySkeleton } from '../../src/Skeleton';
 import { ActionMenu } from '../../src/Menu';
@@ -444,6 +444,21 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               {sectionCard}
               <Photos activity={a} />
               <RouteAndSegments activity={a} />
+              <Laps activity={a} format={format} pace={pace} />
+            </>
+          ) : sport === 'strength' ? (
+            // A strength workout as Strava's: its exercises at a glance, effort and goals, heart rate and
+            // its zones, then the full sets.
+            <>
+              {(a.sets ?? []).length > 0 && <ExercisesBlock sets={a.sets} device={a.device} />}
+              {context && <EffortBlock context={context} />}
+              {context && <GoalsBlock context={context} />}
+              {track && track.n > 1 && charts.length > 0 && chartsHeading}
+              {chartCard('hr')}
+              {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}
+              {sectionCard}
+              {(a.sets ?? []).length > 0 && <Strength sets={a.sets} cover={muscleCover} />}
+              <Photos activity={a} />
               <Laps activity={a} format={format} pace={pace} />
             </>
           ) : (
