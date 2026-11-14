@@ -2116,6 +2116,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/activities/{activity_id}/context': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Activity Context
+     * @description Fitness, effort, goals, the same route, results and power figures around one activity.
+     */
+    get: operations['getActivityContext'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/health': {
     parameters: {
       query?: never;
@@ -2160,6 +2180,23 @@ export interface components {
        * @description Accepts how the data is handled
        */
       accept: boolean;
+    };
+    /** ActivityContext */
+    ActivityContext: {
+      fitness: components['schemas']['FitnessOut'] | null;
+      effort: components['schemas']['EffortOut'] | null;
+      /** Goals */
+      goals: components['schemas']['zankup__api__insights__GoalOut'][];
+      /**
+       * Matches
+       * @description Every effort on the same route, oldest first
+       */
+      matches: components['schemas']['MatchOut'][];
+      /** Medals */
+      medals: components['schemas']['zankup__api__insights__Medal'][];
+      /** Segments */
+      segments: components['schemas']['SegmentResult'][];
+      power: components['schemas']['PowerOut'] | null;
     };
     /** ActivityDetail */
     ActivityDetail: {
@@ -2875,6 +2912,18 @@ export interface components {
       /** Decoupling */
       decoupling: number | null;
     };
+    /** EffortOut */
+    EffortOut: {
+      /** Score */
+      score: number;
+      /**
+       * Average
+       * @description Average relative effort per activity in the 3 weeks before
+       */
+      average: number | null;
+      /** Status */
+      status: ('below' | 'in' | 'above') | null;
+    };
     /** EffortScale */
     EffortScale: {
       /**
@@ -3015,6 +3064,34 @@ export interface components {
        */
       tsb: number;
     };
+    /** FitnessOut */
+    FitnessOut: {
+      /**
+       * Before
+       * @description Fitness the day before
+       */
+      before: number;
+      /**
+       * After
+       * @description Fitness at the end of the activity's day
+       */
+      after: number;
+      /**
+       * Points
+       * @description The four weeks up to the day, for a small line
+       */
+      points: components['schemas']['FitnessPoint'][];
+    };
+    /** FitnessPoint */
+    FitnessPoint: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Ctl */
+      ctl: number;
+    };
     /** ForgotRequest */
     ForgotRequest: {
       /** Email */
@@ -3139,36 +3216,6 @@ export interface components {
        * @description Metres, seconds, metres climbed or a number of activities
        */
       target: number;
-    };
-    /** GoalOut */
-    GoalOut: {
-      /** Id */
-      id: number;
-      /** Period */
-      period: string;
-      /** Metric */
-      metric: string;
-      /** Sport */
-      sport: string | null;
-      /** Target */
-      target: number;
-      /**
-       * Start
-       * Format: date
-       */
-      start: string;
-      /**
-       * End
-       * Format: date
-       */
-      end: string;
-      /** Current */
-      current: number;
-      /**
-       * Projection
-       * @description Where the current pace ends the period
-       */
-      projection: number;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -3394,6 +3441,27 @@ export interface components {
       /** Descent M */
       descent_m: number | null;
     };
+    /** MatchOut */
+    MatchOut: {
+      /** Activity Id */
+      activity_id: number;
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Speed Mps */
+      speed_mps: number | null;
+      /** Moving S */
+      moving_s: number;
+      /** Relative Effort */
+      relative_effort: number | null;
+      /**
+       * This
+       * @description The activity the page is about
+       */
+      this: boolean;
+    };
     /** Me */
     Me: {
       /** Id */
@@ -3424,31 +3492,6 @@ export interface components {
       weight_kg?: number | null;
       /** Height Cm */
       height_cm?: number | null;
-    };
-    /** Medal */
-    Medal: {
-      /** Key */
-      key: string;
-      /** Activity Id */
-      activity_id: number;
-      /**
-       * Day
-       * Format: date
-       */
-      day: string;
-      /** Value */
-      value: number;
-      /**
-       * Rank
-       * @description 1 to 3
-       */
-      rank: number;
-      /**
-       * Scope
-       * @description Of all time, or of its year
-       * @enum {string}
-       */
-      scope: 'all' | 'year';
     };
     /** MetricComparison */
     MetricComparison: {
@@ -3700,6 +3743,23 @@ export interface components {
       height: number;
       /** Caption */
       caption: string | null;
+    };
+    /** PowerOut */
+    PowerOut: {
+      /** Work Kj */
+      work_kj: number;
+      /**
+       * Intensity
+       * @description Normalized power over FTP, as a percentage
+       */
+      intensity: number | null;
+      /**
+       * Load
+       * @description Training load: time * NP * IF / (FTP * 3600) * 100
+       */
+      load: number | null;
+      /** Ftp */
+      ftp: number | null;
     };
     /** Preferences */
     Preferences: {
@@ -4349,6 +4409,24 @@ export interface components {
       rank: number;
       /** Count */
       count: number;
+    };
+    /** SegmentResult */
+    SegmentResult: {
+      /** Segment Id */
+      segment_id: number;
+      /** Name */
+      name: string;
+      /** Distance M */
+      distance_m: number;
+      /** Elapsed S */
+      elapsed_s: number;
+      /** Avg Power */
+      avg_power: number | null;
+      /**
+       * Rank
+       * @description Among every effort on the segment
+       */
+      rank: number;
     };
     /**
      * SetOut
@@ -5058,6 +5136,91 @@ export interface components {
        * @description The same, over the span just before the period
        */
       previous: number[];
+    };
+    /** GoalOut */
+    zankup__api__insights__GoalOut: {
+      /** Period */
+      period: string;
+      /** Metric */
+      metric: string;
+      /** Sport */
+      sport: string | null;
+      /** Target */
+      target: number;
+      /** Current */
+      current: number;
+    };
+    /** Medal */
+    zankup__api__insights__Medal: {
+      /**
+       * Key
+       * @description A run distance, power_30… or longest
+       */
+      key: string;
+      /** Value */
+      value: number;
+      /** Rank */
+      rank: number;
+      /**
+       * Scope
+       * @enum {string}
+       */
+      scope: 'all' | 'year';
+    };
+    /** Medal */
+    zankup__api__stats__Medal: {
+      /** Key */
+      key: string;
+      /** Activity Id */
+      activity_id: number;
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Value */
+      value: number;
+      /**
+       * Rank
+       * @description 1 to 3
+       */
+      rank: number;
+      /**
+       * Scope
+       * @description Of all time, or of its year
+       * @enum {string}
+       */
+      scope: 'all' | 'year';
+    };
+    /** GoalOut */
+    zankup__api__training__GoalOut: {
+      /** Id */
+      id: number;
+      /** Period */
+      period: string;
+      /** Metric */
+      metric: string;
+      /** Sport */
+      sport: string | null;
+      /** Target */
+      target: number;
+      /**
+       * Start
+       * Format: date
+       */
+      start: string;
+      /**
+       * End
+       * Format: date
+       */
+      end: string;
+      /** Current */
+      current: number;
+      /**
+       * Projection
+       * @description Where the current pace ends the period
+       */
+      projection: number;
     };
     /** LoginRequest */
     zankup__auth__passkeys__LoginRequest: {
@@ -7918,7 +8081,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['Medal'][];
+          'application/json': components['schemas']['zankup__api__stats__Medal'][];
         };
       };
       /** @description Validation Error */
@@ -8111,7 +8274,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['GoalOut'][];
+          'application/json': components['schemas']['zankup__api__training__GoalOut'][];
         };
       };
     };
@@ -8135,7 +8298,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['GoalOut'];
+          'application/json': components['schemas']['zankup__api__training__GoalOut'];
         };
       };
       /** @description Validation Error */
@@ -8199,7 +8362,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['GoalOut'];
+          'application/json': components['schemas']['zankup__api__training__GoalOut'];
         };
       };
       /** @description Validation Error */
@@ -8823,6 +8986,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Redirect'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  getActivityContext: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        activity_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ActivityContext'];
         };
       };
       /** @description Validation Error */

@@ -45,6 +45,14 @@ import { SummaryCard } from '../../src/Ai';
 import { useApi } from '../../src/auth';
 import { type ChartSeries, MetricChart } from '../../src/detail/MetricChart';
 import { RouteMap } from '../../src/detail/RouteMap';
+import {
+  EffortBlock,
+  FitnessBlock,
+  GoalsBlock,
+  MatchesBlock,
+  ResultsBlock,
+  useActivityContext,
+} from '../../src/detail/Context';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
 import { MuscleCover, Strength } from '../../src/detail/Strength';
 import { MapControls } from '../../src/detail/MapControls';
@@ -91,6 +99,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   const { hrMax, estimated } = useHrMax();
   const units = useUnits();
   const [editing, setEditing] = useState(false);
+  const context = useActivityContext(a.id);
   const series = streams.data as Series | undefined;
   const metrics = useMemo(() => (series ? availableMetrics(series) : []), [series]);
   const [chosen, setChosen] = useState<Metric | null>(null);
@@ -224,6 +233,97 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
     : 1;
   // The buttons' round backgrounds go as the header comes.
   const round = typeof solid === 'number' ? 1 - solid : Animated.subtract(1, solid);
+  // The charts' pieces, laid out per sport below: the heading with the section switch, one card per
+  // chart (its figures under it) and the selected section's figures.
+  const chartsHeading = (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 12,
+      }}
+    >
+      <Heading>{t('activity.profile')}</Heading>
+      <Pressable
+        onPress={() => {
+          // Turning "Section" off drops the band, its figures and the map's highlight.
+          if (selecting) {
+            selection.set(null);
+            setSection(null);
+            setStats(null);
+          }
+          setSelecting(!selecting);
+        }}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: selecting }}
+        style={{
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 999,
+          backgroundColor: selecting ? accent(c) : c.surface2,
+        }}
+      >
+        <Text style={{ color: selecting ? onAccent(c) : c.fg, fontWeight: '600' }}>
+          {t('mobile.selectSection')}
+        </Text>
+      </Pressable>
+    </View>
+  );
+  const chartCard = (key: string) => {
+    const chart = charts.find((x) => x.key === key || (key === 'speed' && x.key === 'pace'));
+    if (!chart || !track) return null;
+    // A ride's power chart also gets its work, intensity and training load (the server's).
+    const extra: [string, string][] =
+      key === 'power' && context?.power
+        ? [
+            [t('detail.work'), `${context.power.work_kj.toLocaleString(locale)} kJ`],
+            ...(context.power.intensity != null
+              ? ([[t('detail.intensity'), String(context.power.intensity)]] as [string, string][])
+              : []),
+            ...(context.power.load != null
+              ? ([[t('detail.load'), String(context.power.load)]] as [string, string][])
+              : []),
+          ]
+        : [];
+    return (
+      <ChartCard
+        key={chart.key}
+        track={track}
+        series={extra.length ? { ...chart, footer: [...(chart.footer ?? []), ...extra] } : chart}
+        width={width - 60}
+        selection={selection}
+        selecting={selecting}
+        onCursor={onCursor}
+        onSelection={onSelection}
+        unit={units === 'imperial' ? 1609.344 : 1000}
+        unitLabel={units === 'imperial' ? 'mi' : 'km'}
+        colors={chartColors}
+      />
+    );
+  };
+  const sectionCard =
+    track && (stats || (section && track.hasGps)) ? (
+      <Card>
+        {stats && (
+          <View style={ui.stats}>
+            <Stat label={t('feed.stat.distance')} value={format.distance(stats.distance)} />
+            <Stat label={t('feed.stat.time')} value={formatDuration(stats.time)} />
+            <Stat
+              label={t(pace ? 'feed.stat.pace' : 'feed.stat.speed')}
+              value={
+                stats.distance > 0 ? format.speedFor(stats.distance / Math.max(stats.time, 1), pace) : '–'
+              }
+            />
+            <Stat label={t('feed.stat.ascent')} value={format.elevation(stats.ascent)} />
+            {stats.avgHr != null && (
+              <Stat label={t('feed.stat.hr')} value={`${Math.round(stats.avgHr)} bpm`} />
+            )}
+          </View>
+        )}
+        {section && track.hasGps && <SaveSegment activityId={a.id} section={section} />}
+      </Card>
+    ) : null;
   const title = a.name ?? t(`sport.${sport}`);
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -285,97 +385,50 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
           </View>
           <Figures main={main} more={more} />
           <SummaryCard activityId={a.id} />
-          {track && track.n > 1 && (
+          {sport === 'ride' ? (
+            // A ride as Strava's: fitness, the same route, effort, goals and results first, then each
+            // chart with what belongs to it (the power curve and zones round power, HR zones after HR).
             <>
-              {/* Each chart on its own card, under one heading with the section switch. */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: 12,
-                }}
-              >
-                <Heading>{t('activity.profile')}</Heading>
-                <Pressable
-                  onPress={() => {
-                    // Turning "Section" off drops the band, its figures and the map's highlight.
-                    if (selecting) {
-                      selection.set(null);
-                      setSection(null);
-                      setStats(null);
-                    }
-                    setSelecting(!selecting);
-                  }}
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: selecting }}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 999,
-                    backgroundColor: selecting ? accent(c) : c.surface2,
-                  }}
-                >
-                  <Text style={{ color: selecting ? onAccent(c) : c.fg, fontWeight: '600' }}>
-                    {t('mobile.selectSection')}
-                  </Text>
-                </Pressable>
-              </View>
-              {charts.map((chart) => (
-                <ChartCard
-                  key={chart.label}
-                  track={track}
-                  series={chart}
-                  width={width - 60}
-                  selection={selection}
-                  selecting={selecting}
-                  onCursor={onCursor}
-                  onSelection={onSelection}
-                  unit={units === 'imperial' ? 1609.344 : 1000}
-                  unitLabel={units === 'imperial' ? 'mi' : 'km'}
-                  colors={chartColors}
-                />
-              ))}
-              {(stats || (section && track.hasGps)) && (
-                <Card>
-                  {stats && (
-                    <View style={ui.stats}>
-                      <Stat label={t('feed.stat.distance')} value={format.distance(stats.distance)} />
-                      <Stat label={t('feed.stat.time')} value={formatDuration(stats.time)} />
-                      <Stat
-                        label={t(pace ? 'feed.stat.pace' : 'feed.stat.speed')}
-                        value={
-                          stats.distance > 0
-                            ? format.speedFor(stats.distance / Math.max(stats.time, 1), pace)
-                            : '–'
-                        }
-                      />
-                      <Stat label={t('feed.stat.ascent')} value={format.elevation(stats.ascent)} />
-                      {stats.avgHr != null && (
-                        <Stat label={t('feed.stat.hr')} value={`${Math.round(stats.avgHr)} bpm`} />
-                      )}
-                    </View>
-                  )}
-                  {section && track.hasGps && <SaveSegment activityId={a.id} section={section} />}
-                </Card>
+              {context && <FitnessBlock context={context} />}
+              {context && <MatchesBlock context={context} activityId={a.id} pace={pace} />}
+              {context && <EffortBlock context={context} />}
+              {context && <GoalsBlock context={context} />}
+              {context && <ResultsBlock context={context} ride />}
+              {track && track.n > 1 && charts.length > 0 && chartsHeading}
+              <Power activity={a} part="curve" />
+              {chartCard('power')}
+              <Power activity={a} part="zones" />
+              {chartCard('hr')}
+              {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}
+              {chartCard('speed')}
+              {chartCard('cad')}
+              {chartCard('alt')}
+              {sectionCard}
+              <Photos activity={a} />
+              <RouteAndSegments activity={a} />
+              <Laps activity={a} format={format} pace={pace} />
+              <Splits activity={a} format={format} pace={pace} />
+            </>
+          ) : (
+            <>
+              {track && track.n > 1 && (
+                <>
+                  {chartsHeading}
+                  {charts.map((chart) => chartCard(chart.key))}
+                  {sectionCard}
+                </>
               )}
+              <Photos activity={a} />
+              {series && <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />}
+              {/* On a run, the splits follow the heart-rate zones. */}
+              {sport === 'run' && <Splits activity={a} format={format} pace={pace} />}
+              {(a.sets ?? []).length > 0 && <Strength sets={a.sets} cover={muscleCover} />}
+              <RouteAndSegments activity={a} />
+              <Power activity={a} />
+              <Laps activity={a} format={format} pace={pace} />
+              {sport !== 'run' && <Splits activity={a} format={format} pace={pace} />}
             </>
           )}
-          <Photos activity={a} />
-          {/* On a ride, heart-rate zones follow the power curve and zones. */}
-          {series && sport !== 'ride' && (
-            <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />
-          )}
-          {/* On a run, the splits follow the heart-rate zones. */}
-          {sport === 'run' && <Splits activity={a} format={format} pace={pace} />}
-          {(a.sets ?? []).length > 0 && <Strength sets={a.sets} cover={muscleCover} />}
-          <RouteAndSegments activity={a} />
-          <Power activity={a} />
-          {series && sport === 'ride' && (
-            <Zones series={series} activity={a} hrMax={hrMax} estimated={estimated} />
-          )}
-          <Laps activity={a} format={format} pace={pace} />
-          {sport !== 'run' && <Splits activity={a} format={format} pace={pace} />}
           {a.description ? (
             <Card>
               <Text style={{ color: c.fg }}>{a.description}</Text>
@@ -550,9 +603,10 @@ function chartSeries(
   format: Format,
   c: ReturnType<typeof useTheme>,
   a: ActivityDetail | undefined,
-): ChartSeries[] {
+): (ChartSeries & { key: string })[] {
   const decimal = (1.5).toLocaleString(locale).charAt(1);
   return activityCharts(series, { sport, pace, units, format, activity: a, t, locale }).map((chart) => ({
+    key: chart.key,
     label: chart.label,
     color: chart.colour === 'power' ? POWER_COLOUR : String(c[chart.colour]),
     values: chart.values,

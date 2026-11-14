@@ -13,6 +13,7 @@ from sqlalchemy import Engine
 from zankup import __version__
 from zankup.api.activities import router as activities_router
 from zankup.api.ai import router as ai_router
+from zankup.api.insights import router as insights_router
 from zankup.api.keys import instance_router
 from zankup.api.keys import router as keys_router
 from zankup.api.library import router as library_router
@@ -133,6 +134,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(instance_router)
     app.include_router(mcp_router)
     app.include_router(oauth_router)
+    app.include_router(insights_router)
 
     # Uploads and downloads go straight to the API host (api/transfers.py): the app's origins may call
     # those paths from the browser. Never with cookies, which keep working only through the proxy.

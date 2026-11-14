@@ -229,15 +229,18 @@ export function FitnessSparkline({
   values,
   width = 150,
   height = 84,
+  first: showFirst = true,
 }: {
   values: number[];
   width?: number;
   height?: number;
+  /** The first value written before the line (a score); off when the values are not one (a pace). */
+  first?: boolean;
 }) {
   const c = useTheme();
   const ready = useCanvasReady(width);
   const colour = String(c.accent);
-  const left = 30; // the first score, written before the line
+  const left = showFirst ? 30 : 6; // the first score, written before the line
   const pad = 14;
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -267,20 +270,22 @@ export function FitnessSparkline({
           </>
         )}
       </Canvas>
-      <Text
-        style={{
-          position: 'absolute',
-          left: 0,
-          width: left - 8,
-          textAlign: 'right',
-          top: first[1] - 9,
-          color: c.muted,
-          fontSize: 12,
-          fontVariant: ['tabular-nums'],
-        }}
-      >
-        {Math.round(values[0])}
-      </Text>
+      {showFirst && (
+        <Text
+          style={{
+            position: 'absolute',
+            left: 0,
+            width: left - 8,
+            textAlign: 'right',
+            top: first[1] - 9,
+            color: c.muted,
+            fontSize: 12,
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {Math.round(values[0])}
+        </Text>
+      )}
     </View>
   );
 }
