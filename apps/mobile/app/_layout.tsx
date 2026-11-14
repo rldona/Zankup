@@ -149,6 +149,7 @@ export default function Root() {
                   <Stack.Screen name="skills" options={{ title: t('progress.skills') }} />
                   <Stack.Screen name="bests" options={{ title: t('progress.bests') }} />
                   <Stack.Screen name="assistants" options={{ title: t('assistants.title') }} />
+                  <Stack.Screen name="matches" options={{ title: t('detail.matching') }} />
                   <Stack.Screen name="sync" options={{ title: t('sync.title') }} />
                   <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
                   <Stack.Screen name="coach" options={{ title: t('coach.title') }} />

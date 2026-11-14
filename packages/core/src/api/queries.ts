@@ -657,6 +657,22 @@ export function activitySummaryQuery(api: ApiClient, activityId: number) {
   };
 }
 
+export type ActivityContext = Json<'/api/activities/{activity_id}/context', 'get'>;
+
+/** What an activity's page shows around its numbers: fitness, effort, goals, the same route, results. */
+export function activityContextQuery(api: ApiClient, activityId: number) {
+  return {
+    queryKey: ['activity', activityId, 'context'] as const,
+    queryFn: async ({ signal }: { signal?: AbortSignal }) =>
+      unwrap(
+        await api.GET('/api/activities/{activity_id}/context', {
+          params: { path: { activity_id: activityId } },
+          signal,
+        }),
+      ),
+  };
+}
+
 /** The longer report on an activity ("Tell me more"), or null while there is none. */
 export function activityReportQuery(api: ApiClient, activityId: number) {
   return {

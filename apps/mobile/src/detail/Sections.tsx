@@ -326,7 +326,14 @@ export function RouteAndSegments({ activity }: { activity: ActivityDetail }) {
 const CURVE_TICKS = [5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600];
 
 /** The best power for each duration in this activity, against the best of all time. */
-export function Power({ activity }: { activity: ActivityDetail }) {
+export function Power({
+  activity,
+  part = 'both',
+}: {
+  activity: ActivityDetail;
+  /** The curve, the zones or both (a ride shows them apart, around its power chart). */
+  part?: 'curve' | 'zones' | 'both';
+}) {
   const api = useApi();
   const c = useTheme();
   const metrics = activity.metrics;
@@ -352,7 +359,7 @@ export function Power({ activity }: { activity: ActivityDetail }) {
   const curveLayers: Layer[] = lines.map((l) => ({ kind: 'line', ...l, domain: [0, top] }));
   return (
     <>
-      {ticks.length > 1 && (
+      {part !== 'zones' && ticks.length > 1 && (
         <Card>
           <CardTitle>{t('activity.powerCurve')}</CardTitle>
           <Chart
@@ -363,7 +370,7 @@ export function Power({ activity }: { activity: ActivityDetail }) {
           />
         </Card>
       )}
-      {zones && bounds && (
+      {part !== 'curve' && zones && bounds && (
         <Card>
           <CardTitle>{t('activity.powerZones')}</CardTitle>
           <ZoneRows seconds={zones} limits={bounds} unit="W" />

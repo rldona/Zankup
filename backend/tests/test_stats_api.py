@@ -192,3 +192,31 @@ def test_a_medal_is_of_all_time_or_of_its_year() -> None:
     assert medal_of([*old, this_year], old[1], lower=True) == (2, "all")
     watts = best("2026-06-01", 551)
     assert medal_of([best("2025-01-01", 600), watts], watts, lower=False) == (2, "all")
+
+
+def test_an_activitys_context_fitness_effort_results_and_power(ctx: Ctx) -> None:  # noqa: F811
+    ready(ctx)
+    ride = ctx.http.get(f"/api/activities/{ctx.ids['ride-power']}/context").json()
+    assert ride["fitness"] and ride["fitness"]["points"]
+    assert ride["effort"]["score"] > 0
+    assert ride["power"]["work_kj"] > 0
+    assert any(m["key"].startswith("power_") and m["rank"] == 1 for m in ride["medals"])
+    assert ride["matches"] == []  # no route done before
+    run = ctx.http.get(f"/api/activities/{ctx.ids['run']}/context").json()
+    assert any(m["key"] == "5k" for m in run["medals"]) and run["power"] is None
+    assert ctx.http.get("/api/activities/999999/context").status_code == 404
+
+
+def test_effort_against_the_weeks_before_and_power_figures() -> None:
+    from zankup.api.insights import effort_status, power_figures
+
+    assert effort_status(189, 130) == "above"  # Col du Granon: above the average
+    assert effort_status(133, 130) == "in"
+    assert effort_status(43, 130) == "below"
+    assert effort_status(50, None) is None
+    # 181 W for 1:37:41 with NP 181 and FTP 200: 1061 kJ, IF 91, load about 135.
+    figures = power_figures(181, 181, 5861, 200)
+    assert figures is not None
+    assert figures.work_kj == 1061 and figures.intensity == 90 and 130 <= (figures.load or 0) <= 136
+    no_ftp = power_figures(181, 181, 5861, None)
+    assert no_ftp is not None and no_ftp.intensity is None and no_ftp.work_kj == 1061
