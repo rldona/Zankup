@@ -1,4 +1,5 @@
 /** Small building blocks shared by the screens, drawn with the theme's tokens. */
+import { alpha } from '@zankup/core';
 import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import {
   Animated,
@@ -320,48 +321,25 @@ export function Body({ children }: { children: ReactNode }) {
   return <Text style={{ color: c.fg, fontSize: 15 }}>{children}</Text>;
 }
 
+/** Android's touch ripple in the theme's text colour: a circle from the finger, the whole row when held. */
+export const ripple = (c: Palette) => ({ color: alpha(String(c.fg), 0.12), foreground: true });
+
 /**
- * A card, widget or row that opens something, as Strava's: pressed, it sinks a little and dims, and
- * springs back when let go, so the tap shows.
+ * A card or widget that opens something, as Strava's and Android's: pressed, a ripple spreads from the
+ * finger, and held it shades the whole card. The card's rounded corners (16) clip it.
  */
 export function Tappable({
   style,
   children,
-  onPressIn,
-  onPressOut,
   ...props
 }: Omit<PressableProps, 'style' | 'children'> & { style?: ViewStyle; children: ReactNode }) {
-  const [pressed] = useState(() => new Animated.Value(0));
-  const to = (value: number, duration: number) =>
-    Animated.timing(pressed, {
-      toValue: value,
-      duration,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+  const c = useTheme();
   return (
-    <Pressable
-      {...props}
-      style={style}
-      onPressIn={(e) => {
-        to(1, 90);
-        onPressIn?.(e);
-      }}
-      onPressOut={(e) => {
-        to(0, 180);
-        onPressOut?.(e);
-      }}
-    >
-      <Animated.View
-        style={{
-          flex: style?.flex,
-          transform: [{ scale: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) }],
-          opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.85] }),
-        }}
-      >
+    <View style={[{ borderRadius: 16, overflow: 'hidden' }, style]}>
+      <Pressable {...props} android_ripple={ripple(c)} style={{ flex: style?.flex == null ? undefined : 1 }}>
         {children}
-      </Animated.View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -625,7 +603,7 @@ export function ProgressBar({
   );
 }
 
-/** A row of a menu: an icon, a label, an optional note and a chevron. */
+/** A row of a menu: an icon, a label, an optional note and a chevron; pressed, it ripples. */
 export function MenuRow({
   icon,
   label,
@@ -649,11 +627,8 @@ export function MenuRow({
       accessibilityRole="button"
       accessibilityLabel={note ? `${label}, ${note}` : label}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        { borderColor: c.line, opacity: pressed ? 0.7 : 1 },
-        last && { borderBottomWidth: 0 },
-      ]}
+      android_ripple={ripple(c)}
+      style={[styles.row, { borderColor: c.line }, last && { borderBottomWidth: 0 }]}
     >
       {icon}
       <View style={{ flex: 1 }}>
