@@ -9,17 +9,19 @@ import { bestsQuery, effortShown, SPORT_ICONS } from '@zankup/core';
 import { Canvas, Circle, Group, Line, Path, rect, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import {
+import Animated, {
   cancelAnimation,
-  Easing,
+  scrollTo,
   useAnimatedReaction,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
   useDerivedValue,
   useSharedValue,
   withDecay,
-  withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -33,7 +35,6 @@ import {
   CHART_SLOTS,
   lowerIsBetter,
   chartScale,
-  offsetFor,
   offsetRange,
   placeOf,
   ranked,
@@ -47,7 +48,6 @@ import {
 } from '../src/progress/bests';
 import { bestName, Medal, MEDAL_COLOURS, sportOf } from '../src/progress/BestsCard';
 import { Chip, CHIP_ICON } from '../src/progress/Chip';
-import { isoDay } from '../src/progress/fitness';
 import { Panel } from '../src/progress/Panel';
 import { racePace, smoothPath } from '../src/progress/raceTimes';
 import { useTheme } from '../src/theme';
@@ -80,24 +80,28 @@ export default function BestsScreen() {
   const format = useFormat();
   const imperial = useUnits() === 'imperial';
   const params = useLocalSearchParams<{ key?: string }>();
-  const today = isoDay(new Date());
   const [key, setKey] = useState(params.key ?? '10k');
   // The measure shown until the picked one loads: it loads in the background, with no skeleton.
   const [previous, setPrevious] = useState(params.key ?? '10k');
   const [tab, setTab] = useState<'analysis' | 'top'>('analysis');
-  // The best at the top of the list (none: the newest): the chart puts it at its right edge.
-  const [anchor, setAnchor] = useState<number | null>(null);
-  const list = useRef<ScrollViewInstance>(null);
-  const rows = useRef(new Map<number, { y: number; h: number }>());
-  const yearHeader = useRef(44);
+  // The chart and the list move together, frame by frame on the UI thread (as Strava's): `offset` is
+  // the chart's left slot; whoever the finger is on drives the other (1: the chart, 2: the list).
+  const list = useAnimatedRef<Animated.ScrollView>();
+  const offset = useSharedValue(0);
+  const driver = useSharedValue(0);
+  // Where each row of the list starts (newest first), and the sticky year header's height.
+  const rowTops = useRef<number[]>([]);
+  const rowTop = useSharedValue<number[]>([]);
+  const yearHeader = useSharedValue(44);
   const [panel, setPanel] = useState<'sport' | 'year' | null>(null);
   const sport = sportOf(key);
   const keys = (sport === 'run' ? [...RUN_KEYS] : [...RIDE_KEYS]).filter((k) => effortShown(k, format.unit));
-  const bests = useQuery(bestsQuery(api, key));
+  // An hour fresh: bests change only with a new activity, and a sync refreshes them.
+  const bests = useQuery({ ...bestsQuery(api, key), staleTime: 60 * 60_000 });
   // The last measure's bests, from the cache, while the picked one loads.
   const before = useQuery({ ...bestsQuery(api, previous), enabled: false });
   const shownKey = bests.data || !before.data ? key : previous;
-  const all = (bests.data ?? before.data ?? []) as Best[];
+  const all = useMemo(() => (bests.data ?? before.data ?? []) as Best[], [bests.data, before.data]);
   const loaded = bests.data != null || before.data != null;
   const top = ranked(shownKey, all);
   const value = (v: number) => bestValue(shownKey, v, locale, imperial);
@@ -110,35 +114,82 @@ export default function BestsScreen() {
   const pick = (k: string) => {
     if (bests.data) setPrevious(key);
     setKey(k);
-    setAnchor(null);
-    rows.current.clear();
+  };
+  // Newest first, as the list shows them; oldest first, as the chart draws them.
+  const ordered = useMemo(() => [...all].sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0)), [all]);
+  const chrono = useMemo(() => [...ordered].reverse(), [ordered]);
+  const medals = useMemo(
+    () => new Map(all.map((b) => [b.activity_id, yearMedal(shownKey, all, b)])),
+    [all, shownKey],
+  );
+  const n = chrono.length;
+  const [low, high] = offsetRange(n);
+  // Another measure: the newest best at the chart's right edge and the list at its top.
+  useEffect(() => {
+    // Rows keep their place by index; their onLayout fills in what moved (clearing here could race it).
+    rowTops.current.length = chrono.length;
+    rowTop.set([...rowTops.current]);
+    driver.set(0);
+    offset.set(offsetRange(chrono.length)[1]);
     list.current?.scrollTo({ y: 0, animated: false });
+  }, [chrono, list, offset, driver, rowTop]);
+
+  // The list's top best, fractional while between two rows, as the chart's right edge, and back.
+  const offsetAt = (y: number) => {
+    'worklet';
+    const tops = rowTop.get();
+    if (tops.length < n || n === 0) return null;
+    const line = y + yearHeader.get();
+    let k = 0;
+    while (k < n - 1 && (tops[k + 1] ?? 0) <= line) k++;
+    const next = tops[k + 1];
+    const share =
+      next != null && next > (tops[k] ?? 0)
+        ? Math.min(1, Math.max(0, (line - (tops[k] ?? 0)) / (next - (tops[k] ?? 0))))
+        : 0;
+    const right = n - 1 - (k + share);
+    return Math.min(high, Math.max(low, right - (CHART_SLOTS - 1)));
   };
-  // Newest first, as the list shows them.
-  const ordered = [...all].sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
-  // Oldest first, as the chart draws them; the list's top best is the chart's right edge.
-  const chrono = [...ordered].reverse();
-  const at = chrono.findIndex((b) => b.activity_id === anchor);
-  const focus = at >= 0 ? at : chrono.length - 1;
-  const focusYear = chrono[focus]?.day.slice(0, 4) ?? today.slice(0, 4);
-  // The list and the chart move together (as Strava's): scrolling the list scrolls the chart to the
-  // best at the top, and dragging the chart scrolls the list to the best at its right edge.
-  const onListScroll = (offset: number) => {
-    const line = offset + yearHeader.current;
-    const atTop = ordered.find((b) => {
-      const r = rows.current.get(b.activity_id);
-      return r != null && r.y + r.h > line;
-    });
-    if (atTop && atTop.activity_id !== (anchor ?? ordered[0]?.activity_id)) setAnchor(atTop.activity_id);
+  const listAt = (o: number) => {
+    'worklet';
+    const tops = rowTop.get();
+    if (tops.length < n || n === 0) return null;
+    const right = Math.min(n - 1, Math.max(0, o + CHART_SLOTS - 1));
+    const k = n - 1 - right;
+    const k0 = Math.floor(k);
+    const k1 = Math.min(n - 1, k0 + 1);
+    const a = tops[k0] ?? 0;
+    const y = a + (k - k0) * ((tops[k1] ?? a) - a);
+    return Math.max(0, y - yearHeader.get());
   };
-  const scrollToBest = (best: Best | undefined, animated: boolean) => {
-    const r = best && rows.current.get(best.activity_id);
-    if (!best || r == null) return;
-    const y = best === ordered[0] ? 0 : Math.max(0, r.y - yearHeader.current);
-    list.current?.scrollTo({ y, animated });
+  const onScroll = useAnimatedScrollHandler(
+    {
+      onBeginDrag: () => {
+        driver.set(2);
+      },
+      onScroll: (e) => {
+        if (driver.get() === 1) return; // the chart is moving the list
+        const o = offsetAt(e.contentOffset.y);
+        if (o != null) offset.set(o);
+      },
+    },
+    [n, low, high],
+  );
+  useAnimatedReaction(
+    () => offset.get(),
+    (o) => {
+      if (driver.get() !== 1) return;
+      const y = listAt(o);
+      if (y != null) scrollTo(list, 0, y, false);
+    },
+    [n],
+  );
+  const scrollToDay = (target: string) => {
+    const k = ordered.findIndex((b) => b.day <= target);
+    const y = k <= 0 ? 0 : Math.max(0, (rowTops.current[k] ?? 0) - yearHeader.get());
+    driver.set(0);
+    list.current?.scrollTo({ y, animated: true });
   };
-  const scrollToDay = (target: string) =>
-    scrollToBest(ordered.find((b) => b.day <= target) ?? ordered.at(-1), true);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.page }}>
@@ -224,10 +275,10 @@ export default function BestsScreen() {
             bestKey={shownKey}
             all={all}
             chrono={chrono}
-            focus={focus}
-            focusYear={focusYear}
+            medals={medals}
+            offset={offset}
+            driver={driver}
             label={value}
-            onMove={(i) => scrollToBest(chrono[i], false)}
           />
           <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
             <Pressable
@@ -248,28 +299,26 @@ export default function BestsScreen() {
               <Icon name="keyboard_arrow_down" color={c.fg} size={22} />
             </Pressable>
           </View>
-          <ScrollView
+          <Animated.ScrollView
             ref={list}
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: 32 }}
-            scrollEventThrottle={32}
-            onScroll={(e) => onListScroll(e.nativeEvent.contentOffset.y)}
+            scrollEventThrottle={16}
+            onScroll={onScroll}
             stickyHeaderIndices={yearsOf(all).map((y) => listIndex(ordered, y))}
           >
             {ordered.flatMap((b, i) => {
               const y = b.day.slice(0, 4);
-              const medal = yearMedal(shownKey, all, b);
+              const medal = medals.get(b.activity_id);
               const row = (
                 <Pressable
                   key={b.activity_id}
                   accessibilityRole="button"
                   onPress={() => open(b)}
-                  onLayout={(e) =>
-                    rows.current.set(b.activity_id, {
-                      y: e.nativeEvent.layout.y,
-                      h: e.nativeEvent.layout.height,
-                    })
-                  }
+                  onLayout={(e) => {
+                    rowTops.current[i] = e.nativeEvent.layout.y;
+                    rowTop.set([...rowTops.current]);
+                  }}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -310,7 +359,7 @@ export default function BestsScreen() {
               return [
                 <View
                   key={`y${y}`}
-                  onLayout={(e) => (yearHeader.current = e.nativeEvent.layout.height)}
+                  onLayout={(e) => yearHeader.set(e.nativeEvent.layout.height)}
                   style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: c.surface }}
                 >
                   <Text style={{ color: c.fg, fontSize: 15, fontWeight: '800' }}>{y}</Text>
@@ -318,7 +367,7 @@ export default function BestsScreen() {
                 row,
               ];
             })}
-          </ScrollView>
+          </Animated.ScrollView>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
@@ -406,18 +455,18 @@ export default function BestsScreen() {
             <Pressable
               key={y ?? 'last'}
               accessibilityRole="radio"
-              accessibilityState={{ checked: y === focusYear }}
+              accessibilityState={{ checked: false }}
               onPress={() => {
                 if (y) scrollToDay(`${y}-12-31`);
-                else list.current?.scrollTo({ y: 0, animated: true });
+                else {
+                  driver.set(0);
+                  list.current?.scrollTo({ y: 0, animated: true });
+                }
                 setPanel(null);
               }}
               style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}
             >
-              <Text style={{ flex: 1, color: y === focusYear ? accent(c) : c.fg, fontSize: 15 }}>
-                {y ?? t('progress.last12Months')}
-              </Text>
-              {y === focusYear && <Icon name="check" color={accent(c)} size={24} />}
+              <Text style={{ flex: 1, color: c.fg, fontSize: 15 }}>{y ?? t('progress.last12Months')}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -428,30 +477,31 @@ export default function BestsScreen() {
 
 /**
  * The bests as Strava's chart: one slot each, oldest to newest, twelve on screen, the better ones higher
- * (a faster time or more watts), the year's medals in their colours, the bests of the list's year filled
- * and the rest hollow, and the trend through them as a smooth line. The scale goes from the record to
- * the slow days and stays while it scrolls. It follows the finger sideways and keeps going a little after
- * a fling; the list below scrolls with it.
+ * (a faster time or more watts), the year's medals in their colours, the bests of the year at the right
+ * edge filled and the rest hollow, and the trend through them as a smooth line. The scale goes from the
+ * record to the slow days and stays while it scrolls. It follows the finger sideways and keeps going a
+ * little after a fling; the list below moves with it frame by frame. Everything is drawn once: moving
+ * only shifts it, so nothing is redrawn while the finger is on it.
  */
 function BestsChart({
   bestKey,
   all,
   chrono,
-  focus,
-  focusYear,
+  medals,
+  offset,
+  driver,
   label,
-  onMove,
 }: {
   bestKey: string;
   all: Best[];
   /** Every best, oldest first. */
   chrono: Best[];
-  /** The best at the list's top: the chart scrolls to put it at the right edge. */
-  focus: number;
-  focusYear: string;
+  medals: Map<number, number | null>;
+  /** The slot at the left edge, shared with the list. */
+  offset: SharedValue<number>;
+  /** Who moves it: 1 the chart (this), 2 the list. */
+  driver: SharedValue<number>;
   label: (v: number) => string;
-  /** The chart was dragged: the best now at its right edge, oldest first. */
-  onMove: (index: number) => void;
 }) {
   const c = useTheme();
   const [width, setWidth] = useState(0);
@@ -464,23 +514,16 @@ function BestsChart({
   const slot = plot / CHART_SLOTS;
   const n = chrono.length;
   const [low, high] = offsetRange(n);
-  const offset = useSharedValue(offsetFor(focus, n));
   const start = useSharedValue(0);
-  const dragging = useSharedValue(false);
-  const [first, setFirst] = useState(() => Math.round(offsetFor(focus, n)));
-  // The list moved (or another measure was picked): scroll to its top best, unless the finger is on the chart.
-  useEffect(() => {
-    if (!dragging.get())
-      offset.set(withTiming(offsetFor(focus, n), { duration: 250, easing: Easing.out(Easing.cubic) }));
-  }, [focus, n, offset, dragging]);
+  // The best at the right edge, for the dates under the chart and the year drawn filled: it changes a
+  // few times a second at most, and only the labels follow it.
+  const [right, setRight] = useState(n - 1);
   useAnimatedReaction(
-    () => Math.round(offset.get()),
+    () => Math.min(n - 1, Math.max(0, Math.round(offset.get()) + CHART_SLOTS - 1)),
     (now, before) => {
-      if (now === before) return;
-      scheduleOnRN(setFirst, now);
-      if (dragging.get()) scheduleOnRN(onMove, Math.min(n - 1, Math.max(0, now + CHART_SLOTS - 1)));
+      if (now !== before) scheduleOnRN(setRight, now);
     },
-    [n, onMove],
+    [n],
   );
   const pan = Gesture.Pan()
     .activeOffsetX([-10, 10])
@@ -488,33 +531,68 @@ function BestsChart({
     .onStart(() => {
       cancelAnimation(offset);
       start.set(offset.get());
-      dragging.set(true);
+      driver.set(1);
     })
     .onUpdate((e) => {
       // Dragged right shows earlier bests, as Strava's.
       offset.set(Math.min(high, Math.max(low, start.get() - e.translationX / slot)));
     })
     .onEnd((e) => {
-      offset.set(
-        withDecay({ velocity: -e.velocityX / slot, clamp: [low, high], deceleration: 0.994 }, (finished) => {
-          if (finished) dragging.set(false);
-        }),
-      );
+      offset.set(withDecay({ velocity: -e.velocityX / slot, clamp: [low, high], deceleration: 0.997 }));
     });
   const shift = useDerivedValue(() => [{ translateX: -offset.get() * slot }]);
   const lower = lowerIsBetter(bestKey);
-  const { record, worst } = chartScale(bestKey, all);
+  const { record, worst } = useMemo(() => chartScale(bestKey, all), [bestKey, all]);
   const span = Math.abs(worst - record) || Math.abs(record) * 0.1 || 1;
   // Better is higher: the record at the top, the slow days at the bottom (slower ones sit on it).
   const y = (v: number) => {
     const behind = lower ? v - record : record - v;
     return top + Math.min(1, Math.max(0, behind / span)) * (base - top);
   };
-  const x = (i: number) => axis + 8 + slot / 2 + i * slot;
   const middle = (record + worst) / 2;
-  const line = trend(chrono, 45, chrono);
-  const left = chrono[Math.max(0, first)];
-  const right = chrono[Math.min(n - 1, first + CHART_SLOTS - 1)];
+  const year = chrono[Math.min(n - 1, Math.max(0, right))]?.day.slice(0, 4) ?? '';
+  // Drawn once per measure, size and year: the lines, the trend and the points.
+  const drawing = useMemo(() => {
+    if (!ready || !n) return null;
+    const x = (i: number) => axis + 8 + slot / 2 + i * slot;
+    const line = trend(chrono, 45, chrono);
+    return (
+      <>
+        {chrono.map((b, i) => (
+          <Line
+            key={`l${b.activity_id}`}
+            p1={vec(x(i), top)}
+            p2={vec(x(i), base)}
+            color={c.line}
+            strokeWidth={1}
+          />
+        ))}
+        {n > 1 && (
+          <Path
+            path={smoothPath(chrono.map((_, i) => ({ x: x(i), y: y(line[i] ?? record) })))}
+            style="stroke"
+            strokeWidth={2.5}
+            color={String(c.fitness)}
+          />
+        )}
+        {chrono.map((b, i) => {
+          const m = medals.get(b.activity_id);
+          const colour = m ? MEDAL_COLOURS[m - 1] : String(c.muted);
+          return b.day.startsWith(year) ? (
+            <Circle key={b.activity_id} cx={x(i)} cy={y(b.value)} r={6} color={colour} />
+          ) : (
+            <Group key={b.activity_id}>
+              <Circle cx={x(i)} cy={y(b.value)} r={6} color={String(c.page)} />
+              <Circle cx={x(i)} cy={y(b.value)} r={5} style="stroke" strokeWidth={2} color={colour} />
+            </Group>
+          );
+        })}
+      </>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, chrono, medals, slot, year, record, worst, c]);
+  const left = chrono[Math.max(0, right - CHART_SLOTS + 1)];
+  const last = chrono[right];
   return (
     <GestureDetector gesture={pan}>
       <View
@@ -530,45 +608,7 @@ function BestsChart({
                     <Line key={i} p1={vec(axis, y(v))} p2={vec(width, y(v))} color={c.line} strokeWidth={1} />
                   ))}
                   <Group clip={rect(axis, 0, width - axis, height)}>
-                    <Group transform={shift}>
-                      {chrono.map((b, i) => (
-                        <Line
-                          key={`l${b.activity_id}`}
-                          p1={vec(x(i), top)}
-                          p2={vec(x(i), base)}
-                          color={c.line}
-                          strokeWidth={1}
-                        />
-                      ))}
-                      {n > 1 && (
-                        <Path
-                          path={smoothPath(chrono.map((_, i) => ({ x: x(i), y: y(line[i] ?? record) })))}
-                          style="stroke"
-                          strokeWidth={2.5}
-                          color={String(c.fitness)}
-                        />
-                      )}
-                      {chrono.map((b, i) => {
-                        const m = yearMedal(bestKey, all, b);
-                        const colour = m ? MEDAL_COLOURS[m - 1] : String(c.muted);
-                        const filled = b.day.startsWith(focusYear);
-                        return filled ? (
-                          <Circle key={b.activity_id} cx={x(i)} cy={y(b.value)} r={6} color={colour} />
-                        ) : (
-                          <Group key={b.activity_id}>
-                            <Circle cx={x(i)} cy={y(b.value)} r={6} color={String(c.page)} />
-                            <Circle
-                              cx={x(i)}
-                              cy={y(b.value)}
-                              r={5}
-                              style="stroke"
-                              strokeWidth={2}
-                              color={colour}
-                            />
-                          </Group>
-                        );
-                      })}
-                    </Group>
+                    <Group transform={shift}>{drawing}</Group>
                   </Group>
                 </>
               )}
@@ -588,9 +628,9 @@ function BestsChart({
                 {label(v)}
               </Text>
             ))}
-            {left && right && (
+            {left && last && (
               <Muted style={{ position: 'absolute', left: axis + 8, top: base + 10, fontSize: 12 }}>
-                {day(left.day)} – {day(right.day)}
+                {day(left.day)} – {day(last.day)}
               </Muted>
             )}
           </>
