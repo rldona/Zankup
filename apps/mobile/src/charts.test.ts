@@ -4,8 +4,13 @@ vi.mock('@shopify/react-native-skia', () => ({}));
 vi.mock('react-native', () => ({}));
 vi.mock('react-native-gesture-handler', () => ({}));
 vi.mock('./theme', () => ({}));
+vi.mock('react-native-reanimated', () => ({ Easing: { out: (f: unknown) => f, cubic: (t: number) => t } }));
 
-const { dayTicks, domainOf, linePath, niceScale, shortNumber } = await import('./charts');
+const { circlesPath, dayTicks, domainOf, linePath, niceScale, polyline, rectsPath, shortNumber } =
+  await import('./charts');
+
+/** A path's commands, without their numbers: two paths with the same ones can slide into each other. */
+const verbs = (d: string) => d.replace(/[^A-Za-z]/g, '');
 
 describe('charts', () => {
   it('pads a line and keeps bars on zero', () => {
@@ -50,5 +55,36 @@ describe('charts', () => {
     ]);
     expect(dayTicks(3)).toEqual([0, 1, 2]);
     expect(dayTicks(30)).toEqual([0, 7, 15, 22, 29]);
+  });
+
+  it('draws a flattened shape with the same commands, so it can grow into the real one', () => {
+    const pts = [
+      [0, 10],
+      [5, 40],
+      [10, 25],
+    ] as const;
+    const real = polyline(pts, 100);
+    const flat = polyline(pts, 100, true);
+    expect(verbs(flat.line)).toBe(verbs(real.line));
+    expect(verbs(flat.area)).toBe(verbs(real.area));
+    // Lying just over the floor: a fill with no height at all blanks Android's canvas.
+    expect(flat.area).toBe('M0 99L5 99L10 99L10 100L0 100Z');
+    expect(polyline([], 100)).toEqual({ line: '', area: '' });
+  });
+
+  it('keeps a circle or a bar with no size in the shape', () => {
+    expect(verbs(circlesPath([[3, 4]], 0))).toBe(verbs(circlesPath([[3, 4]], 5)));
+    expect(verbs(circlesPath([[3, 4]], 5))).toBe('MCCCCZ');
+    expect(circlesPath([[0, 0]], 2)).toMatch(/^M2 0C/);
+    expect(
+      circlesPath(
+        [
+          [0, 0],
+          [9, 9],
+        ],
+        (i) => i * 2,
+      ),
+    ).toContain('M11 9');
+    expect(rectsPath([{ x: 1, y: 2, w: 3, h: 0 }])).toBe('M1 2L4 2L4 2L1 2Z');
   });
 });

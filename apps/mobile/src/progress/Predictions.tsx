@@ -3,7 +3,7 @@
  * app/predictions.tsx shows the four races today or one over months. The distance badge, the change
  * badge and the time line (faster is higher) are shared by both.
  */
-import { Canvas, Circle, Group, Line, Path, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
 import { estimatesQuery } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
-import { useCanvasReady } from '../charts';
+import { circlesPath, MorphPath, Rings, useCanvasReady } from '../charts';
 import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
@@ -199,7 +199,7 @@ function TimeSparkline({
 
 /**
  * A prediction over a range: faster is higher, a ring where it changed, today filled, times on the
- * right and dates under it.
+ * right and dates under it. Another race or range slides into place.
  */
 export function PredictionChart({
   points,
@@ -231,6 +231,10 @@ export function PredictionChart({
   const x = (day: string) => 8 + ((ms(day) - ms(from)) / (ms(to) - ms(from) || 1)) * (plot - 16);
   const colour = String(c.accent);
   const last = points.length - 1;
+  const at = points.map((p) => [x(p.day), y(p.value)] as const);
+  const floor = at.map(([px]) => [px, base] as const);
+  const today = at.slice(last);
+  const todayFlat = floor.slice(last);
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height, opacity: ready ? 1 : 0 }}>
       {width > 0 && (
@@ -241,38 +245,40 @@ export function PredictionChart({
                 {ticks.map((v) => (
                   <Line key={v} p1={vec(0, y(v))} p2={vec(plot, y(v))} color={c.line} strokeWidth={1} />
                 ))}
-                <Path
-                  path={smoothPath(points.map((p) => ({ x: x(p.day), y: y(p.value) })))}
+                <MorphPath
+                  d={smoothPath(at.map(([px, py]) => ({ x: px, y: py })))}
+                  flat={smoothPath(floor.map(([px, py]) => ({ x: px, y: py })))}
+                  ready={ready}
                   style="stroke"
                   strokeWidth={3}
                   strokeJoin="round"
                   color={colour}
                 />
-                {points.map((p, i) =>
-                  i === last ? null : (
-                    <Group key={i}>
-                      <Circle cx={x(p.day)} cy={y(p.value)} r={5} color={c.bg} />
-                      <Circle
-                        cx={x(p.day)}
-                        cy={y(p.value)}
-                        r={5}
-                        style="stroke"
-                        strokeWidth={2.5}
-                        color={colour}
-                      />
-                    </Group>
-                  ),
+                {last > 0 && (
+                  <Rings
+                    points={at.slice(0, last)}
+                    base={base}
+                    r={5}
+                    fill={String(c.bg)}
+                    colour={colour}
+                    ready={ready}
+                  />
                 )}
                 {last >= 0 && (
                   <>
-                    <Circle
-                      cx={x(points[last].day)}
-                      cy={y(points[last].value)}
-                      r={14}
+                    <MorphPath
+                      d={circlesPath(today, 14)}
+                      flat={circlesPath(todayFlat, 0.5)}
+                      ready={ready}
                       color={colour}
                       opacity={0.25}
                     />
-                    <Circle cx={x(points[last].day)} cy={y(points[last].value)} r={7} color={colour} />
+                    <MorphPath
+                      d={circlesPath(today, 7)}
+                      flat={circlesPath(todayFlat, 0.5)}
+                      ready={ready}
+                      color={colour}
+                    />
                   </>
                 )}
               </>
