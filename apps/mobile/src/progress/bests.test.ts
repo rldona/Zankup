@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { bestsIn, bestValue, placeOf, ranked, yearMedal, yearsOf } from './bests';
+import {
+  bestsBetween,
+  bestsIn,
+  bestValue,
+  monthStarts,
+  placeOf,
+  ranked,
+  trend,
+  windowOf,
+  windowShare,
+  yearBefore,
+  yearMedal,
+  yearsOf,
+} from './bests';
 
 const b = (day: string, value: number, id = Math.round(value)) => ({ activity_id: id, day, value });
 
@@ -27,5 +40,19 @@ describe('best times', () => {
     expect(bestValue('marathon', 4 * 3600 + 6 * 60 + 10, 'es')).toBe('4:06:10');
     expect(bestValue('power_30', 551.4, 'es')).toBe('551 W');
     expect(bestValue('longest', 102200, 'es')).toBe('102,2 km');
+  });
+  it('shows twelve months at a time, a year back per swipe', () => {
+    expect(yearBefore('2024-02-29')).toBe('2023-02-28');
+    expect(windowOf('2026-11-15')).toEqual({ from: '2025-11-15', to: '2026-11-15' });
+    const b = (day: string, value: number) => ({ activity_id: value, day, value });
+    const all = [b('2025-11-15', 1), b('2025-11-16', 2), b('2026-11-15', 3), b('2026-11-16', 4)];
+    expect(bestsBetween(all, '2025-11-15', '2026-11-15').map((x) => x.value)).toEqual([2, 3]);
+    expect(windowShare('2026-05-15', '2025-11-15', '2026-11-15')).toBeCloseTo(0.5, 1);
+    expect(monthStarts('2025-11-15', '2026-02-10')).toEqual(['2025-12-01', '2026-01-01', '2026-02-01']);
+  });
+  it('draws the trend as the average of the bests near each one', () => {
+    const b = (day: string, value: number) => ({ activity_id: value, day, value });
+    const points = [b('2026-01-01', 100), b('2026-01-10', 200), b('2026-06-01', 300)];
+    expect(trend(points, 30)).toEqual([150, 150, 300]);
   });
 });

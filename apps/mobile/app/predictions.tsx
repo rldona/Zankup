@@ -1,11 +1,12 @@
 /**
  * Performance predictions, from Progress (as Strava's): today, the four races with their pace and how
  * they changed in 30 days; over a month, three or six, one race with its line. The range is chosen at
- * the bottom.
+ * the bottom of the screen, always there.
  */
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
@@ -33,6 +34,7 @@ const at = (iso: string) => new Date(`${iso}T12:00:00`);
 
 export default function PredictionsScreen() {
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const imperial = useUnits() === 'imperial';
   const { byKind, isPending } = usePredictions();
   const [range, setRange] = useState<Range>('today');
@@ -166,14 +168,19 @@ export default function PredictionsScreen() {
   })();
 
   return (
-    <Screen header>
+    // The range stays at the bottom of the screen (as Strava's), whatever is above it.
+    <Screen header scroll={false}>
       <Stack.Screen options={{ headerRight: () => <InfoButton text={t('progress.predictionsInfo')} /> }} />
-      {body}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
+        {body}
+      </ScrollView>
       <View
         accessibilityRole="radiogroup"
         style={{
           flexDirection: 'row',
-          marginTop: 16,
+          marginHorizontal: 16,
+          marginTop: 8,
+          marginBottom: insets.bottom + 16,
           borderRadius: 999,
           borderWidth: 1.5,
           borderColor: c.line,

@@ -102,3 +102,59 @@ export const RUN_METRES: Record<string, number> = {
   half_marathon: 21097.5,
   marathon: 42195,
 };
+
+/** The same day a year before (29 February becomes the 28th). */
+export function yearBefore(iso: string): string {
+  const y = Number(iso.slice(0, 4)) - 1;
+  const rest = iso.slice(4) === '-02-29' ? '-02-28' : iso.slice(4);
+  return `${y}${rest}`;
+}
+
+/**
+ * The twelve months the chart shows, as Strava's: after `yearBefore(end)` up to `end`, both ISO days.
+ * Swiping moves it a year at a time; a year from the filter is its 1 January to 31 December.
+ */
+export function windowOf(end: string): { from: string; to: string } {
+  return { from: yearBefore(end), to: end };
+}
+
+/** The bests inside a window (after `from`, up to `to`), oldest first. */
+export function bestsBetween(bests: Best[], from: string, to: string): Best[] {
+  return bests.filter((b) => b.day > from && b.day <= to).sort((a, b) => (a.day < b.day ? -1 : 1));
+}
+
+const dayNumber = (iso: string) =>
+  Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
+
+/**
+ * The trend through the bests (Strava's smooth line): at each best, the average of those within
+ * `days` either side, so one good or bad day moves it a little and the line shows the progress.
+ * `context` are bests outside the window that still count near its edges.
+ */
+export function trend(points: Best[], days = 45, context: Best[] = points): number[] {
+  return points.map((p) => {
+    const at = dayNumber(p.day);
+    const near = context.filter((b) => Math.abs(dayNumber(b.day) - at) <= days);
+    return near.reduce((s, b) => s + b.value, 0) / Math.max(1, near.length);
+  });
+}
+
+/** Where a day falls in a window, from 0 (its start) to 1 (its end). */
+export function windowShare(day: string, from: string, to: string): number {
+  const span = dayNumber(to) - dayNumber(from);
+  return span > 0 ? Math.min(1, Math.max(0, (dayNumber(day) - dayNumber(from)) / span)) : 0;
+}
+
+/** The first of each month inside a window: the chart's vertical lines. */
+export function monthStarts(from: string, to: string): string[] {
+  const out: string[] = [];
+  let y = Number(from.slice(0, 4));
+  let m = Number(from.slice(5, 7));
+  for (;;) {
+    m += 1;
+    if (m > 12) [y, m] = [y + 1, 1];
+    const iso = `${y}-${String(m).padStart(2, '0')}-01`;
+    if (iso > to) return out;
+    out.push(iso);
+  }
+}

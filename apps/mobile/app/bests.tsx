@@ -1,8 +1,9 @@
 /**
  * Best times, from Progress (as Strava's): one measure (a run distance, a ride's best power over a
  * duration or its distance) with two tabs. Analysis: the record and the second and third, a chart of
- * the bests over the last twelve months or a year, and the bests by year, each with its medal of the
- * year. Top 10: the ten best. Each best opens its activity.
+ * twelve months of bests with their trend (swiped sideways a year at a time, or a year picked), and
+ * those bests by year below, each with its medal of the year. Top 10: the ten best. Each best opens
+ * its activity.
  */
 import { bestsQuery, effortShown, SPORT_ICONS } from '@zankup/core';
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
@@ -10,6 +11,9 @@ import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useApi } from '../src/auth';
 import { useCanvasReady } from '../src/charts';
@@ -17,14 +21,19 @@ import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { useFormat, useUnits } from '../src/prefs';
 import {
-  bestsIn,
+  bestsBetween,
   bestValue,
   lowerIsBetter,
+  monthStarts,
   placeOf,
   ranked,
   RIDE_KEYS,
   RUN_KEYS,
   RUN_METRES,
+  trend,
+  windowOf,
+  windowShare,
+  yearBefore,
   yearMedal,
   yearsOf,
   type Best,
@@ -54,7 +63,8 @@ export default function BestsScreen() {
   const today = isoDay(new Date());
   const [key, setKey] = useState(params.key ?? '5k');
   const [tab, setTab] = useState<'analysis' | 'top'>('analysis');
-  const [year, setYear] = useState<string | null>(null);
+  // The chart's twelve months end here: today, a year back per swipe, or 31 December of a year picked.
+  const [end, setEnd] = useState(today);
   const [panel, setPanel] = useState<'sport' | 'year' | null>(null);
   const sport = sportOf(key);
   const keys = (sport === 'run' ? [...RUN_KEYS] : [...RIDE_KEYS]).filter((k) => effortShown(k, format.unit));
@@ -68,7 +78,19 @@ export default function BestsScreen() {
 
   const pick = (k: string) => {
     setKey(k);
-    setYear(null);
+    setEnd(today);
+  };
+  const months = windowOf(end);
+  const shown = bestsBetween(all, months.from, months.to);
+  const year = end.endsWith('-12-31') && end < today ? end.slice(0, 4) : null;
+  const first = all.reduce((d, b) => (b.day < d ? b.day : d), today);
+  const nextEnd = (() => {
+    const later = `${Number(end.slice(0, 4)) + 1}${end.slice(4)}`;
+    return later > today ? today : later;
+  })();
+  const move = (step: -1 | 1) => {
+    if (step < 0 && months.from > first) setEnd(yearBefore(end));
+    if (step > 0 && end < today) setEnd(nextEnd);
   };
 
   return (
@@ -103,8 +125,9 @@ export default function BestsScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}
+        // Its own height, never squeezed by the list below (the chips were cut at the bottom).
+        style={{ flexGrow: 0, flexShrink: 0 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' }}
       >
         <Chip
           on={false}
@@ -156,7 +179,15 @@ export default function BestsScreen() {
                 ))}
               </View>
             </View>
-            <BestsChart bestKey={key} all={all} shown={bestsIn(all, year, today)} label={value} />
+            <BestsChart
+              bestKey={key}
+              all={all}
+              shown={shown}
+              from={months.from}
+              to={months.to}
+              label={value}
+              onSwipe={move}
+            />
             <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
               <Pressable
                 accessibilityRole="button"
@@ -178,7 +209,7 @@ export default function BestsScreen() {
                 <Icon name="keyboard_arrow_down" color={c.fg} size={22} />
               </Pressable>
             </View>
-            {(year ? [year] : yearsOf(all)).map((y) => (
+            {yearsOf(shown).map((y) => (
               <View key={y}>
                 <Text
                   style={{
@@ -192,7 +223,7 @@ export default function BestsScreen() {
                 >
                   {y}
                 </Text>
-                {all
+                {shown
                   .filter((b) => b.day.startsWith(y))
                   .sort((a, b) => (a.day < b.day ? 1 : -1))
                   .map((b) => {
@@ -326,7 +357,7 @@ export default function BestsScreen() {
               accessibilityRole="radio"
               accessibilityState={{ checked: y === year }}
               onPress={() => {
-                setYear(y);
+                setEnd(y ? (`${y}-12-31` < today ? `${y}-12-31` : today) : today);
                 setPanel(null);
               }}
               style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}
@@ -344,102 +375,130 @@ export default function BestsScreen() {
 }
 
 /**
- * The bests of the range by date, joined by a smooth line, the better ones higher (a faster time or
- * more watts); the year's medals in their colours. The axis goes from the slowest shown to the record.
+ * Twelve months of bests, as Strava's: each best at its date, a line a month, the better ones higher (a
+ * faster time or more watts), the year's medals in their colours, and the trend through them as a smooth
+ * line. The axis goes from the slowest shown to the record. Swiped sideways, it follows the finger and
+ * moves a year back or forward; the list below changes with it.
  */
 function BestsChart({
   bestKey,
   all,
   shown,
+  from,
+  to,
   label,
+  onSwipe,
 }: {
   bestKey: string;
   all: Best[];
   shown: Best[];
+  from: string;
+  to: string;
   label: (v: number) => string;
+  onSwipe: (step: -1 | 1) => void;
 }) {
   const c = useTheme();
   const [width, setWidth] = useState(0);
   const ready = useCanvasReady(width);
+  const shift = useSharedValue(0);
+  const pan = Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-12, 12])
+    .onUpdate((e) => {
+      shift.set(e.translationX);
+    })
+    .onEnd((e) => {
+      const far = Math.abs(e.translationX) > 60 || Math.abs(e.velocityX) > 600;
+      if (far) scheduleOnRN(onSwipe, e.translationX > 0 ? -1 : 1);
+      shift.set(withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) }));
+    });
+  const moving = useAnimatedStyle(() => ({ transform: [{ translateX: shift.get() * 0.5 }] }));
   const height = 260;
   const axis = 70;
   const top = 14;
   const base = height - 34;
-  const points = [...shown].sort((a, b) => (a.day < b.day ? -1 : 1));
-  if (!points.length) return null;
   const lower = lowerIsBetter(bestKey);
-  const record = ranked(bestKey, all)[0].value;
-  const worst = points.reduce((w, b) => (lower ? Math.max(w, b.value) : Math.min(w, b.value)), record);
+  const record = ranked(bestKey, all)[0]?.value ?? 0;
+  const worst = shown.reduce((w, b) => (lower ? Math.max(w, b.value) : Math.min(w, b.value)), record);
   const span = Math.abs(worst - record) || Math.abs(record) * 0.1 || 1;
   // Better is higher: the record at the top, the worst shown at the bottom.
   const y = (v: number) => top + (Math.abs(v - record) / span) * (base - top);
   const plot = Math.max(1, width - axis - 16);
-  const x = (i: number) => axis + 8 + (points.length > 1 ? (i / (points.length - 1)) * plot : plot / 2);
-  const middle = lower ? (record + worst) / 2 : (record + worst) / 2;
+  const x = (day: string) => axis + 8 + windowShare(day, from, to) * plot;
+  const middle = (record + worst) / 2;
   const medal = (b: Best) => yearMedal(bestKey, all, b);
+  const line = trend(shown, 45, all);
   return (
-    <View
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      style={{ height, marginTop: 16, opacity: ready ? 1 : 0 }}
-    >
-      {width > 0 && (
-        <>
-          <Canvas style={{ width, height }}>
-            {ready && (
-              <>
-                {[record, middle, worst].map((v, i) => (
+    <GestureDetector gesture={pan}>
+      <View
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        style={{ height, marginTop: 16, opacity: ready ? 1 : 0, overflow: 'hidden' }}
+      >
+        {width > 0 && (
+          <>
+            <Canvas style={{ position: 'absolute', width, height }}>
+              {ready &&
+                [record, middle, worst].map((v, i) => (
                   <Line key={i} p1={vec(axis, y(v))} p2={vec(width, y(v))} color={c.line} strokeWidth={1} />
                 ))}
-                {points.map((_, i) => (
-                  <Line
-                    key={`v${i}`}
-                    p1={vec(x(i), top)}
-                    p2={vec(x(i), base)}
-                    color={c.line}
-                    strokeWidth={1}
-                  />
-                ))}
-                <Path
-                  path={smoothPath(points.map((b, i) => ({ x: x(i), y: y(b.value) })))}
-                  style="stroke"
-                  strokeWidth={2.5}
-                  color={String(c.fitness)}
-                />
-                {points.map((b, i) => {
-                  const m = medal(b);
-                  return (
-                    <Circle
-                      key={b.activity_id}
-                      cx={x(i)}
-                      cy={y(b.value)}
-                      r={6}
-                      color={m ? MEDAL_COLOURS[m - 1] : String(c.muted)}
-                    />
-                  );
-                })}
-              </>
+            </Canvas>
+            <Animated.View style={[{ position: 'absolute', width, height }, moving]}>
+              <Canvas style={{ width, height }}>
+                {ready && (
+                  <>
+                    {monthStarts(from, to).map((m) => (
+                      <Line key={m} p1={vec(x(m), top)} p2={vec(x(m), base)} color={c.line} strokeWidth={1} />
+                    ))}
+                    {shown.length > 1 && (
+                      <Path
+                        path={smoothPath(shown.map((b, i) => ({ x: x(b.day), y: y(line[i]) })))}
+                        style="stroke"
+                        strokeWidth={2.5}
+                        color={String(c.fitness)}
+                      />
+                    )}
+                    {shown.map((b) => {
+                      const m = medal(b);
+                      return (
+                        <Circle
+                          key={b.activity_id}
+                          cx={x(b.day)}
+                          cy={y(b.value)}
+                          r={5}
+                          color={m ? MEDAL_COLOURS[m - 1] : String(c.muted)}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              </Canvas>
+            </Animated.View>
+            {[record, middle, worst].map((v, i) => (
+              <Text
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: 4,
+                  top: y(v) - 9,
+                  color: c.fg,
+                  fontSize: 12,
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {label(v)}
+              </Text>
+            ))}
+            <Muted style={{ position: 'absolute', left: axis + 8, top: base + 10, fontSize: 12 }}>
+              {day(from)} – {day(to)}
+            </Muted>
+            {!shown.length && (
+              <Muted style={{ position: 'absolute', left: axis + 8, top: base / 2, fontSize: 13 }}>
+                {t('progress.noBestsHere')}
+              </Muted>
             )}
-          </Canvas>
-          {[record, middle, worst].map((v, i) => (
-            <Text
-              key={i}
-              style={{
-                position: 'absolute',
-                left: 4,
-                top: y(v) - 9,
-                color: c.fg,
-                fontSize: 12,
-                fontVariant: ['tabular-nums'],
-              }}
-            >
-              {label(v)}
-            </Text>
-          ))}
-          <Muted style={{ position: 'absolute', left: axis + 8, top: base + 10, fontSize: 12 }}>
-            {day(points[0].day)} – {day(points[points.length - 1].day)}
-          </Muted>
-        </>
-      )}
-    </View>
+          </>
+        )}
+      </View>
+    </GestureDetector>
   );
 }
