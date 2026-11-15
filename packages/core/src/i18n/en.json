@@ -1289,7 +1289,7 @@
   "progress.skillsScale": "At each duration, the {levels} levels run from what a beginner holds to what the best manage, in watts per kilo.",
   "progress.bests": "Best times",
   "progress.bestsInfo": "Your best in each activity: running times by distance and, on the bike, the best power by duration and the longest ride. Medals mark the top three of all time or of each year.",
-  "progress.noRecentBests": "No medals in the last month.",
+  "progress.noRecentBests": "No medals in the last year.",
   "progress.noBests": "No bests at this measure yet.",
   "progress.noBestsHere": "None in these twelve months. Swipe to see others.",
   "progress.bestPower": "Power: {duration}",

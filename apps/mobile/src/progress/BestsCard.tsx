@@ -1,6 +1,7 @@
 /**
- * Best times on Progress (as Strava's): the card shows the last month's medals, up to three (of all
- * time first, then of their year), each opening its measure in app/bests.tsx. The medal, the measures'
+ * Best times on Progress (as Strava's): the card shows the medals of the last twelve months, one per
+ * measure and up to three (of all time first, then of their year, the better place first), each opening
+ * its measure in app/bests.tsx. The medal, the measures'
  * names and the medal colours are shared by both.
  */
 import { effortShown, recentBestsQuery, SPORT_ICONS } from '@zankup/core';
@@ -61,9 +62,13 @@ export function BestsCard() {
   const c = useTheme();
   const unit = useFormat().unit;
   const imperial = useUnits() === 'imperial';
-  const medals = useQuery(recentBestsQuery(api, 30));
+  const medals = useQuery(recentBestsQuery(api, 365));
   if (medals.isPending) return <CardSkeleton lines={3} />;
-  const shown = (medals.data ?? []).filter((m) => effortShown(m.key, unit)).slice(0, 3);
+  // The server sorts them all-time first, then by place and newest: a measure's first is its best medal.
+  const shown = (medals.data ?? [])
+    .filter((m) => effortShown(m.key, unit))
+    .filter((m, i, all) => all.findIndex((o) => o.key === m.key) === i)
+    .slice(0, 3);
   return (
     <Card>
       <Pressable
