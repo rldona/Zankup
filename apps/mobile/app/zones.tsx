@@ -21,7 +21,6 @@ import { PROGRESS_RANGES, rangeOf, type ProgressRange } from '../src/progress/vo
 import { sportIcon } from '../src/progress/VolumeCard';
 import { glance, shareChange, topZone, zoneKinds, type ZoneKind } from '../src/progress/zones';
 import { ShareBadge, ZoneRows } from '../src/progress/ZonesCard';
-import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { accent, Card, InfoButton, Muted, onAccent, Screen } from '../src/ui';
 
@@ -46,8 +45,14 @@ export default function ZonesScreen() {
   const [range, setRange] = useState<ProgressRange>('1m');
   const [picking, setPicking] = useState(false);
   const { current } = rangeOf(range, today);
-  const zones = useQuery(zonesQuery(api, kind, current, sport ? [sport] : undefined));
-  const seconds = zones.data?.seconds ?? [];
+  // Loaded in the background: while a new range or sport loads, the zones shown stay (when they are of
+  // the same kind) and the bars move to the new times, with no skeleton in between.
+  const zones = useQuery({
+    ...zonesQuery(api, kind, current, sport ? [sport] : undefined),
+    placeholderData: (before) => (before?.kind === kind ? before : undefined),
+  });
+  const loaded = zones.data != null && !zones.isPlaceholderData;
+  const seconds = zones.data?.seconds ?? Array<number>(kind === 'power' ? 7 : 5).fill(0);
   const previous = zones.data?.previous ?? [];
   const top = topZone(seconds);
   const change = top ? shareChange(seconds, previous, top.index) : null;
@@ -85,33 +90,33 @@ export default function ZonesScreen() {
         ))}
       </View>
 
-      {zones.isPending ? (
-        <ChartSkeleton height={320} />
-      ) : (
-        <>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={{ color: c.fg, fontSize: 24, fontWeight: '800' }}>
-                {top
-                  ? t('progress.zonesTopLong', { share: top.share, zone: top.index + 1 })
-                  : t('progress.noZones')}
-              </Text>
-              <Muted style={{ fontSize: 13 }}>
-                {longDate(current.from)} – {t('progress.today')}
-              </Muted>
-            </View>
-            {change != null && change !== 0 && (
-              <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                <ShareBadge points={change} />
-                <Muted style={{ fontSize: 13 }}>{t('progress.vsBefore')}</Muted>
-              </View>
-            )}
+      <>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Text numberOfLines={1} style={{ color: c.fg, fontSize: 24, fontWeight: '800' }}>
+              {top
+                ? t('progress.zonesTopLong', { share: top.share, zone: top.index + 1 })
+                : zones.data || zones.isError
+                  ? t('progress.noZones')
+                  : ' '}
+            </Text>
+            <Muted style={{ fontSize: 13 }}>
+              {longDate(current.from)} – {t('progress.today')}
+            </Muted>
           </View>
-          <ZoneRows kind={kind} seconds={seconds} bounds={zones.data?.bounds ?? []} />
-          {kind === 'power' && !zones.data?.bounds.length && <Muted>{t('progress.noFtp')}</Muted>}
-          {kind === 'pace' && !zones.data?.bounds.length && <Muted>{t('progress.noThreshold')}</Muted>}
-        </>
-      )}
+          {change != null && change !== 0 && (
+            <View style={{ alignItems: 'flex-end', gap: 2 }}>
+              <ShareBadge points={change} />
+              <Muted style={{ fontSize: 13 }}>{t('progress.vsBefore')}</Muted>
+            </View>
+          )}
+        </View>
+        <ZoneRows kind={kind} seconds={seconds} bounds={zones.data?.bounds ?? []} />
+        {loaded && kind === 'power' && !zones.data?.bounds.length && <Muted>{t('progress.noFtp')}</Muted>}
+        {loaded && kind === 'pace' && !zones.data?.bounds.length && (
+          <Muted>{t('progress.noThreshold')}</Muted>
+        )}
+      </>
 
       <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
         {PROGRESS_RANGES.map((r) => {
