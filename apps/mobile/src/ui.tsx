@@ -325,8 +325,15 @@ export function Body({ children }: { children: ReactNode }) {
 export const ripple = (c: Palette) => ({ color: alpha(String(c.fg), 0.12), foreground: true });
 
 /**
+ * How long a finger rests before a card shows it is pressed: Android's tap timeout (100 ms), as its own
+ * lists wait. A finger that starts scrolling in that time never lights up what it crossed.
+ */
+export const TAP_TIMEOUT = 100;
+
+/**
  * A card or widget that opens something, as Strava's and Android's: pressed, a ripple spreads from the
- * finger, and held it shades the whole card. The card's rounded corners (16) clip it.
+ * finger, and held it shades the whole card; a swipe across it does not (`TAP_TIMEOUT`). The card's
+ * rounded corners (16) clip it.
  */
 export function Tappable({
   style,
@@ -336,7 +343,12 @@ export function Tappable({
   const c = useTheme();
   return (
     <View style={[{ borderRadius: 16, overflow: 'hidden' }, style]}>
-      <Pressable {...props} android_ripple={ripple(c)} style={{ flex: style?.flex == null ? undefined : 1 }}>
+      <Pressable
+        unstable_pressDelay={TAP_TIMEOUT}
+        {...props}
+        android_ripple={ripple(c)}
+        style={{ flex: style?.flex == null ? undefined : 1 }}
+      >
         {children}
       </Pressable>
     </View>
@@ -628,6 +640,7 @@ export function MenuRow({
       accessibilityLabel={note ? `${label}, ${note}` : label}
       onPress={onPress}
       android_ripple={ripple(c)}
+      unstable_pressDelay={TAP_TIMEOUT}
       style={[styles.row, { borderColor: c.line }, last && { borderBottomWidth: 0 }]}
     >
       {icon}
