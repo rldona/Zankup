@@ -15,7 +15,7 @@ import { asSport, useFormat, useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { sportColour } from '../stats/Sections';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { isoDay } from './fitness';
 import {
   addDays,
@@ -59,7 +59,7 @@ export function LogCard() {
     </View>
   );
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.log')}: ${t('progress.thisWeek')} ${time(thisWeek)}`}
       onPress={() => router.push('/training-log')}
@@ -78,7 +78,7 @@ export function LogCard() {
         <Dots days={lastWeek} today={today} />
         {line(t('progress.lastWeek'), time(lastWeek))}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

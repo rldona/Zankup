@@ -7,7 +7,7 @@ import { goalsQuery, SPORT_ICONS, type GoalOut } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { useCanvasReady } from '../charts';
@@ -16,7 +16,7 @@ import { locale, t } from '../i18n';
 import { asSport } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { fraction, runningTotal, type GoalMetric, type GoalPeriod } from './goals';
 import { useVolumeFormat } from './VolumeCard';
 
@@ -83,7 +83,7 @@ export function GoalsCard() {
   if (goals.isPending) return <CardSkeleton lines={4} />;
   const list = goals.data ?? [];
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={t('progress.goals')}
       onPress={() => router.push('/objectives')}
@@ -114,7 +114,7 @@ export function GoalsCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

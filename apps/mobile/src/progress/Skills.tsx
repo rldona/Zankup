@@ -18,7 +18,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { useCanvasReady } from '../charts';
@@ -26,7 +26,7 @@ import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme, type Palette } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { isoDay } from './fitness';
 import {
   DURATIONS,
@@ -234,7 +234,7 @@ export function SkillsCard() {
   const best = strongest(skills.recent, skills.weight);
   const colours = radarColours();
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.skills')}${best ? `: ${t(`progress.skill.${best.skill}`)} ${durationLabel(best.duration)} ${Math.round(best.watts)} W` : ''}`}
       onPress={() => router.push('/skills')}
@@ -279,6 +279,6 @@ export function SkillsCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }

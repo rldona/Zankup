@@ -18,7 +18,7 @@ import { asSport } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { monthGrid } from '../stats/dates';
 import { useTheme } from '../theme';
-import { accent, Card, InfoButton, Muted, onAccent } from '../ui';
+import { accent, Card, InfoButton, Muted, onAccent, Tappable } from '../ui';
 import { isoDay } from './fitness';
 import { addDays, weekDays, weekMark, type WeekMark } from './weeks';
 import { Panel } from './Panel';
@@ -31,7 +31,7 @@ export function SeriesCard({ onOpen }: { onOpen: () => void }) {
   if (streak.isPending) return <CardSkeleton lines={4} />;
   const weeks = streak.data?.weeks ?? 0;
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.series')}: ${t('progress.streakWeeks', { count: weeks })}`}
       onPress={onOpen}
@@ -51,7 +51,7 @@ export function SeriesCard({ onOpen }: { onOpen: () => void }) {
           </Text>
         </View>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

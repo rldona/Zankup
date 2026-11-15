@@ -7,7 +7,7 @@ import { zonesQuery, zoneScale } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useApi } from '../auth';
@@ -17,7 +17,7 @@ import { paceRange } from '../detail/paceZones';
 import { useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { isoDay } from './fitness';
 import { changeText } from './raceTimes';
 import { rangeOf } from './volume';
@@ -58,7 +58,7 @@ export function ZonesCard() {
   const change = top ? shareChange(seconds, zones.data?.previous ?? [], top.index) : null;
   const most = Math.max(1, ...seconds);
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.zones')}: ${top ? t('progress.zonesTop', { share: top.share, zone: top.index + 1 }) : t('progress.noZones')}`}
       onPress={() => router.push('/zones')}
@@ -110,7 +110,7 @@ export function ZonesCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

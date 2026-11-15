@@ -8,7 +8,7 @@ import { Canvas, Path } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router, useNavigation } from 'expo-router';
 import { memo, useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 
 import { useApi } from '../../src/auth';
 import { t } from '../../src/i18n';
@@ -16,7 +16,7 @@ import { asSport, useFormat } from '../../src/prefs';
 import { RoutesSkeleton } from '../../src/Skeleton';
 import { sportColour } from '../../src/stats/Sections';
 import { useTheme } from '../../src/theme';
-import { Card, Muted, Screen, styles as ui } from '../../src/ui';
+import { Card, Muted, Screen, styles as ui, Tappable } from '../../src/ui';
 
 type Route = NonNullable<ReturnType<typeof useRoutes>['data']>[number];
 
@@ -66,7 +66,7 @@ const RouteRow = memo(function RouteRow({ route: r }: { route: Route }) {
   const format = useFormat();
   const shape = routeThumbnail(r.route);
   return (
-    <Pressable accessibilityRole="link" onPress={() => router.push(`/routes/${r.id}`)}>
+    <Tappable accessibilityRole="link" onPress={() => router.push(`/routes/${r.id}`)}>
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: c.fg, fontWeight: '700' }}>{r.name ?? t(`sport.${asSport(r.sport)}`)}</Text>
@@ -88,6 +88,6 @@ const RouteRow = memo(function RouteRow({ route: r }: { route: Route }) {
           </Canvas>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 });

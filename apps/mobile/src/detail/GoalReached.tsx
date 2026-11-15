@@ -4,7 +4,7 @@
  */
 import { type ReachedGoal as Reached } from '@zankup/core';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Icon } from '../Icon';
 import { t } from '../i18n';
@@ -12,7 +12,7 @@ import { goalWords } from '../progress/GoalsCard';
 import { type GoalMetric } from '../progress/goals';
 import { useVolumeFormat } from '../progress/VolumeCard';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 
 /** "Anual: Objetivo de distancia · 1.000 km · Carrera". */
 function useGoalLine() {
@@ -57,7 +57,7 @@ export function GoalReachedBanner({ goals }: { goals: Reached[] | undefined }) {
   const line = useGoalLine();
   if (!goals?.length) return null;
   return (
-    <Pressable accessibilityRole="button" onPress={() => router.push('/objectives')}>
+    <Tappable accessibilityRole="button" onPress={() => router.push('/objectives')}>
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Icon name="trophy" color={accent(c)} size={32} />
@@ -74,6 +74,6 @@ export function GoalReachedBanner({ goals }: { goals: Reached[] | undefined }) {
           <Icon name="chevron_right" color={c.muted} size={22} />
         </View>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }

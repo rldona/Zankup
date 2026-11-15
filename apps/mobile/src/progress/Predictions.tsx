@@ -8,7 +8,7 @@ import { estimatesQuery } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { useCanvasReady } from '../charts';
@@ -16,7 +16,7 @@ import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { isoDay } from './fitness';
 import {
   changeText,
@@ -102,7 +102,7 @@ export function PredictionsCard() {
   const now = valueOn(history, today);
   const before = line[0]?.value;
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.predictions')}: 5 km ${now != null ? raceTime(now) : '–'}`}
       onPress={() => router.push('/predictions')}
@@ -133,7 +133,7 @@ export function PredictionsCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

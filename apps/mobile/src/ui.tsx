@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   View,
+  type PressableProps,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
@@ -297,6 +298,51 @@ export function Muted({
 export function Body({ children }: { children: ReactNode }) {
   const c = useTheme();
   return <Text style={{ color: c.fg, fontSize: 15 }}>{children}</Text>;
+}
+
+/**
+ * A card, widget or row that opens something, as Strava's: pressed, it sinks a little and dims, and
+ * springs back when let go, so the tap shows.
+ */
+export function Tappable({
+  style,
+  children,
+  onPressIn,
+  onPressOut,
+  ...props
+}: Omit<PressableProps, 'style' | 'children'> & { style?: ViewStyle; children: ReactNode }) {
+  const [pressed] = useState(() => new Animated.Value(0));
+  const to = (value: number, duration: number) =>
+    Animated.timing(pressed, {
+      toValue: value,
+      duration,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  return (
+    <Pressable
+      {...props}
+      style={style}
+      onPressIn={(e) => {
+        to(1, 90);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        to(0, 180);
+        onPressOut?.(e);
+      }}
+    >
+      <Animated.View
+        style={{
+          flex: style?.flex,
+          transform: [{ scale: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) }],
+          opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.85] }),
+        }}
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
 }
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {

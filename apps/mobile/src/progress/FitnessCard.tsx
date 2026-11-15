@@ -2,14 +2,14 @@
 import { fitnessQuery } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { fitnessChange, rangePeriod, untilToday } from './fitness';
 import { FitnessSparkline } from './FitnessChart';
 
@@ -22,7 +22,7 @@ export function FitnessCard() {
   const now = values.at(-1);
   const change = now != null ? fitnessChange(values[0], now) : null;
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.fitness')}, ${t('progress.score')} ${now != null ? Math.round(now) : '–'}`}
       onPress={() => router.push('/fitness')}
@@ -74,6 +74,6 @@ export function FitnessCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }

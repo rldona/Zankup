@@ -32,7 +32,7 @@ import {
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { Thumbnail } from '../Feed';
@@ -40,7 +40,7 @@ import { Icon, type IconName } from '../Icon';
 import { locale, t } from '../i18n';
 import { asSport, useFormat } from '../prefs';
 import { useTheme } from '../theme';
-import { Card, Heading, Muted } from '../ui';
+import { Card, Heading, Muted, Tappable } from '../ui';
 import { CardSkeleton, Pulse } from '../Skeleton';
 
 type Format = ReturnType<typeof useFormat>;
@@ -174,7 +174,7 @@ function DayActivity({ activity: a, format }: { activity: ActivitySummary; forma
         : null,
   ].filter(Boolean);
   return (
-    <Pressable accessibilityRole="button" onPress={() => router.push(`/activity/${a.id}`)}>
+    <Tappable accessibilityRole="button" onPress={() => router.push(`/activity/${a.id}`)}>
       <Card>
         <Text numberOfLines={1} style={{ color: c.fg, fontSize: 16, fontWeight: '600' }}>
           {a.name ?? t(`sport.${sport}`)}
@@ -202,7 +202,7 @@ function DayActivity({ activity: a, format }: { activity: ActivitySummary; forma
           {a.route ? <Thumbnail route={a.route} colour={c.muted} /> : null}
         </View>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 
