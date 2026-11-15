@@ -473,7 +473,7 @@ export function Curves({ range }: { range: Range }) {
   const api = useApi();
   const c = useTheme();
   const format = useFormat();
-  const [kind, setKind] = useState<'speed' | 'power'>('speed');
+  const [kind, setKind] = useState<'speed' | 'power'>('power');
   const sport = kind === 'speed' ? ['run'] : undefined;
   const period = useQuery(curvesQuery(api, kind, range, sport));
   const all = useQuery(curvesQuery(api, kind, { from: '2000-01-01' }, sport));
@@ -507,8 +507,8 @@ export function Curves({ range }: { range: Range }) {
             value={kind}
             onChange={setKind}
             options={[
-              { value: 'speed', label: t('stats.pace') },
               { value: 'power', label: t('stats.power') },
+              { value: 'speed', label: t('stats.pace') },
             ]}
           />
         }
