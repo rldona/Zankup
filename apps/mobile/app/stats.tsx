@@ -110,7 +110,6 @@ export default function StatsScreen() {
       toolbar={
         <>
           <Choice
-            center
             label={t('stats.period')}
             value={mode}
             onChange={setMode}
