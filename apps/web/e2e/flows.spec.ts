@@ -130,7 +130,8 @@ test("Home in the app's order at every size, with This week as the app's", async
   // Monday's run with a dot for the ride, Tuesday's ride, then the days' numbers.
   const days = page.locator('.week .days');
   await expect(days.getByRole('link', { name: /Morning run, Hill ride/ }).locator('.second')).toBeVisible();
-  await expect(days.locator('li.future .dot').first()).toHaveText(/^\d+$/);
+  // The days still to come show their number; on a Sunday none is left.
+  if (new Date().getDay() !== 0) await expect(days.locator('li.future .dot').first()).toHaveText(/^\d+$/);
   await expect(page.getByRole('progressbar', { name: w('home.vsUsual') })).toBeVisible();
 });
 
