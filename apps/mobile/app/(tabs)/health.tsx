@@ -111,6 +111,7 @@ export default function HealthScreen() {
 
   return (
     <Screen
+      tab="health"
       title={t('nav.health')}
       busy={sync.isPending}
       actions={

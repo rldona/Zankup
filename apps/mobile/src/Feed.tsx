@@ -4,7 +4,7 @@
  * was seen (OS-505).
  */
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import {
   musclesFromExercises,
   activitiesQuery,
@@ -20,7 +20,7 @@ import {
 } from '@zankup/core';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useApi } from './auth';
@@ -29,6 +29,7 @@ import { locale, t } from './i18n';
 import { Icon, SportIcon } from './Icon';
 import { asSport, useFormat } from './prefs';
 import { GoalReachedLine } from './detail/GoalReached';
+import { useScrollTop } from './scrollTop';
 import { useTheme } from './theme';
 import { Badge, Card, Empty, Muted, Stat, styles as ui, Tappable } from './ui';
 import { FeedSkeleton, WeekSkeleton } from './Skeleton';
@@ -46,8 +47,11 @@ export function Feed() {
   const format = useFormat();
   const feed = useInfiniteQuery(activitiesQuery(api));
   const items = useMemo(() => feed.data?.pages.flatMap((p) => p.items) ?? [], [feed.data]);
+  const list = useRef<FlashListRef<(typeof items)[number]>>(null);
+  useScrollTop('activities', list);
   return (
     <FlashList
+      ref={list}
       data={items}
       keyExtractor={(a) => String(a.id)}
       renderItem={({ item }) => <ActivityCard activity={item} format={format} />}
