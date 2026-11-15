@@ -129,6 +129,8 @@ export function EditProfile({ me, onDone }: { me: Me; onDone: () => void }) {
       return data;
     },
     onSuccess: (data) => {
+      // A new weight is also today's weighing: the weight card and screen show it at once.
+      if (data.weight_kg !== me.weight_kg) void queryClient.invalidateQueries({ queryKey: ['weight'] });
       queryClient.setQueryData(queryKeys.me, data);
       onDone();
     },
