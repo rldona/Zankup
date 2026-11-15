@@ -1375,6 +1375,8 @@
   "detail.paceZones": "Pace zones",
   "detail.paceZonesNote": "Based on your threshold pace of {pace}.",
   "detail.analysis": "Training analysis",
+  "detail.analysisOpen": "View workout",
+  "detail.analysisHint": "Slide along the workout to see each split's details.",
   "detail.analysisAverage": "Average {pace}",
   "detail.analysisFastest": "Fastest {pace}",
   "detail.exercises": "Exercises",

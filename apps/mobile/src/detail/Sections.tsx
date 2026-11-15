@@ -16,6 +16,7 @@ import {
   type Series,
   type ZoneScale,
   effortShown,
+  ZONE_SCALES,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { Text, View } from 'react-native';
@@ -256,7 +257,8 @@ export function Splits({
                   width: `${((speeds[i] ?? 0) / fastest) * 100}%`,
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: c.accent,
+                  // Pace blue, as Strava's (not the theme's colour).
+                  backgroundColor: ZONE_SCALES.pace[3],
                 }}
               />
             </View>
