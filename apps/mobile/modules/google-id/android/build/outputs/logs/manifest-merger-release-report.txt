@@ -1,16 +1,16 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml:2:13-83
-INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml:2:13-83
+ADDED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml:2:13-83
+INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml:2:13-83
 	package
-		INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml
+		INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml
 	xmlns:android
-		ADDED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml:2:23-81
+		ADDED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml:2:23-81
 uses-sdk
-INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml reason: use-sdk injection requested
-INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml
-INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml
+INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml reason: use-sdk injection requested
+INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml
+INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml
 	android:targetSdkVersion
-		INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml
+		INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml
 	android:minSdkVersion
-		INJECTED from /Users/raul.lopezcepsa.com/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest16842032820826723149.xml
+		INJECTED from /home/rldona/workspace/Zankup/apps/mobile/modules/google-id/android/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest12320012921833683236.xml
