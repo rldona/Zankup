@@ -80,7 +80,8 @@ export function Screen({
         <ScrollView
           {...keyboard}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.page, title ? { paddingTop: 0 } : null]}
+          // Under a tab's title, a little room below its loading bar.
+          contentContainerStyle={[styles.page, title ? { paddingTop: 12 } : null]}
         >
           {children}
         </ScrollView>
