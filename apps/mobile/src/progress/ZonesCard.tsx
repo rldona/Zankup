@@ -6,7 +6,9 @@
 import { zonesQuery, zoneScale } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useApi } from '../auth';
 import { Icon } from '../Icon';
@@ -112,6 +114,18 @@ export function ZonesCard() {
   );
 }
 
+/** A zone's bar, as wide as its share of the row (%): a new share slides there instead of jumping. */
+function GrowingBar({ share, colour }: { share: number; colour: string }) {
+  const width = useSharedValue(share);
+  useEffect(() => {
+    width.set(withTiming(share, { duration: 320, easing: Easing.out(Easing.cubic) }));
+  }, [share, width]);
+  const style = useAnimatedStyle(() => ({ width: `${width.get()}%` }));
+  return (
+    <Animated.View style={[{ minWidth: 8, height: 22, borderRadius: 6, backgroundColor: colour }, style]} />
+  );
+}
+
 /** The zones in full, the highest on top: each one's time as a bar, the time and its range. */
 export function ZoneRows({ kind, seconds, bounds }: { kind: ZoneKind; seconds: number[]; bounds: number[] }) {
   const c = useTheme();
@@ -135,15 +149,7 @@ export function ZoneRows({ kind, seconds, bounds }: { kind: ZoneKind; seconds: n
           <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ width: 24, color: c.fg, fontSize: 14, fontWeight: '800' }}>Z{i + 1}</Text>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View
-                style={{
-                  width: `${Math.max(2, (s / most) * 62)}%`,
-                  minWidth: 8,
-                  height: 22,
-                  borderRadius: 6,
-                  backgroundColor: colours[i],
-                }}
-              />
+              <GrowingBar share={Math.max(2, (s / most) * 62)} colour={colours[i]} />
               <Text style={{ color: c.fg, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                 {changeText(s)}
               </Text>
