@@ -6,7 +6,7 @@ import { MATERIAL_ICONS } from '@zankup/core';
 import { Icon, type IconName } from '../../src/Icon';
 import { LatestActivity } from '../../src/LatestActivity';
 import { t } from '../../src/i18n';
-import { useTheme } from '../../src/theme';
+import { borderlessCards, useTheme } from '../../src/theme';
 
 const TABS: { name: string; icon: IconName; label: Parameters<typeof t>[0] }[] = [
   { name: 'index', icon: 'home', label: 'nav.home' },
@@ -32,6 +32,7 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: c.surface,
             borderTopColor: c.line,
+            ...(borderlessCards(c) && { borderTopWidth: 0 }),
             height: 76 + insets.bottom,
             paddingTop: 8,
             paddingBottom: insets.bottom + 16,
@@ -39,7 +40,8 @@ export default function TabsLayout() {
           tabBarLabelStyle: { fontSize: 12, marginTop: 4 },
           tabBarIconStyle: { width: 28, height: 28 },
           tabBarActiveTintColor: c.accent,
-          tabBarInactiveTintColor: c.muted,
+          // Strava's themes draw the other tabs in the text colour (white on dark), as Strava does.
+          tabBarInactiveTintColor: borderlessCards(c) ? c.fg : c.muted,
         }}
       >
         {TABS.map((tab) => (
