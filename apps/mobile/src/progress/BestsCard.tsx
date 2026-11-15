@@ -1,13 +1,13 @@
 /**
  * Best times on Progress (as Strava's): the card shows the medals of the last twelve months, one per
- * measure and up to three (of all time first, then of their year, the better place first), each opening
- * its measure in app/bests.tsx. The medal, the measures'
+ * measure and up to three (of all time first, then of their year, the better place first). The whole card
+ * opens app/bests.tsx on its default measure (running, 10 km), as Strava's widget does. The medal, the measures'
  * names and the medal colours are shared by both.
  */
 import { effortShown, recentBestsQuery, SPORT_ICONS } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { Icon } from '../Icon';
@@ -15,7 +15,7 @@ import { locale, t } from '../i18n';
 import { useFormat, useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
-import { accent, Card, Muted } from '../ui';
+import { accent, Card, Muted, Tappable } from '../ui';
 import { bestValue, RUN_KEYS } from './bests';
 import { durationLabel } from './skillLevels';
 
@@ -70,47 +70,49 @@ export function BestsCard() {
     .filter((m, i, all) => all.findIndex((o) => o.key === m.key) === i)
     .slice(0, 3);
   return (
-    <Card>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/bests')}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-      >
-        <Icon name="trophy" color={accent(c)} size={26} />
-        <Text numberOfLines={1} style={{ flex: 1, color: c.fg, fontSize: 16, fontWeight: '700' }}>
-          {t('progress.bests')}
-        </Text>
-        <Icon name="chevron_right" color={c.muted} size={22} />
-      </Pressable>
-      {!shown.length ? (
-        <Muted style={{ marginTop: 12 }}>{t('progress.noRecentBests')}</Muted>
-      ) : (
-        <View style={{ flexDirection: 'row', marginTop: 12 }}>
-          {shown.map((m) => (
-            <Pressable
-              key={`${m.key}-${m.activity_id}`}
-              accessibilityRole="button"
-              accessibilityLabel={`${bestName(m.key)} ${bestValue(m.key, m.value, locale, imperial)}`}
-              onPress={() => router.push(`/bests?key=${m.key}`)}
-              style={{ flex: 1, alignItems: 'center', gap: 4 }}
-            >
-              <Medal rank={m.rank} size={44} />
-              <Text numberOfLines={1} style={{ color: c.fg, fontSize: 13 }}>
-                {bestName(m.key)}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Icon name={SPORT_ICONS[sportOf(m.key)]} color={c.fg} size={18} />
-                <Text style={{ color: c.fg, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                  {bestValue(m.key, m.value, locale, imperial)}
-                </Text>
-              </View>
-              <Muted style={{ fontSize: 13 }}>
-                {t(m.scope === 'all' ? 'progress.allTimeBest' : 'progress.yearBest')}
-              </Muted>
-            </Pressable>
-          ))}
+    <Tappable
+      accessibilityRole="button"
+      accessibilityLabel={t('progress.bests')}
+      onPress={() => router.push('/bests')}
+    >
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Icon name="trophy" color={accent(c)} size={26} />
+          <Text numberOfLines={1} style={{ flex: 1, color: c.fg, fontSize: 16, fontWeight: '700' }}>
+            {t('progress.bests')}
+          </Text>
+          <Icon name="chevron_right" color={c.muted} size={22} />
         </View>
-      )}
-    </Card>
+        {!shown.length ? (
+          <Muted style={{ marginTop: 12 }}>{t('progress.noRecentBests')}</Muted>
+        ) : (
+          <View style={{ flexDirection: 'row', marginTop: 12 }}>
+            {shown.map((m) => (
+              <View
+                key={`${m.key}-${m.activity_id}`}
+                accessibilityLabel={`${bestName(m.key)} ${bestValue(m.key, m.value, locale, imperial)}`}
+                style={{ flex: 1, alignItems: 'center', gap: 4 }}
+              >
+                <Medal rank={m.rank} size={44} />
+                <Text numberOfLines={1} style={{ color: c.fg, fontSize: 13 }}>
+                  {bestName(m.key)}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Icon name={SPORT_ICONS[sportOf(m.key)]} color={c.fg} size={18} />
+                  <Text
+                    style={{ color: c.fg, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}
+                  >
+                    {bestValue(m.key, m.value, locale, imperial)}
+                  </Text>
+                </View>
+                <Muted style={{ fontSize: 13 }}>
+                  {t(m.scope === 'all' ? 'progress.allTimeBest' : 'progress.yearBest')}
+                </Muted>
+              </View>
+            ))}
+          </View>
+        )}
+      </Card>
+    </Tappable>
   );
 }
