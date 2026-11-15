@@ -49,6 +49,15 @@ export function levelAt(watts: number, duration: number, weightKg: number): numb
   return Math.min(LEVELS, Math.max(0, 1 + ((LEVELS - 1) * (watts / weightKg - lo)) / (hi - lo)));
 }
 
+/**
+ * The watts that reach a level at a duration for a weight: the inverse of `levelAt`. Level 1 is where
+ * the scale starts (anyone below is still at level 1).
+ */
+export function levelWatts(level: number, duration: number, weightKg: number): number {
+  const [lo, hi] = scaleAt(duration);
+  return (lo + ((Math.max(1, level) - 1) * (hi - lo)) / (LEVELS - 1)) * weightKg;
+}
+
 /** A skill's level: the average of its durations', so one lucky effort does not carry it. */
 export function skillLevel(levels: number[]): number {
   return levels.length ? levels.reduce((a, b) => a + b, 0) / levels.length : 0;

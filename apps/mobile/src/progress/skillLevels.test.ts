@@ -4,6 +4,7 @@ import {
   DURATIONS,
   levelAt,
   levelName,
+  levelWatts,
   radialShare,
   scaleAt,
   segments,
@@ -52,5 +53,9 @@ describe('skills', () => {
     expect(radialShare(1)).toBeCloseTo(0.3);
     expect(radialShare(3)).toBeCloseTo(0.55);
     expect(radialShare(2.5)).toBeCloseTo(0.5);
+  });
+  it('gives the watts that reach each level, the inverse of the level', () => {
+    for (const d of [15, 300, 3600])
+      for (const level of [1, 4.5, 9]) expect(levelAt(levelWatts(level, d, 75), d, 75)).toBeCloseTo(level, 6);
   });
 });
