@@ -84,12 +84,12 @@ export default function StatsScreen() {
   const years = useQuery(yearsQuery(api));
   const first = years.data?.at(-1) ?? today.getFullYear();
   // The period: a mode, and for a year or a month where the arrows have moved to (months count from
-  // year 0, so one step is always one month).
-  const [mode, setMode] = useState<Mode>('last12');
+  // year 0, so one step is always one month). It opens on months, from last month to this one.
+  const [mode, setMode] = useState<Mode>('month');
   const now = today.getFullYear() * 12 + today.getMonth();
   const [shownYear, setShownYear] = useState(today.getFullYear());
   // Months: from and to, both included; each stops at the other, so the run never turns around.
-  const [fromMonth, setFromMonth] = useState(now);
+  const [fromMonth, setFromMonth] = useState(now - 1);
   const [toMonth, setToMonth] = useState(now);
   const choice = mode === 'year' ? String(shownYear) : mode;
   const period = useMemo(
