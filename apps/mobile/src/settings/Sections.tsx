@@ -206,14 +206,14 @@ export function Notifications() {
       <Card>
         <Heading>{t('notifications.title')}</Heading>
         <Muted>{t('mobile.pushHelp')}</Muted>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          <Button primary onPress={() => void registerPush(api).then(setPush)}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Button fill primary onPress={() => void registerPush(api).then(setPush)}>
             {t('mobile.pushOn')}
           </Button>
-          <Button onPress={() => void unregisterPush(api).then(() => setPush('off'))}>
+          <Button fill onPress={() => void unregisterPush(api).then(() => setPush('off'))}>
             {t('mobile.pushOff')}
           </Button>
-          <Button onPress={() => test.mutate()} disabled={test.isPending}>
+          <Button fill onPress={() => test.mutate()} disabled={test.isPending}>
             {t('notifications.test')}
           </Button>
         </View>
