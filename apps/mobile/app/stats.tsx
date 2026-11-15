@@ -177,6 +177,8 @@ export default function StatsScreen() {
         </Muted>
       )}
 
+      {/* The period's figures against the year before, first: what the period was, at a glance. */}
+      <Summary range={range} />
       <Fitness range={range} />
       <Volume range={range} unit={period.unit} />
       <Efficiency range={range} />
@@ -184,8 +186,6 @@ export default function StatsScreen() {
       <Records range={range} />
       <Progress selected={Number(year) || today.getFullYear()} />
       <CompareWithStrava />
-      {/* The period's figures against the year before: a table, after the charts the filters change. */}
-      <Summary range={range} />
 
       <Heading>{t('stats.links')}</Heading>
       <Card style={{ paddingVertical: 0, gap: 0 }}>
