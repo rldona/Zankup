@@ -24,7 +24,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   if (!me.data) return <Loading />;
   return (
-    <Screen>
+    <Screen tab="profile">
       <Header me={me.data} onEdit={() => setEditing(true)} />
       {editing && <EditProfile me={me.data} onDone={() => setEditing(false)} />}
       <Card style={{ paddingVertical: 0, gap: 0 }}>

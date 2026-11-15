@@ -21,6 +21,7 @@ import type { ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './Icon';
+import { useScrollTop } from './scrollTop';
 import { t } from './i18n';
 import { PageSkeleton } from './Skeleton';
 import { borderlessCards, dynamicAccent, dynamicOnAccent, useTheme, type Palette } from './theme';
@@ -45,6 +46,7 @@ export function Screen({
   toolbar,
   actions,
   busy = false,
+  tab,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -58,10 +60,13 @@ export function Screen({
   actions?: ReactNode;
   /** Something is updating (a sync): a thin bar moves under the header, as Google Health does. */
   busy?: boolean;
+  /** The tab it is (index, progress…): pressing the tab brings it back to the top. */
+  tab?: string;
 }) {
   const c = useTheme();
   const keyboard = useFieldAboveKeyboard();
   const top = useTopInset(!header);
+  useScrollTop(scroll ? tab : undefined, keyboard.ref);
   return (
     // Every screen of cards on the theme's background, so the cards stand out (grey under white cards in
     // Strava's light theme); the stack's header bar keeps the page colour. Plain lists (Best times, the

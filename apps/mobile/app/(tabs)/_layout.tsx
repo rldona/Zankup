@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MATERIAL_ICONS, meQuery } from '@zankup/core';
 
 import { useApi } from '../../src/auth';
+import { scrollTabToTop } from '../../src/scrollTop';
 import { Icon, type IconName } from '../../src/Icon';
 import { LatestActivity } from '../../src/LatestActivity';
 import { t } from '../../src/i18n';
@@ -81,6 +82,10 @@ export default function TabsLayout() {
           <Tabs.Screen
             key={tab.name}
             name={tab.name}
+            // A tab opens at the top (it would keep its scroll); pressed again, it scrolls up.
+            listeners={({ navigation }) => ({
+              tabPress: () => scrollTabToTop(tab.name, navigation.isFocused()),
+            })}
             options={{
               title: t(tab.label),
               tabBarIcon: ({ color, focused }) =>

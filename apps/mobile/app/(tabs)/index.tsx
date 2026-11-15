@@ -5,7 +5,8 @@
 import { aiStatusQuery, type MessageKey } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
 
 import { WeekHeader } from '../../src/Feed';
 import { LastDay, LastSevenDays, Metrics, UsualWeek } from '../../src/home/Widgets';
@@ -13,6 +14,7 @@ import { useApi } from '../../src/auth';
 import { Icon, type IconName } from '../../src/Icon';
 import { t } from '../../src/i18n';
 import { useFormat } from '../../src/prefs';
+import { useScrollTop } from '../../src/scrollTop';
 import { useTheme } from '../../src/theme';
 import { styles as ui, useTopInset } from '../../src/ui';
 import { Wordmark } from '../../src/Wordmark';
@@ -24,6 +26,8 @@ const ACTIONS: { href: string; icon: IconName; label: MessageKey }[] = [
 
 export default function HomeScreen() {
   const c = useTheme();
+  const list = useRef<ScrollViewInstance>(null);
+  useScrollTop('index', list);
   const api = useApi();
   const ai = useQuery({ ...aiStatusQuery(api), retry: false });
   const format = useFormat();
@@ -46,7 +50,7 @@ export default function HomeScreen() {
           </Pressable>
         ))}
       </View>
-      <ScrollView contentContainerStyle={[ui.page, { paddingTop: 4 }]}>
+      <ScrollView ref={list} contentContainerStyle={[ui.page, { paddingTop: 4 }]}>
         <WeekHeader format={format} footer={<UsualWeek />} />
         <LastDay />
         {/* Where things stand now before the week in detail, which repeats This week's ground. */}

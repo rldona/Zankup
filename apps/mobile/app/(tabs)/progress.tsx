@@ -23,7 +23,7 @@ import { Screen } from '../../src/ui';
 export default function ProgressScreen() {
   const [series, setSeries] = useState(false);
   return (
-    <Screen title={t('nav.progress')}>
+    <Screen tab="progress" title={t('nav.progress')}>
       <VolumeCard />
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
         <SeriesCard onOpen={() => setSeries(true)} />
