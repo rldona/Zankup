@@ -1366,6 +1366,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/weight': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Weight
+     * @description Every weighing, oldest first.
+     */
+    get: operations['listWeight'];
+    /**
+     * Save Weight
+     * @description A day's weighing, new or changed; the latest becomes the profile's weight.
+     */
+    put: operations['saveWeight'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/weight/{day}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Weight */
+    delete: operations['deleteWeight'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/stats/fitness': {
     parameters: {
       query?: never;
@@ -5218,6 +5259,26 @@ export interface components {
        */
       week_start?: string | null;
     };
+    /** WeightIn */
+    WeightIn: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Weight Kg */
+      weight_kg: number;
+    };
+    /** WeightOut */
+    WeightOut: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Weight Kg */
+      weight_kg: number;
+    };
     /** YearLine */
     YearLine: {
       /** Year */
@@ -7744,6 +7805,88 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SourceStatus'][];
+        };
+      };
+    };
+  };
+  listWeight: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WeightOut'][];
+        };
+      };
+    };
+  };
+  saveWeight: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WeightIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WeightOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  deleteWeight: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        day: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

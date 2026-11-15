@@ -153,6 +153,7 @@ export default function Root() {
                   <Stack.Screen name="monthly" options={{ title: t('monthly.title') }} />
                   <Stack.Screen name="sources" options={{ title: t('sources.manageTitle') }} />
                   <Stack.Screen name="app-icon" options={{ title: t('appIcon.title') }} />
+                  <Stack.Screen name="weight" options={{ title: t('weight.title') }} />
                   <Stack.Screen name="sync" options={{ title: t('sync.title') }} />
                   <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
                   <Stack.Screen name="coach" options={{ title: t('coach.title') }} />

@@ -37,6 +37,7 @@ export type SearchParams = NonNullable<paths['/api/activities/search']['get']['p
 export type SearchPage = Json<'/api/activities/search', 'get'>;
 export type PasskeyInfo = Json<'/api/auth/passkeys', 'get'>[number];
 export type HealthDay = Json<'/api/wellness/days', 'get'>[number];
+export type Weighing = Json<'/api/weight', 'get'>[number];
 export type HealthNight = Json<'/api/wellness/nights/{day}', 'get'>;
 export type HealthSettings = Json<'/api/wellness/settings', 'get'>;
 export type HealthSourceName = HealthSettings['sources'][number]['source'];
@@ -486,6 +487,14 @@ export function goalsQuery(api: ApiClient) {
     staleTime: 5 * 60_000,
     refetchOnMount: false,
     queryFn: async ({ signal }: { signal?: AbortSignal }) => unwrap(await api.GET('/api/goals', { signal })),
+  };
+}
+
+/** Every weighing, oldest first (Health → Weight). */
+export function weightQuery(api: ApiClient) {
+  return {
+    queryKey: ['weight'] as const,
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => unwrap(await api.GET('/api/weight', { signal })),
   };
 }
 

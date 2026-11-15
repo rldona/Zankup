@@ -277,6 +277,10 @@ def update_me(body: ProfileUpdate, user: CurrentUser, db: DbSession) -> Me:
         if name == "birth_date" and value is not None and not date(1900, 1, 1) <= value <= date.today():
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "That date of birth is not possible")
         setattr(user, name, value.strip() or None if isinstance(value, str) else value)
+    if "weight_kg" in body.model_fields_set and body.weight_kg is not None and body.weight_kg != before[2]:
+        from zankup import weight
+
+        weight.save(db, user.id, date.today(), body.weight_kg)  # today's weighing, in the weight history
     if before != (user.birth_date, user.sex, user.weight_kg):
         from zankup.engine.run import queue_full
 
