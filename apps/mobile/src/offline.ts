@@ -9,9 +9,10 @@
  *   latest ones the background sync fetches (OS-506), so the detail opens instantly and offline.
  */
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { MutationCache, QueryCache, QueryClient, type Query } from '@tanstack/react-query';
+import { focusManager, MutationCache, QueryCache, QueryClient, type Query } from '@tanstack/react-query';
 import { ApiError, type ActivityStreams, type ApiClient } from '@zankup/core';
 import { useSyncExternalStore } from 'react';
+import { AppState } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
 import { keys, storage } from './storage';
@@ -56,6 +57,12 @@ const noted = {
   },
   onSuccess: () => setUnreachable(false),
 };
+
+// Back from the background, what is on screen refreshes if stale (TanStack only knows window focus).
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) => handleFocus(state === 'active'));
+  return () => subscription.remove();
+});
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache(noted),

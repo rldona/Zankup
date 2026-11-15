@@ -62,6 +62,8 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // A tab out of sight does not redraw when its data refreshes: only the one on screen works.
+          freezeOnBlur: true,
           // Taller than the default, with room above the icons and above the system's gesture bar.
           tabBarStyle: {
             backgroundColor: c.surface,
