@@ -171,47 +171,50 @@ export default function PredictionsScreen() {
     // The range stays at the bottom of the screen (as Strava's), whatever is above it.
     <Screen header scroll={false}>
       <Stack.Screen options={{ headerRight: () => <InfoButton text={t('progress.predictionsInfo')} /> }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
-        {body}
-      </ScrollView>
-      <View
-        accessibilityRole="radiogroup"
-        style={{
-          flexDirection: 'row',
-          marginHorizontal: 16,
-          marginTop: 8,
-          marginBottom: insets.bottom + 16,
-          borderRadius: 999,
-          borderWidth: 1.5,
-          borderColor: c.line,
-          overflow: 'hidden',
-        }}
-      >
-        {(['today', '1m', '3m', '6m'] as const).map((r) => {
-          const on = r === range;
-          return (
-            <Pressable
-              key={r}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              onPress={() => setRange(r)}
-              style={{
-                flex: 1,
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 6,
-                paddingVertical: 12,
-                backgroundColor: on ? c.surface2 : 'transparent',
-              }}
-            >
-              {on && <Icon name="check" color={c.fg} size={18} />}
-              <Text style={{ color: c.fg, fontSize: 14, fontWeight: on ? '700' : '400' }}>
-                {t(`progress.predRange.${r}`)}
-              </Text>
-            </Pressable>
-          );
-        })}
+      {/* On the page's white, as Strava's: a list, not cards on grey. */}
+      <View style={{ flex: 1, backgroundColor: c.page }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
+          {body}
+        </ScrollView>
+        <View
+          accessibilityRole="radiogroup"
+          style={{
+            flexDirection: 'row',
+            marginHorizontal: 16,
+            marginTop: 8,
+            marginBottom: insets.bottom + 16,
+            borderRadius: 999,
+            borderWidth: 1.5,
+            borderColor: c.line,
+            overflow: 'hidden',
+          }}
+        >
+          {(['today', '1m', '3m', '6m'] as const).map((r) => {
+            const on = r === range;
+            return (
+              <Pressable
+                key={r}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on }}
+                onPress={() => setRange(r)}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingVertical: 12,
+                  backgroundColor: on ? c.surface2 : 'transparent',
+                }}
+              >
+                {on && <Icon name="check" color={c.fg} size={18} />}
+                <Text style={{ color: c.fg, fontSize: 14, fontWeight: on ? '700' : '400' }}>
+                  {t(`progress.predRange.${r}`)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </Screen>
   );
