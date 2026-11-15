@@ -52,7 +52,7 @@ function Row({ cells, strong, muted }: { cells: string[]; strong?: boolean; mute
   );
 }
 
-/** Time in each zone: a stacked bar, then one line per zone with its range and time. */
+/** Time in each zone: one line per zone with a thick bar, its time and its range. */
 function ZoneRows({
   kind,
   seconds,
@@ -67,45 +67,35 @@ function ZoneRows({
   const c = useTheme();
   // Strava's scales: reds for heart rate, purples for power.
   const colours = zoneScale(kind, seconds.length);
-  const total = seconds.reduce((a, b) => a + b, 0) || 1;
+  const most = Math.max(1, ...seconds);
+  // As Progress's zones: a thick bar per zone, as long as its time against the longest, the time
+  // beside it and the range on the right.
   return (
-    <>
-      <View style={{ flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden' }}>
-        {seconds.map((s, i) => (
-          <View key={i} style={{ flex: s / total, backgroundColor: colours[i] }} />
-        ))}
-      </View>
+    <View style={{ gap: 12 }}>
       {seconds.map((s, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ color: c.fg, width: 26, fontWeight: '700' }}>Z{i + 1}</Text>
-          <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: c.line }}>
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={{ color: c.fg, width: 26, fontWeight: '800' }}>Z{i + 1}</Text>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View
               style={{
-                width: `${(s / total) * 100}%`,
-                height: 6,
-                borderRadius: 3,
+                width: `${Math.max(2, (s / most) * 60)}%`,
+                minWidth: 8,
+                height: 22,
+                borderRadius: 6,
                 backgroundColor: colours[i],
               }}
             />
+            <Text style={{ color: c.fg, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              {formatDuration(s)}
+            </Text>
           </View>
-          <Text
-            style={{
-              color: c.muted,
-              fontSize: 12,
-              width: 92,
-              textAlign: 'right',
-              fontVariant: ['tabular-nums'],
-            }}
-          >
+          <Text style={{ color: c.muted, fontSize: 13, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
             {limits[i]}
             {i < limits.length - 1 ? `–${(limits[i + 1] ?? 0) - 1}` : '+'} {unit}
           </Text>
-          <Text style={{ color: c.fg, width: 56, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
-            {formatDuration(s)}
-          </Text>
         </View>
       ))}
-    </>
+    </View>
   );
 }
 
