@@ -213,20 +213,17 @@ export function SkillsRadar({
               disabled={!onPick}
               hitSlop={10}
               onPress={() => onPick?.(d)}
-              style={{ position: 'absolute', left: p.x - 36, top: p.y - 11, width: 72, alignItems: 'center' }}
+              style={{ position: 'absolute', left: p.x - 36, top: p.y - 13, width: 72, alignItems: 'center' }}
             >
-              <Text
-                accessibilityLabel={`${durationLabel(d)}: ${w ? `${Math.round(w)} W` : '–'}`}
-                style={{
-                  color: c.fg,
-                  fontSize: 15,
-                  fontWeight: '800',
-                  fontVariant: ['tabular-nums'],
-                  textDecorationLine: w ? 'underline' : 'none',
-                }}
-              >
-                {w ? `${Math.round(w)} W` : '–'}
-              </Text>
+              {/* Underlined as Strava's: a thick line a little below the figure, as wide as it. */}
+              <View style={{ borderBottomWidth: w ? 2 : 0, borderColor: c.fg, paddingBottom: 3 }}>
+                <Text
+                  accessibilityLabel={`${durationLabel(d)}: ${w ? `${Math.round(w)} W` : '–'}`}
+                  style={{ color: c.fg, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}
+                >
+                  {w ? `${Math.round(w)} W` : '–'}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
