@@ -18,7 +18,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { useCanvasReady } from '../charts';
@@ -82,11 +82,14 @@ export function SkillsRadar({
   size,
   shapes,
   labels = true,
+  onPick,
 }: {
   size: number;
   /** Each shape's best power by duration and its colour, the first drawn first (under). */
   shapes: { bests: Map<number, number>; colour: string; weight: number; dots?: boolean }[];
   labels?: boolean;
+  /** A duration's watts were tapped (Skills opens its levels). */
+  onPick?: (duration: number) => void;
 }) {
   const c = useTheme();
   const ready = useCanvasReady(size);
@@ -204,8 +207,12 @@ export function SkillsRadar({
           const p = at(i, outer + band / 2 + 26);
           const w = top?.bests.get(d);
           return (
-            <View
+            <Pressable
               key={d}
+              accessibilityRole={onPick ? 'button' : undefined}
+              disabled={!onPick}
+              hitSlop={10}
+              onPress={() => onPick?.(d)}
               style={{ position: 'absolute', left: p.x - 36, top: p.y - 11, width: 72, alignItems: 'center' }}
             >
               <Text
@@ -220,7 +227,7 @@ export function SkillsRadar({
               >
                 {w ? `${Math.round(w)} W` : '–'}
               </Text>
-            </View>
+            </Pressable>
           );
         })}
     </View>
