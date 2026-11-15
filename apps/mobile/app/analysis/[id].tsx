@@ -10,11 +10,12 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 
 import { useApi } from '../../src/auth';
+import { speedText, useActivityContext } from '../../src/detail/Context';
 import { SplitsChart } from '../../src/detail/SplitsChart';
 import { elevationProfile } from '../../src/detail/splitsElevation';
 import { t } from '../../src/i18n';
 import { streamsQuery } from '../../src/offline';
-import { asSport, useFormat } from '../../src/prefs';
+import { asSport, useFormat, useUnits } from '../../src/prefs';
 import { useTheme } from '../../src/theme';
 import { accent } from '../../src/ui';
 
@@ -31,11 +32,22 @@ export default function AnalysisScreen() {
     () => elevationProfile(series?.dist, series?.alt, a?.distance_m ?? 0, 200),
     [series, a?.distance_m],
   );
-  const [selected, setSelected] = useState<number | null>(null);
+  const context = useActivityContext(id);
+  const imperial = useUnits() === 'imperial';
+  // The first split is picked from the start, as Strava's; a finger on the chart picks another.
+  const [selected, setSelected] = useState<number | null>(0);
   const list = useRef<ScrollViewInstance>(null);
   const rows = useRef<number[]>([]);
   if (!a || a.splits.length < 2) return <View style={{ flex: 1, backgroundColor: c.page }} />;
   const pace = usesPace(asSport(a.sport));
+  const picked = selected != null ? a.splits[selected] : null;
+  const pickedSpeed = picked?.time_s ? picked.distance_m / picked.time_s : 0;
+  // Its pace zone: the highest whose lower bound it reaches (on a run with a threshold pace).
+  const bounds = context?.pace_zones?.bounds ?? [];
+  const zone =
+    pace && pickedSpeed > 0 && bounds.length
+      ? bounds.reduce((z, b, i) => (pickedSpeed >= b ? i : z), 0)
+      : null;
   const select = (i: number) => {
     if (i === selected) return;
     setSelected(i);
@@ -43,10 +55,34 @@ export default function AnalysisScreen() {
   };
   return (
     <View style={{ flex: 1, backgroundColor: c.page }}>
-      <View style={{ paddingHorizontal: 16, paddingVertical: 16, backgroundColor: c.bg }}>
-        <Text style={{ color: c.fg, fontSize: 15, fontWeight: '700', lineHeight: 22 }}>
-          {t('detail.analysisHint')}
-        </Text>
+      {/* What the picked split was: its number, pace and pace zone (as Strava's black box). */}
+      <View
+        style={{
+          minHeight: 64,
+          paddingHorizontal: 16,
+          paddingVertical: 16,
+          backgroundColor: c.bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {picked ? (
+          <Text style={{ color: c.fg, fontSize: 15, textAlign: 'center' }}>
+            {[
+              <Text key="n" style={{ fontWeight: '800' }}>
+                {t('detail.splitN', { n: (selected ?? 0) + 1 })}
+              </Text>,
+              speedText(pickedSpeed, pace, imperial),
+              ...(zone != null
+                ? [t('detail.zoneN', { zone: zone + 1 }), t(`detail.paceZone.${zone + 1}` as never)]
+                : []),
+            ].flatMap((part, i) => (i ? ['  ·  ', part] : [part]))}
+          </Text>
+        ) : (
+          <Text style={{ color: c.fg, fontSize: 15, fontWeight: '700', lineHeight: 22 }}>
+            {t('detail.analysisHint')}
+          </Text>
+        )}
       </View>
       <View style={{ paddingHorizontal: 12, paddingTop: 20, paddingBottom: 12 }}>
         <SplitsChart
