@@ -8,6 +8,7 @@
     { "name": "purple", "background": ["#7048e8"], "mark": "#ffffff" },
     { "name": "red", "background": ["#e03131"], "mark": "#ffffff" },
     { "name": "orange", "background": ["#f76707"], "mark": "#ffffff" },
+    { "name": "flame", "background": ["#fc4c02"], "mark": "#ffffff" },
     {
       "name": "pride",
       "background": ["#e03131", "#f59f00", "#2f9e44", "#1c7ed6", "#7048e8"],
