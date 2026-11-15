@@ -7,19 +7,20 @@ import type { ActivityDetail } from '../api/queries';
 import type { Sport } from '../domain/sports';
 import type { formatters } from '../format';
 import type { MessageKey } from '../i18n';
+import { KIND_COLOURS } from '../tokens';
 import { gapSpeeds } from './gap';
 import { metricValues, smooth, type Series } from './streams';
 
 type Format = ReturnType<typeof formatters>;
 type Translate = (key: MessageKey, values?: Record<string, string | number>) => string;
 
-/** Power in a light violet on every theme: the ride's blue and speed's accent can both be blue (Ocean). */
-export const POWER_COLOUR = '#b197fc';
+/** Power in Strava's purple (its zones' strong colour), on every theme. */
+export const POWER_COLOUR = KIND_COLOURS.power;
 
 export type ChartKey = 'power' | 'speed' | 'pace' | 'gap' | 'cad' | 'alt' | 'hr';
 
-/** A theme token, or `power` for POWER_COLOUR. */
-export type ChartColour = 'muted' | 'accent' | 'zone5' | 'zone4' | 'power';
+/** A theme token, or one of the zone kinds' colours: `hr`, `pace` (also speed) or `power`. */
+export type ChartColour = 'muted' | 'zone4' | 'hr' | 'pace' | 'power';
 
 export type ActivityChart = {
   key: ChartKey;
@@ -110,7 +111,7 @@ export function activityCharts(
         ? {
             key: 'pace',
             label: t('metric.pace'),
-            colour: 'accent',
+            colour: 'pace',
             // Minutes per km (or mile); standing still has no pace.
             values: speed.map((v) => (v == null || v < 0.5 ? null : unit / v / 60)),
             readout: { kind: 'pace', suffix: units === 'imperial' ? ' /mi' : ' /km' },
@@ -126,7 +127,7 @@ export function activityCharts(
         : {
             key: 'speed',
             label: t('metric.speed'),
-            colour: 'accent',
+            colour: 'pace',
             values: speed.map((v) => (v == null ? null : (v * 3600) / unit)),
             readout: { kind: 'dec1', suffix: units === 'imperial' ? ' mph' : ' km/h' },
             fromZero: true,
@@ -148,7 +149,7 @@ export function activityCharts(
       out.push({
         key: 'gap',
         label: t('chart.gapFull'),
-        colour: 'accent',
+        colour: 'pace',
         values: gap.map((v) => (v == null || v < 0.5 ? null : unit / v / 60)),
         readout: { kind: 'pace', suffix: units === 'imperial' ? ' /mi' : ' /km' },
         inverted: true,
@@ -162,7 +163,7 @@ export function activityCharts(
     out.push({
       key: 'hr',
       label: t('metric.hr'),
-      colour: 'zone5',
+      colour: 'hr',
       values: hr,
       readout: { kind: 'int', suffix: ' bpm' },
       footer: [

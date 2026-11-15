@@ -519,7 +519,9 @@ def years(db: DbSession, user: CurrentUser) -> list[int]:
 
 class ZonesOut(BaseModel):
     kind: str
-    bounds: list[float] = Field(description="Each zone's lower bound (bpm or W) with today's settings")
+    bounds: list[float] = Field(
+        description="Each zone's lower bound (bpm, W or, for pace, m/s) with today's settings"
+    )
     seconds: list[float] = Field(description="Time in each zone in the period")
     previous: list[float] = Field(description="The same, over the span just before the period")
 
@@ -528,31 +530,39 @@ class ZonesOut(BaseModel):
 def zones(
     db: DbSession,
     user: CurrentUser,
-    kind: Literal["hr", "power"] = "hr",
+    kind: Literal["hr", "power", "pace"] = "hr",
     start: From = None,
     end: To = None,
     sport: Sports = None,
 ) -> ZonesOut:
-    """Time in each HR or power zone over a period and the span before it (Progress → Training zones)."""
+    """Time in each HR, power or pace zone over a period and the span before it (Progress → Training
+    zones). Pace zones are speeds over the latest critical speed, from runs and walks."""
     start, end = _range(start, end)
     who = athlete(db, user.id)
     if kind == "hr":
         bounds = m.hr_zones(who.zone_method, who.hr_max, who.hr_rest, who.lthr)
-    else:
+    elif kind == "power":
         bounds = m.power_zones(who.ftp) if who.ftp else []
-    count = 5 if kind == "hr" else 7
+    else:
+        bounds = m.pace_zones(who.threshold_speed) if who.threshold_speed else []
+    count = 7 if kind == "power" else 5
+
+    def zones_of(mt: ActivityMetrics | None) -> list[float]:
+        if mt is None:
+            return []
+        return (mt.hr_zones if kind == "hr" else mt.power_zones if kind == "power" else mt.pace_zones) or []
 
     def total(a: date, b: date) -> list[float]:
         out = [0.0] * count
         for _, mt in _activities(db, user.id, a, b, sport):
-            for i, s in enumerate((mt and (mt.hr_zones if kind == "hr" else mt.power_zones)) or []):
+            for i, s in enumerate(zones_of(mt)):
                 if i < count:
                     out[i] += s
         return [round(s, 1) for s in out]
 
     return ZonesOut(
         kind=kind,
-        bounds=[round(b) for b in bounds],
+        bounds=[round(b, 3) if kind == "pace" else round(b) for b in bounds],
         seconds=total(start, end),
         previous=total(start - (end - start), start),
     )

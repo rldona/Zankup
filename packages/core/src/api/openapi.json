@@ -4309,7 +4309,7 @@
           "stats"
         ],
         "summary": "Zones",
-        "description": "Time in each HR or power zone over a period and the span before it (Progress → Training zones).",
+        "description": "Time in each HR, power or pace zone over a period and the span before it (Progress → Training\nzones). Pace zones are speeds over the latest critical speed, from runs and walks.",
         "operationId": "getZones",
         "parameters": [
           {
@@ -4319,7 +4319,8 @@
             "schema": {
               "enum": [
                 "hr",
-                "power"
+                "power",
+                "pace"
               ],
               "type": "string",
               "default": "hr",
@@ -14059,7 +14060,7 @@
             },
             "type": "array",
             "title": "Bounds",
-            "description": "Each zone's lower bound (bpm or W) with today's settings"
+            "description": "Each zone's lower bound (bpm, W or, for pace, m/s) with today's settings"
           },
           "seconds": {
             "items": {

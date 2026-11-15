@@ -4,7 +4,17 @@
  * it is unit-tested; the seconds come from /api/stats/zones.
  */
 
-export type ZoneKind = 'hr' | 'power';
+export type ZoneKind = 'hr' | 'power' | 'pace';
+
+/**
+ * The zones a sport has, as Strava's: every sport heart rate, runs and walks pace too, rides power
+ * too. All sports together, heart rate only.
+ */
+export function zoneKinds(sport: string | null): ZoneKind[] {
+  if (sport === 'run' || sport === 'walk') return ['hr', 'pace'];
+  if (sport === 'ride') return ['hr', 'power'];
+  return ['hr'];
+}
 
 /** The zone with the most time: its index (0 is Z1) and share (0 to 100); null without any time. */
 export function topZone(seconds: number[]): { index: number; share: number } | null {

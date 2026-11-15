@@ -21,6 +21,7 @@ class Athlete:
     zone_method: str  # max, reserve or lthr
     lthr: float | None
     ftp: float | None
+    threshold_speed: float | None  # m/s: the latest critical speed, for pace zones
     sex: str | None
     weight_kg: float | None
     age: float | None
@@ -59,6 +60,7 @@ def athlete(db: Session, user_id: int, today: date | None = None) -> Athlete:
         zone_method=method,
         lthr=float(lthr) if lthr else None,
         ftp=float(ftp) if ftp else None,
+        threshold_speed=_latest(db, user_id, "critical_speed"),
         sex=user.sex,
         weight_kg=user.weight_kg,
         age=age,

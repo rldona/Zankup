@@ -1616,7 +1616,8 @@ export interface paths {
     };
     /**
      * Zones
-     * @description Time in each HR or power zone over a period and the span before it (Progress → Training zones).
+     * @description Time in each HR, power or pace zone over a period and the span before it (Progress → Training
+     *     zones). Pace zones are speeds over the latest critical speed, from runs and walks.
      */
     get: operations['getZones'];
     put?: never;
@@ -5233,7 +5234,7 @@ export interface components {
       kind: string;
       /**
        * Bounds
-       * @description Each zone's lower bound (bpm or W) with today's settings
+       * @description Each zone's lower bound (bpm, W or, for pace, m/s) with today's settings
        */
       bounds: number[];
       /**
@@ -8110,7 +8111,7 @@ export interface operations {
   getZones: {
     parameters: {
       query?: {
-        kind?: 'hr' | 'power';
+        kind?: 'hr' | 'power' | 'pace';
         from?: string | null;
         to?: string | null;
         /** @description Only these sports */

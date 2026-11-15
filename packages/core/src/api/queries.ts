@@ -386,7 +386,7 @@ export function streakQuery(api: ApiClient) {
 }
 
 /** Time in each HR or power zone over a period, and the span before it (Progress → Training zones). */
-export function zonesQuery(api: ApiClient, kind: 'hr' | 'power', period: Period, sport?: string[]) {
+export function zonesQuery(api: ApiClient, kind: 'hr' | 'power' | 'pace', period: Period, sport?: string[]) {
   return {
     queryKey: stats('zones', { ...period, kind, sport }),
     queryFn: async ({ signal }: { signal?: AbortSignal }) =>

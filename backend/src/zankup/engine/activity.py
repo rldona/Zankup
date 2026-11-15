@@ -43,6 +43,7 @@ def compute(activity: Activity, series: dict[str, list[Any]] | None, who: Athlet
         "trimp": None,
         "hr_zones": None,
         "power_zones": None,
+        "pace_zones": None,
         "gap_distance_m": None,
         "calories": None,
         "efficiency": None,
@@ -87,6 +88,11 @@ def compute(activity: Activity, series: dict[str, list[Any]] | None, who: Athlet
             assert alt is not None
             gap = m.gap_distance(dist, alt)
             values["gap_distance_m"] = round(gap, 1) if gap else None
+        if activity.sport in PACE_SPORTS and who.threshold_speed:
+            speeds = speed_series(t, dist, series.get("speed") if series else None)
+            values["pace_zones"] = [
+                round(s, 1) for s in m.time_in_zones(t, speeds, m.pace_zones(who.threshold_speed))
+            ]
         if has(hr) and activity.sport in PACE_SPORTS:  # Pa:HR, pace against HR
             assert hr is not None
             decoupling = m.decoupling(t, dist, hr)
@@ -98,6 +104,27 @@ def compute(activity: Activity, series: dict[str, list[Any]] | None, who: Athlet
         kcal = m.calories(activity.sport, moving / 60, activity.avg_hr, who.weight_kg, who.age, who.sex)
         values["calories"] = round(kcal) if kcal else None
     return values
+
+
+def speed_series(
+    t: list[float], dist: list[float | None], speed: list[float | None] | None
+) -> list[float | None]:
+    """Speed per sample (m/s): the device's when it has one, else from distance over the next 10 s or
+    so (one-second steps are noisy). Standing still (under 0.5 m/s) counts as no speed."""
+    if has(speed):
+        assert speed is not None
+        return [v if v is not None and v >= 0.5 else None for v in speed]
+    out: list[float | None] = []
+    j = 0
+    for i in range(len(t)):
+        j = max(j, i)
+        while j < len(t) - 1 and t[j] - t[i] < 10:
+            j += 1
+        a, b = dist[i], dist[j]
+        dt = t[j] - t[i]
+        v = (b - a) / dt if a is not None and b is not None and dt > 0 else None
+        out.append(v if v is not None and v >= 0.5 else None)
+    return out
 
 
 def series_of(db: Session, activity_id: int) -> dict[str, list[Any]] | None:

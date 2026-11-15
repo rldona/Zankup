@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { themes, THEMES, type Theme } from './index';
+import { themes, THEMES, ZONE_SCALES, zoneScale, type Theme } from './index';
 
 /** WCAG 2.x relative luminance and contrast ratio of two #rrggbb colours. */
 function luminance(hex: string): number {
@@ -48,5 +48,14 @@ describe('theme contrast (WCAG AA)', () => {
       .filter(([fg, bg, min]) => contrast(theme[fg], theme[bg]) < min)
       .map(([fg, bg, min]) => `${fg} on ${bg}: ${contrast(theme[fg], theme[bg]).toFixed(2)} < ${min}`);
     expect(failures).toEqual([]);
+  });
+});
+
+describe('zone scales', () => {
+  it('gives every zone a colour, light to dark, spread over a scale when the counts differ', () => {
+    expect(zoneScale('hr', 5)).toEqual([...ZONE_SCALES.hr]);
+    expect(zoneScale('pace', 5)).toHaveLength(5);
+    expect(zoneScale('power', 5)[0]).toBe(ZONE_SCALES.power[0]);
+    expect(zoneScale('power', 5)[4]).toBe(ZONE_SCALES.power[6]);
   });
 });

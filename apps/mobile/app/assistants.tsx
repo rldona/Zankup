@@ -9,11 +9,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 
-import { Icon } from '../src/Icon';
+import { CLAUDE_MARK } from '@zankup/core';
+
+import { Icon, PathIcon } from '../src/Icon';
 import { t } from '../src/i18n';
 import { instanceUrl } from '../src/session';
 import { useTheme } from '../src/theme';
-import { accent, Button, Card, Muted, onAccent, Screen } from '../src/ui';
+import { Button, Card, Muted, onAccent, Screen } from '../src/ui';
 
 /** Where Claude's connectors are: there, "Add custom connector". */
 const CLAUDE_CONNECTORS = 'https://claude.ai/settings/connectors';
@@ -40,7 +42,7 @@ export default function AssistantsScreen() {
 
       <Card style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Icon name="smart_toy" color={accent(c)} size={28} />
+          <PathIcon icon={CLAUDE_MARK} color={CLAUDE_MARK.color} size={28} />
           <Text style={{ color: c.fg, fontSize: 20, fontWeight: '800' }}>Claude</Text>
         </View>
         {steps([

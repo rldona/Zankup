@@ -60,6 +60,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['expo-notifications', { color: '#20c997', defaultChannel: 'default' }],
     'react-native-health-connect',
     './plugins/withReleaseSigning',
+    './plugins/withAppIcons',
     [
       'expo-build-properties',
       {

@@ -10,9 +10,11 @@ import {
   timeInZones,
   ZONE_SHARES,
   zoneLimits,
+  zoneScale,
   type ActivityDetail,
   type MessageKey,
   type Series,
+  type ZoneScale,
   effortShown,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
@@ -21,12 +23,10 @@ import { Text, View } from 'react-native';
 import { useApi } from '../auth';
 import { Chart, type Layer } from '../charts';
 import { t } from '../i18n';
-import { useTheme, type Palette } from '../theme';
+import { useTheme } from '../theme';
 import { Card, CardTitle, Muted } from '../ui';
 
 type Format = ReturnType<typeof formatters>;
-
-const ZONE_COLOURS = (c: Palette) => [c.zone1, c.zone2, c.zone3, c.zone4, c.zone5];
 
 /** A row of a table: cells spread across, the first one left-aligned. */
 function Row({ cells, strong, muted }: { cells: string[]; strong?: boolean; muted?: boolean }) {
@@ -53,13 +53,20 @@ function Row({ cells, strong, muted }: { cells: string[]; strong?: boolean; mute
 }
 
 /** Time in each zone: a stacked bar, then one line per zone with its range and time. */
-function ZoneRows({ seconds, limits, unit }: { seconds: number[]; limits: number[]; unit: string }) {
+function ZoneRows({
+  kind,
+  seconds,
+  limits,
+  unit,
+}: {
+  kind: ZoneScale;
+  seconds: number[];
+  limits: number[];
+  unit: string;
+}) {
   const c = useTheme();
-  const palette = ZONE_COLOURS(c);
-  // Five colours for any number of zones (power has seven): spread from the first to the last.
-  const colours = seconds.map(
-    (_, i) => palette[Math.round((i * 4) / Math.max(1, seconds.length - 1))] ?? c.zone5,
-  );
+  // Strava's scales: reds for heart rate, purples for power.
+  const colours = zoneScale(kind, seconds.length);
   const total = seconds.reduce((a, b) => a + b, 0) || 1;
   return (
     <>
@@ -131,7 +138,7 @@ export function Zones({
   return (
     <Card>
       <CardTitle>{t('activity.zones')}</CardTitle>
-      <ZoneRows seconds={seconds} limits={limits} unit="bpm" />
+      <ZoneRows kind="hr" seconds={seconds} limits={limits} unit="bpm" />
       {!engine && hrMax && (
         <Muted>
           {t('activity.zonesNote', {
@@ -373,7 +380,7 @@ export function Power({
       {part !== 'curve' && zones && bounds && (
         <Card>
           <CardTitle>{t('activity.powerZones')}</CardTitle>
-          <ZoneRows seconds={zones} limits={bounds} unit="W" />
+          <ZoneRows kind="power" seconds={zones} limits={bounds} unit="W" />
         </Card>
       )}
     </>

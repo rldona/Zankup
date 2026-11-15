@@ -19,7 +19,7 @@ import {
   sharedPreviewQuery,
   activityCharts,
   activityFigures,
-  POWER_COLOUR,
+  KIND_COLOURS,
   usesPace,
   type ActivityDetail,
   type Metric,
@@ -667,7 +667,10 @@ function chartSeries(
   return activityCharts(series, { sport, pace, units, format, activity: a, t, locale }).map((chart) => ({
     key: chart.key,
     label: chart.label,
-    color: chart.colour === 'power' ? POWER_COLOUR : String(c[chart.colour]),
+    color:
+      chart.colour in KIND_COLOURS
+        ? KIND_COLOURS[chart.colour as keyof typeof KIND_COLOURS]
+        : String(c[chart.colour as 'muted' | 'zone4']),
     values: chart.values,
     readout: { ...chart.readout, decimal },
     average: '',

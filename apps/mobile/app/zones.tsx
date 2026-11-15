@@ -1,5 +1,5 @@
 /**
- * Training zones, from Progress (as Strava's): the time in each HR or power zone over 7 days to a
+ * Training zones, from Progress (as Strava's): the time in each HR, pace or power zone over 7 days to a
  * year, for every sport or one, the zone with most time and how its share moved against the span
  * before, and a sentence on what changed most. The pencil opens the zones' settings.
  */
@@ -19,11 +19,17 @@ import { Panel } from '../src/progress/Panel';
 import { SportSheet } from '../src/progress/SportSheet';
 import { PROGRESS_RANGES, rangeOf, type ProgressRange } from '../src/progress/volume';
 import { sportIcon } from '../src/progress/VolumeCard';
-import { glance, shareChange, topZone, type ZoneKind } from '../src/progress/zones';
+import { glance, shareChange, topZone, zoneKinds, type ZoneKind } from '../src/progress/zones';
 import { ShareBadge, ZoneRows } from '../src/progress/ZonesCard';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { accent, Card, InfoButton, Muted, onAccent, Screen } from '../src/ui';
+
+const KIND_LABEL = {
+  hr: 'progress.heartRate',
+  power: 'progress.power',
+  pace: 'progress.pace',
+} as const;
 
 const longDate = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
@@ -33,7 +39,10 @@ export default function ZonesScreen() {
   const c = useTheme();
   const today = isoDay(new Date());
   const [sport, setSport] = useState<string | null>(null);
-  const [kind, setKind] = useState<ZoneKind>('hr');
+  const [chosen, setKind] = useState<ZoneKind>('hr');
+  // Only the zones the sport has (a run: HR and pace; a ride: HR and power; the rest: HR).
+  const kinds = zoneKinds(sport);
+  const kind = kinds.includes(chosen) ? chosen : 'hr';
   const [range, setRange] = useState<ProgressRange>('1m');
   const [picking, setPicking] = useState(false);
   const { current } = rangeOf(range, today);
@@ -71,8 +80,9 @@ export default function ZonesScreen() {
           icon={(colour) => <Icon name={sportIcon(sport)} color={colour} size={CHIP_ICON} />}
           onPress={() => setPicking(true)}
         />
-        <Chip on={kind === 'hr'} label={t('progress.heartRate')} onPress={() => setKind('hr')} />
-        <Chip on={kind === 'power'} label={t('progress.power')} onPress={() => setKind('power')} />
+        {kinds.map((k) => (
+          <Chip key={k} on={kind === k} label={t(KIND_LABEL[k])} onPress={() => setKind(k)} />
+        ))}
       </View>
 
       {zones.isPending ? (
@@ -99,6 +109,7 @@ export default function ZonesScreen() {
           </View>
           <ZoneRows kind={kind} seconds={seconds} bounds={zones.data?.bounds ?? []} />
           {kind === 'power' && !zones.data?.bounds.length && <Muted>{t('progress.noFtp')}</Muted>}
+          {kind === 'pace' && !zones.data?.bounds.length && <Muted>{t('progress.noThreshold')}</Muted>}
         </>
       )}
 
