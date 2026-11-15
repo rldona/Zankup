@@ -90,7 +90,7 @@ export default function HeatmapScreen() {
             {t('heatmap.title')}
           </Text>
         </View>
-        <View style={{ alignItems: 'center', marginTop: 12 }}>
+        <View style={{ alignItems: 'flex-start', marginTop: 12 }}>
           <Choice
             label={t('feed.sports')}
             value={sport}
