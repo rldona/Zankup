@@ -3469,6 +3469,108 @@
         }
       }
     },
+    "/api/weight": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "List Weight",
+        "description": "Every weighing, oldest first.",
+        "operationId": "listWeight",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WeightOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listweight"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Save Weight",
+        "description": "A day's weighing, new or changed; the latest becomes the profile's weight.",
+        "operationId": "saveWeight",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/weight/{day}": {
+      "delete": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Delete Weight",
+        "operationId": "deleteWeight",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/stats/fitness": {
       "get": {
         "tags": [
@@ -14025,6 +14127,46 @@
         },
         "type": "object",
         "title": "WeeklyRequest"
+      },
+      "WeightIn": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "weight_kg": {
+            "type": "number",
+            "maximum": 300.0,
+            "minimum": 20.0,
+            "title": "Weight Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "weight_kg"
+        ],
+        "title": "WeightIn"
+      },
+      "WeightOut": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "weight_kg": {
+            "type": "number",
+            "title": "Weight Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "weight_kg"
+        ],
+        "title": "WeightOut"
       },
       "YearLine": {
         "properties": {

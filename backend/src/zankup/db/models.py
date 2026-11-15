@@ -488,6 +488,19 @@ class Goal(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class WeightEntry(Base):
+    """A weighing: one a day (the last one entered wins). The latest is the profile's weight."""
+
+    __tablename__ = "weight_entries"
+    __table_args__ = (UniqueConstraint("user_id", "day"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_id: Mapped[int] = _user_fk()
+    day: Mapped[date] = mapped_column(Date)
+    weight_kg: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Segment(Base):
     """A stretch saved from an activity (OS-325), found in every activity that goes through it."""
 

@@ -6,12 +6,14 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
+from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import extract, func, select
 
+from zankup import weight
 from zankup.api.routing import protected_router
 from zankup.auth.deps import AppSettings, CurrentUser, DbSession
-from zankup.db.models import Activity, BestEffort, Source, SyncRun
+from zankup.db.models import Activity, BestEffort, Source, SyncRun, WeightEntry
 
 router = protected_router(prefix="/api", tags=["profile"])
 
@@ -155,3 +157,45 @@ def list_sources(db: DbSession, user: CurrentUser, settings: AppSettings) -> lis
             last_error=last.error if last is not None and last.status == "error" else None,
         )
     ]
+
+
+# --- weight -----------------------------------------------------------------------------------------
+
+
+class WeightIn(BaseModel):
+    day: date
+    weight_kg: float = Field(ge=20, le=300)
+
+
+class WeightOut(BaseModel):
+    day: date
+    weight_kg: float
+
+
+@router.get("/weight", operation_id="listWeight")
+def list_weight(db: DbSession, user: CurrentUser) -> list[WeightOut]:
+    """Every weighing, oldest first."""
+    rows = db.scalars(select(WeightEntry).where(WeightEntry.user_id == user.id).order_by(WeightEntry.day))
+    return [WeightOut(day=r.day, weight_kg=r.weight_kg) for r in rows]
+
+
+@router.put("/weight", operation_id="saveWeight")
+def save_weight(body: WeightIn, db: DbSession, user: CurrentUser) -> WeightOut:
+    """A day's weighing, new or changed; the latest becomes the profile's weight."""
+    if body.day > datetime.now(UTC).date() + timedelta(days=1):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "That day has not come yet")
+    entry = weight.save(db, user.id, body.day, round(body.weight_kg, 2))
+    weight.follow_latest(db, user)
+    db.commit()
+    return WeightOut(day=entry.day, weight_kg=entry.weight_kg)
+
+
+@router.delete("/weight/{day}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteWeight")
+def delete_weight(day: date, db: DbSession, user: CurrentUser) -> None:
+    entry = db.scalar(select(WeightEntry).where(WeightEntry.user_id == user.id, WeightEntry.day == day))
+    if entry is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No weighing that day")
+    db.delete(entry)
+    db.flush()
+    weight.follow_latest(db, user)
+    db.commit()

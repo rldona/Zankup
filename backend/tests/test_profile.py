@@ -232,3 +232,26 @@ def test_a_record_in_miles_is_kept_but_only_announced_with_miles(
         kept = db.scalars(select(Event.payload).where(Event.user_id == ctx.user_id, Event.kind == "record"))
         assert sorted(p["distance_key"] for p in kept) == ["1mile", "5k"]
     assert announced == (["5k"] if units == "metric" else ["1mile", "5k"])
+
+
+def test_weight_history_follows_the_profile(ctx: Ctx) -> None:
+    assert ctx.http.get("/api/weight").json() == []
+    first = ctx.http.put("/api/weight", json={"day": "2026-10-01", "weight_kg": 74.25}).json()
+    assert first == {"day": "2026-10-01", "weight_kg": 74.25}
+    ctx.http.put("/api/weight", json={"day": "2026-11-01", "weight_kg": 73})
+    ctx.http.put("/api/weight", json={"day": "2026-11-01", "weight_kg": 72.5})  # the same day: changed
+    history = ctx.http.get("/api/weight").json()
+    assert [(w["day"], w["weight_kg"]) for w in history] == [("2026-10-01", 74.25), ("2026-11-01", 72.5)]
+    assert ctx.http.get("/api/auth/me").json()["weight_kg"] == 72.5  # the latest
+    # An older weighing does not change the profile; deleting the latest goes back to the one before.
+    ctx.http.put("/api/weight", json={"day": "2026-09-01", "weight_kg": 76})
+    assert ctx.http.get("/api/auth/me").json()["weight_kg"] == 72.5
+    assert ctx.http.delete("/api/weight/2026-11-01").status_code == 204
+    assert ctx.http.get("/api/auth/me").json()["weight_kg"] == 74.25
+    assert ctx.http.delete("/api/weight/2026-11-01").status_code == 404
+    assert ctx.http.put("/api/weight", json={"day": "2026-11-01", "weight_kg": 5}).status_code == 422
+    assert ctx.http.put("/api/weight", json={"day": "2999-01-01", "weight_kg": 70}).status_code == 422
+    # Changing the weight on the profile weighs today.
+    ctx.http.patch("/api/auth/me", json={"weight_kg": 71})
+    today = ctx.http.get("/api/weight").json()[-1]
+    assert today == {"day": date.today().isoformat(), "weight_kg": 71}

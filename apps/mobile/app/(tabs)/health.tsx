@@ -7,6 +7,7 @@ import {
   healthDaysQuery,
   healthNightQuery,
   relativeDay,
+  weightQuery,
   type HealthDay,
   type HealthSourceName,
   type MessageKey,
@@ -25,6 +26,7 @@ import { Icon, SourceIcon, SpinningIcon } from '../../src/Icon';
 import { MenuButton } from '../../src/Menu';
 import { locale, t } from '../../src/i18n';
 import { useTheme } from '../../src/theme';
+import { change, dailyWeights } from '../../src/weight';
 import { Button, Card, CardTitle, Heading, Muted, Screen, styles as ui } from '../../src/ui';
 
 const PERIODS = ['30', '90', '365'] as const;
@@ -158,6 +160,7 @@ export default function HealthScreen() {
 
       {lastNight?.sleep && <LastNight day={lastNight} sleep={lastNight.sleep} />}
       {latest && <Today day={latest} />}
+      <WeightCard />
 
       {nights.length > 1 && (
         <>
@@ -309,6 +312,78 @@ function LastNight({ day, sleep }: { day: HealthDay; sleep: NonNullable<HealthDa
         <Corner source={sleep.source} label={from(sleep.source, sleep.others)} />
       </Card>
     </>
+  );
+}
+
+/**
+ * Weight, after today's figures: the latest weighing, how it moved in 30 days and the last 90 days as a
+ * line. It opens the weight screen; with no weighing yet, it asks for the first one.
+ */
+function WeightCard() {
+  const api = useApi();
+  const c = useTheme();
+  const weight = useQuery(weightQuery(api));
+  if (!weight.data) return null;
+  const today = isoDay(new Date());
+  const back = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return isoDay(d);
+  };
+  const latest = weight.data.at(-1);
+  const moved = change(weight.data, back(30));
+  const values = dailyWeights(weight.data, back(90), today);
+  const shown = values.filter((v): v is number => v != null);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint={t('weight.open')}
+      onPress={() => router.push('/weight')}
+    >
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <CardTitle>{t('weight.title')}</CardTitle>
+          </View>
+          <Icon name="chevron_right" color={c.muted} size={24} />
+        </View>
+        {latest ? (
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
+              <Text style={{ color: c.fg, fontSize: 26, fontWeight: '800' }}>
+                {latest.weight_kg.toLocaleString(locale, { maximumFractionDigits: 1 })} kg
+              </Text>
+              {moved != null && (
+                <Muted style={{ fontSize: 13 }}>
+                  {t('weight.change30', {
+                    value: `${moved > 0 ? '+' : moved < 0 ? '−' : ''}${Math.abs(moved).toLocaleString(locale)}`,
+                  })}
+                </Muted>
+              )}
+            </View>
+            {shown.length > 1 && (
+              <Chart
+                height={90}
+                days={values.map(() => '')}
+                label={t('weight.title')}
+                layers={[
+                  {
+                    kind: 'line',
+                    label: t('weight.kg'),
+                    color: c.accent,
+                    values,
+                    hideLegend: true,
+                    domain: [Math.min(...shown) - 1, Math.max(...shown) + 1],
+                  },
+                ]}
+              />
+            )}
+          </>
+        ) : (
+          <Muted>{t('weight.empty')}</Muted>
+        )}
+      </Card>
+    </Pressable>
   );
 }
 
