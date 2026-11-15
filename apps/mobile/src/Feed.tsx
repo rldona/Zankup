@@ -30,7 +30,7 @@ import { Icon, SportIcon } from './Icon';
 import { asSport, useFormat } from './prefs';
 import { GoalReachedLine } from './detail/GoalReached';
 import { useTheme } from './theme';
-import { Badge, Card, Empty, Muted, Stat, styles as ui } from './ui';
+import { Badge, Card, Empty, Muted, Stat, styles as ui, Tappable } from './ui';
 import { FeedSkeleton, WeekSkeleton } from './Skeleton';
 
 type Format = ReturnType<typeof useFormat>;
@@ -171,11 +171,7 @@ export const ActivityCard = memo(function ActivityCard({
         ...(a.avg_hr ? ([[t('feed.stat.hr'), `${a.avg_hr} bpm`]] as [string, string][]) : []),
       ];
   return (
-    <Pressable
-      onPress={() => router.push(`/activity/${a.id}`)}
-      accessibilityRole="button"
-      style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-    >
+    <Tappable onPress={() => router.push(`/activity/${a.id}`)} accessibilityRole="button">
       <Card>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <SportIcon sport={sport} />
@@ -200,7 +196,7 @@ export const ActivityCard = memo(function ActivityCard({
         </View>
         <GoalReachedLine goals={a.goals_reached} />
       </Card>
-    </Pressable>
+    </Tappable>
   );
 });
 

@@ -7,7 +7,7 @@ import { Canvas, Circle, Line, Path, Rect, vec } from '@shopify/react-native-ski
 import { volumeQuery } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { useCanvasReady } from '../charts';
@@ -15,7 +15,7 @@ import { Icon } from '../Icon';
 import { locale, t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme, type Palette } from '../theme';
-import { accent, Card, Muted, onAccent } from '../ui';
+import { accent, Card, Muted, onAccent, Tappable } from '../ui';
 import { cumulative, effortStatus, weeklyRange, type EffortRange, type EffortStatus } from './effort';
 import { isoDay } from './fitness';
 import { addDays, weekAt, weekDays } from './weeks';
@@ -74,7 +74,7 @@ export function EffortCard() {
   const now = weeks.at(-1);
   const before = weeks.at(-2);
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${t('progress.effort')}: ${now?.score ?? 0}`}
       onPress={() => router.push('/effort')}
@@ -128,7 +128,7 @@ export function EffortCard() {
           </View>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

@@ -15,7 +15,18 @@ import { locale, t } from '../../src/i18n';
 import { asSport, useFormat } from '../../src/prefs';
 import { change, shiftPeriod } from '../../src/stats/dates';
 import { useTheme } from '../../src/theme';
-import { Button, Card, Choice, Heading, Loading, Muted, Screen, Stat, styles as ui } from '../../src/ui';
+import {
+  Button,
+  Card,
+  Choice,
+  Heading,
+  Loading,
+  Muted,
+  Screen,
+  Stat,
+  styles as ui,
+  Tappable,
+} from '../../src/ui';
 
 type Format = ReturnType<typeof useFormat>;
 
@@ -163,7 +174,7 @@ function Cards({ data, format }: { data: Review; format: Format }) {
         const a = data[key];
         if (!a) return null;
         return (
-          <Pressable key={key} accessibilityRole="link" onPress={() => open(a.id)}>
+          <Tappable key={key} accessibilityRole="link" onPress={() => open(a.id)}>
             <Card>
               <Heading>{t(`review.${key}`)}</Heading>
               <Text style={{ color: c.accent, fontWeight: '700' }}>
@@ -187,7 +198,7 @@ function Cards({ data, format }: { data: Review; format: Format }) {
                 {a.load ? <Stat label={t('activity.effort')} value={String(Math.round(a.load))} /> : null}
               </View>
             </Card>
-          </Pressable>
+          </Tappable>
         );
       })}
       {data.records.length > 0 && (

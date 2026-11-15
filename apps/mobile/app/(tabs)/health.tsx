@@ -27,7 +27,7 @@ import { MenuButton } from '../../src/Menu';
 import { locale, t } from '../../src/i18n';
 import { useTheme } from '../../src/theme';
 import { change, dailyWeights } from '../../src/weight';
-import { Button, Card, CardTitle, Heading, Muted, Screen, styles as ui } from '../../src/ui';
+import { Button, Card, CardTitle, Heading, Muted, Screen, styles as ui, Tappable } from '../../src/ui';
 
 const PERIODS = ['30', '90', '365'] as const;
 type Period = (typeof PERIODS)[number];
@@ -335,7 +335,7 @@ function WeightCard() {
   const values = dailyWeights(weight.data, back(90), today);
   const shown = values.filter((v): v is number => v != null);
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityHint={t('weight.open')}
       onPress={() => router.push('/weight')}
@@ -383,7 +383,7 @@ function WeightCard() {
           <Muted>{t('weight.empty')}</Muted>
         )}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 
