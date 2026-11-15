@@ -217,7 +217,7 @@ export default function WeightScreen() {
 
       <Panel open={editing != null} onClose={() => setEditing(null)}>
         {editing && (
-          <View style={{ gap: 14 }}>
+          <View style={{ gap: 14, paddingHorizontal: 20, paddingBottom: 8 }}>
             <Text style={{ color: c.fg, fontSize: 20, fontWeight: '800' }}>
               {editing.old ? t('weight.edit') : t('weight.add')}
             </Text>
