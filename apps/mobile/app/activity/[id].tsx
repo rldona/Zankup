@@ -353,10 +353,11 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
     ) : null;
   const title = a.name ?? t(`sport.${sport}`);
   return (
-    <View style={{ flex: 1, backgroundColor: c.page }}>
+    // The page's background, as Progress's: in Strava's light theme the white cards stand out on grey.
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
       <Stack.Screen options={{ headerShown: false, title }} />
       <Animated.ScrollView
-        style={{ backgroundColor: c.page }}
+        style={{ backgroundColor: c.bg }}
         contentContainerStyle={{ paddingBottom: 32, paddingTop: map ? 0 : header }}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
