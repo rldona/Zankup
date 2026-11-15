@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
-import { circlesPath, MorphPath, Rings, useCanvasReady } from '../charts';
+import { circlesPath, MorphPath, Rings, useCanvasReady, useLineFrom } from '../charts';
 import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
@@ -232,9 +232,10 @@ export function PredictionChart({
   const colour = String(c.accent);
   const last = points.length - 1;
   const at = points.map((p) => [x(p.day), y(p.value)] as const);
-  const floor = at.map(([px]) => [px, base] as const);
+  // Another race or range turns the line on screen into the new one: times sit far above zero.
+  const start = useLineFrom(at);
   const today = at.slice(last);
-  const todayFlat = floor.slice(last);
+  const todayFrom = start.slice(last);
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height, opacity: ready ? 1 : 0 }}>
       {width > 0 && (
@@ -247,7 +248,7 @@ export function PredictionChart({
                 ))}
                 <MorphPath
                   d={smoothPath(at.map(([px, py]) => ({ x: px, y: py })))}
-                  flat={smoothPath(floor.map(([px, py]) => ({ x: px, y: py })))}
+                  flat={smoothPath(start.map(([px, py]) => ({ x: px, y: py })))}
                   ready={ready}
                   style="stroke"
                   strokeWidth={3}
@@ -262,20 +263,21 @@ export function PredictionChart({
                     fill={String(c.bg)}
                     colour={colour}
                     ready={ready}
+                    from={start.slice(0, last)}
                   />
                 )}
                 {last >= 0 && (
                   <>
                     <MorphPath
                       d={circlesPath(today, 14)}
-                      flat={circlesPath(todayFlat, 0.5)}
+                      flat={circlesPath(todayFrom, 14)}
                       ready={ready}
                       color={colour}
                       opacity={0.25}
                     />
                     <MorphPath
                       d={circlesPath(today, 7)}
-                      flat={circlesPath(todayFlat, 0.5)}
+                      flat={circlesPath(todayFrom, 7)}
                       ready={ready}
                       color={colour}
                     />

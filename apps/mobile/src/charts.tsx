@@ -251,6 +251,21 @@ export function resample(points: readonly (readonly [number, number])[], xs: rea
   });
 }
 
+/**
+ * Where a line far above zero (a score, a race time) starts when it changes: the one on screen,
+ * stretched over the new points, so it turns into the new line instead of growing from the floor.
+ * The first drawing starts where it is (no animation).
+ */
+export function useLineFrom(points: readonly (readonly [number, number])[]) {
+  const key = points.map(([x, y]) => `${n(x)},${n(y)}`).join(' ');
+  const [drawn, setDrawn] = useState({ key, points, from: points });
+  if (drawn.key !== key) {
+    const xs = points.map(([x]) => x);
+    setDrawn({ key, points, from: drawn.points.length ? resample(drawn.points, xs) : points });
+  }
+  return drawn.key === key ? drawn.from : points;
+}
+
 /** A hollow ring on each point, sliding with the line: drawn as two paths (the fill, then the ring). */
 export function Rings({
   points,

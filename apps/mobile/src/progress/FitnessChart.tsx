@@ -16,10 +16,10 @@ import {
   MorphPath,
   niceScale,
   polyline,
-  resample,
   Rings,
   shortNumber,
   useCanvasReady,
+  useLineFrom,
 } from '../charts';
 import { useTheme } from '../theme';
 import { loadRadius } from './fitness';
@@ -86,14 +86,8 @@ export function FitnessChart({
   const maxLoad = Math.max(0, ...loads);
   const colour = String(c.accent);
   const now = polyline(pts, base);
-  // Another range turns the line on screen into the new one (stretched to its days), never from the
-  // floor: the score sits far above zero. Drawn the first time as it is.
-  const [drawn, setDrawn] = useState({ line: now.line, pts, from: pts });
-  if (drawn.line !== now.line) {
-    const xs = pts.map(([px]) => px);
-    setDrawn({ line: now.line, pts, from: drawn.pts.length ? resample(drawn.pts, xs) : pts });
-  }
-  const from = drawn.line === now.line ? drawn.from : pts;
+  // Another range turns the line on screen into the new one: the score sits far above zero.
+  const from = useLineFrom(pts);
   const flat = polyline(from, base);
   const radius = (i: number) => loadRadius(loads[i] ?? 0, maxLoad);
 
