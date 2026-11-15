@@ -18,8 +18,9 @@ import { accent, Card, Muted } from '../ui';
 import { speedText } from './Context';
 import { splitAt } from './splitsElevation';
 
-/** The bars' blue: Strava's lighter pace blue, so the elevation shows through. */
+/** The bars' blues, as Strava's: the lighter pace blue, and a darker one for the two fastest splits. */
 export const SPLIT_BLUE = ZONE_SCALES.pace[2];
+export const SPLIT_FAST = ZONE_SCALES.pace[3];
 
 export function SplitsChart({
   splits,
@@ -52,6 +53,14 @@ export function SplitsChart({
   const total = splits.reduce((a, s) => a + s.distance_m, 0);
   const time = splits.reduce((a, s) => a + (s.time_s ?? 0), 0);
   const mean = time ? total / time : 0;
+  // The two fastest splits, drawn darker.
+  const fast = new Set(
+    speeds
+      .map((v, i) => ({ v, i }))
+      .sort((a, b) => b.v - a.v)
+      .slice(0, 2)
+      .map((x) => x.i),
+  );
   const h = (v: number) => (v > 0 ? 12 + ((v - lo) / (hi - lo || 1)) * (height - 12) : 4);
   // The elevation fills the chart's height from its lowest to its highest point.
   const alts = elevation.filter((v): v is number => v != null);
@@ -110,11 +119,6 @@ export function SplitsChart({
           onResponderMove={(e) => pick(e.nativeEvent.locationX)}
           style={{ height, flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}
         >
-          {area && ready && (
-            <Canvas pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
-              <Path path={area} color={String(c.muted)} opacity={0.35} />
-            </Canvas>
-          )}
           {splits.map((s, i) => (
             <View
               key={i}
@@ -126,11 +130,17 @@ export function SplitsChart({
                 height: h(speeds[i] ?? 0),
                 borderTopLeftRadius: 8,
                 borderTopRightRadius: 8,
-                backgroundColor: SPLIT_BLUE,
-                opacity: selected == null || selected === i ? 0.85 : 0.45,
+                backgroundColor: fast.has(i) ? SPLIT_FAST : SPLIT_BLUE,
+                opacity: selected == null || selected === i ? 1 : 0.5,
               }}
             />
           ))}
+          {/* The elevation over the bars, see-through, as Strava's: it greys the bars where it rises. */}
+          {area && ready && (
+            <Canvas pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
+              <Path path={area} color="#3a3a3a" opacity={0.6} />
+            </Canvas>
+          )}
           {mean > 0 && (
             <View
               pointerEvents="none"
@@ -193,7 +203,7 @@ export function SplitBars({
   return (
     <Card style={{ gap: 8 }}>
       <Text style={{ color: c.fg, fontSize: 17, fontWeight: '800' }}>{t('detail.analysis')}</Text>
-      <SplitsChart splits={splits} pace={pace} elevation={elevation} />
+      <SplitsChart splits={splits} pace={pace} elevation={elevation} height={180} axis />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Muted style={{ fontSize: 12 }}>
           {t('detail.analysisAverage', { pace: speedText(time ? total / time : 0, pace, imperial) })}

@@ -23,7 +23,7 @@ import { Text, View } from 'react-native';
 
 import { useApi } from '../auth';
 import { Chart, type Layer } from '../charts';
-import { t } from '../i18n';
+import { locale, t } from '../i18n';
 import { useTheme } from '../theme';
 import { Card, CardTitle, Muted } from '../ui';
 
@@ -234,56 +234,64 @@ export function Splits({
   pace: boolean;
 }) {
   const c = useTheme();
+  const imperial = format.unit === 'mi';
   if (activity.splits.length < 2) return null;
   const speeds = activity.splits.map((s) => (s.time_s ? s.distance_m / s.time_s : 0));
-  const fastest = Math.max(...speeds) || 1;
-  let covered = 0;
+  const usable = speeds.filter((v) => v > 0);
+  // As Strava's: the bars start a quarter below the slowest split, so the differences show.
+  const lo = Math.min(...usable) * 0.75;
+  const hi = Math.max(...usable) || 1;
+  const unit = imperial ? 1609.344 : 1000;
+  const head = { color: c.fg, fontSize: 14 } as const;
+  const cell = { color: c.fg, fontSize: 15, fontVariant: ['tabular-nums'] } as const;
   return (
-    <Card>
+    <Card style={{ gap: 0 }}>
       <CardTitle>{t('activity.splits')}</CardTitle>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          paddingBottom: 10,
+          marginBottom: 6,
+          borderBottomWidth: 1,
+          borderColor: c.line,
+        }}
+      >
+        <Text style={[head, { width: 34 }]}>{t(imperial ? 'detail.splitMi' : 'detail.splitKm')}</Text>
+        <Text style={[head, { width: 48 }]}>{t(pace ? 'detail.splitPace' : 'detail.splitSpeed')}</Text>
+        <View style={{ flex: 1 }} />
+        <Text style={[head, { width: 48, textAlign: 'right' }]}>{t('detail.splitElev')}</Text>
+        <Text style={[head, { width: 40, textAlign: 'right' }]}>{t('detail.splitHr')}</Text>
+      </View>
       {activity.splits.map((s, i) => {
-        covered += s.distance_m;
+        const v = speeds[i] ?? 0;
+        // A last, shorter split shows how much of a kilometre (or mile) it was: 0,6.
+        const short = s.distance_m < unit * 0.95;
+        const label = short
+          ? (s.distance_m / unit).toLocaleString(locale, { maximumFractionDigits: 1 })
+          : String(i + 1);
         return (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 }}>
-            <Text style={{ color: c.muted, width: 64, fontSize: 13, fontVariant: ['tabular-nums'] }}>
-              {format.distance(covered)}
-            </Text>
-            <Text style={{ color: c.fg, width: 76, fontVariant: ['tabular-nums'] }}>
-              {s.time_s ? format.speedFor(s.distance_m / s.time_s, pace) : '–'}
-            </Text>
-            <View style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: c.line }}>
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 3 }}>
+            <Text style={[cell, { width: 34 }]}>{label}</Text>
+            <Text style={[cell, { width: 48 }]}>{v ? format.speedFor(v, pace).split(' ')[0] : '–'}</Text>
+            <View style={{ flex: 1 }}>
               <View
                 style={{
-                  width: `${((speeds[i] ?? 0) / fastest) * 100}%`,
-                  height: 8,
-                  borderRadius: 4,
+                  width: `${Math.max(4, ((v - lo) / (hi - lo || 1)) * 100)}%`,
+                  height: 26,
+                  borderRadius: 6,
                   // Pace blue, as Strava's (not the theme's colour).
                   backgroundColor: ZONE_SCALES.pace[3],
                 }}
               />
             </View>
-            <Text
-              style={{
-                color: c.muted,
-                width: 52,
-                fontSize: 12,
-                textAlign: 'right',
-                fontVariant: ['tabular-nums'],
-              }}
-            >
-              {s.elevation_change_m != null ? format.elevation(s.elevation_change_m) : ''}
+            <Text style={[cell, { width: 48, textAlign: 'right' }]}>
+              {s.elevation_change_m != null
+                ? String(Math.round(s.elevation_change_m * (imperial ? 3.28084 : 1)))
+                : ''}
             </Text>
-            <Text
-              style={{
-                color: c.muted,
-                width: 32,
-                fontSize: 12,
-                textAlign: 'right',
-                fontVariant: ['tabular-nums'],
-              }}
-            >
-              {s.avg_hr ?? ''}
-            </Text>
+            <Text style={[cell, { width: 40, textAlign: 'right' }]}>{s.avg_hr ?? ''}</Text>
           </View>
         );
       })}
