@@ -177,7 +177,7 @@ export default function BestsScreen() {
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' }}
       >
         <Chip
-          on={false}
+          on
           role="button"
           label={t(`sport.${sport}`)}
           icon={(colour) => (
