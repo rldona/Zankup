@@ -53,7 +53,9 @@ export function GoalRing({ goal, size = 64 }: { goal: GoalOut; size?: number }) 
       <Canvas style={{ position: 'absolute', width: size, height: size, opacity: ready ? 1 : 0 }}>
         {ready && (
           <>
-            <Path path={circle} style="stroke" strokeWidth={stroke} color={c.line} />
+            {/* The empty track in a grey that shows on every theme (the line colour is near the
+                card's on Strava's dark one). */}
+            <Path path={circle} style="stroke" strokeWidth={stroke} color={String(c.muted)} opacity={0.35} />
             {done > 0 && (
               <Path
                 path={circle}
@@ -137,7 +139,8 @@ export function GoalChart({
   const c = useTheme();
   const [width, setWidth] = useState(0);
   const ready = useCanvasReady(width);
-  const top = 12;
+  // Room above the top line for the last point's 14 px halo when it is at or over the target.
+  const top = 16;
   const base = height - 30;
   const year = period === 'year';
   const shown = year ? [0, ...runningTotal(values)] : values;

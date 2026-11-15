@@ -105,6 +105,8 @@ export function ActivitiesSearch() {
       {searching ? <Results query={query} sport={sport} filters={filters} /> : <Feed />}
       {open && (
         <FiltersSheet
+          query={query}
+          sport={sport}
           value={filters}
           onClose={() => setOpen(false)}
           onApply={(next) => {
@@ -197,10 +199,14 @@ function filterParams(f: Filters, units: 'metric' | 'imperial', today: Date): Se
 }
 
 function FiltersSheet({
+  query,
+  sport,
   value,
   onClose,
   onApply,
 }: {
+  query: string;
+  sport: string | null;
   value: Filters;
   onClose: () => void;
   onApply: (filters: Filters) => void;
@@ -211,9 +217,23 @@ function FiltersSheet({
   const set = <K extends keyof Filters>(key: K, v: Filters[K]) =>
     setF((current) => ({ ...current, [key]: v }));
   const unit = units === 'imperial' ? 'mi' : 'km';
-  const pair = (label: string, low: keyof Filters, high: keyof Filters | null, suffix: string) => (
+  // How many activities the filters as they are now find, for the button (as the PWA's).
+  const api = useApi();
+  const [today] = useState(() => new Date());
+  const params = useMemo<SearchParams>(
+    () => ({
+      ...(query ? { q: query } : {}),
+      ...(sport ? { sport: [sport] } : {}),
+      ...filterParams(f, units, today),
+    }),
+    [query, sport, f, units, today],
+  );
+  const found = useInfiniteQuery(searchQuery(api, params, 1));
+  const count = found.data?.pages[0]?.totals?.count;
+  // The labels carry their unit already ("Distancia (km)").
+  const pair = (label: string, low: keyof Filters, high: keyof Filters | null) => (
     <View style={{ gap: 10 }}>
-      <Text style={{ color: c.fg, fontWeight: '600' }}>{`${label} (${suffix})`}</Text>
+      <Text style={{ color: c.fg, fontWeight: '600' }}>{label}</Text>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1 }}>
           <Field
@@ -243,7 +263,7 @@ function FiltersSheet({
       footer={
         <>
           <Button primary onPress={() => onApply(f)}>
-            {t('search.show')}
+            {count == null ? t('search.apply') : t('search.show', { count })}
           </Button>
           <Button onPress={() => onApply(NO_FILTERS)}>{t('search.clear')}</Button>
         </>
@@ -261,9 +281,9 @@ function FiltersSheet({
           }))}
         />
       </View>
-      {pair(t('search.distance'), 'dmin', 'dmax', unit)}
-      {pair(t('search.duration'), 'tmin', 'tmax', 'min')}
-      {pair(t('search.minAscent'), 'amin', null, units === 'imperial' ? 'ft' : 'm')}
+      {pair(t('search.distance', { unit }), 'dmin', 'dmax')}
+      {pair(t('search.duration'), 'tmin', 'tmax')}
+      {pair(t('search.minAscent'), 'amin', null)}
       <SwitchRow label={t('search.withRecord')} value={f.record} onChange={(v) => set('record', v)} />
       <SwitchRow label={t('search.withDescription')} value={f.desc} onChange={(v) => set('desc', v)} />
       <SwitchRow label={t('search.withGps')} value={f.gps} onChange={(v) => set('gps', v)} />

@@ -149,7 +149,7 @@ export default function FitnessScreen() {
               )}
             </View>
             <View style={{ paddingBottom: insets.bottom }}>
-              <DayActivities day={day.day} />
+              <DayActivities key={day.day} day={day.day} />
             </View>
           </>
         )}
@@ -158,10 +158,11 @@ export default function FitnessScreen() {
   );
 }
 
-/** The picked day's activities, each opening its page; "No activities" and the date otherwise. */
+/** The picked day's activities, each opening its page (more than one: how many, until tapped); "No activities" and the date otherwise. */
 function DayActivities({ day }: { day: string }) {
   const api = useApi();
   const c = useTheme();
+  const [expanded, setExpanded] = useState(false);
   const next = isoDay(new Date(new Date(`${day}T12:00:00`).getTime() + 86_400_000));
   const calendar = useQuery(calendarQuery(api, { from: day, to: next }));
   const activities =
@@ -180,6 +181,25 @@ function DayActivities({ day }: { day: string }) {
           <Muted style={{ fontSize: 13 }}>{when}</Muted>
         </View>
       </View>
+    );
+  // More than one: a line with how many, as Strava's, that opens the list when tapped.
+  if (activities.length > 1 && !expanded)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: false }}
+        onPress={() => setExpanded(true)}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 4 }}
+      >
+        <Icon name="timeline" color={c.fg} size={36} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: c.fg, fontSize: 15 }}>
+            {t('calendar.activities', { count: activities.length })}
+          </Text>
+          <Muted style={{ fontSize: 13 }}>{when}</Muted>
+        </View>
+        <Icon name="keyboard_arrow_down" color={c.muted} size={24} />
+      </Pressable>
     );
   return (
     <View style={{ gap: 12 }}>

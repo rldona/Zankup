@@ -68,7 +68,7 @@ export function GoogleIcon({ color, size = 20 }: { color: ColorValue; size?: num
   );
 }
 
-const sources = new Map<HealthSourceName, ReturnType<typeof Skia.Path.MakeFromSVGString>>();
+const marks = new Map<string, ReturnType<typeof Skia.Path.MakeFromSVGString>>();
 
 /** A health source's mark (Garmin, Google Health, Health Connect), in the corner of a health widget. */
 export function SourceIcon({
@@ -80,9 +80,21 @@ export function SourceIcon({
   color: ColorValue;
   size?: number;
 }) {
-  const icon = SOURCE_ICONS[source];
-  if (!sources.has(source)) sources.set(source, Skia.Path.MakeFromSVGString(icon.d));
-  const shape = sources.get(source);
+  return <PathIcon icon={SOURCE_ICONS[source]} color={color} size={size} />;
+}
+
+/** A mark drawn from one SVG path in its own box (a source's, Claude's). */
+export function PathIcon({
+  icon,
+  color,
+  size = 16,
+}: {
+  icon: { viewBox: string; d: string };
+  color: ColorValue;
+  size?: number;
+}) {
+  if (!marks.has(icon.d)) marks.set(icon.d, Skia.Path.MakeFromSVGString(icon.d));
+  const shape = marks.get(icon.d);
   if (!shape) return null;
   const [x = 0, y = 0, w = 24, h = 24] = icon.viewBox.split(' ').map(Number);
   const scale = size / Math.max(w, h);
