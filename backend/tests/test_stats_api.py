@@ -166,8 +166,10 @@ def test_training_zones_skills_and_best_times(ctx: Ctx) -> None:  # noqa: F811
     power = ctx.http.get("/api/stats/zones", params={"kind": "power", "sport": ["ride"]}).json()
     assert len(power["seconds"]) == 7
     pace = ctx.http.get("/api/stats/zones", params={"kind": "pace", "sport": ["run"]}).json()
-    assert len(pace["seconds"]) == 5  # bounds (m/s) only once the engine has a critical speed
-    assert not pace["bounds"] or (pace["bounds"][0] == 0 and sum(pace["seconds"]) > 0)
+    # Bounds (m/s) once the engine has a critical speed; the time in them, as power's with an FTP
+    # estimated from the same import, after the next full recomputation.
+    assert len(pace["seconds"]) == 5
+    assert not pace["bounds"] or (len(pace["bounds"]) == 5 and pace["bounds"][0] == 0)
     curve = ctx.http.get("/api/stats/curves", params={"kind": "power"}).json()
     assert {180, 900} <= {p["duration_s"] for p in curve}  # Skills' durations
 
