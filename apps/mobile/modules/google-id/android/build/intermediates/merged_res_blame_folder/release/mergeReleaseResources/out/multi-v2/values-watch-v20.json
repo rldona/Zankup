@@ -4,7 +4,7 @@
             "outputFile": "com.zankup.googleid.google-id-mergeReleaseResources-22:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/4dd4606cf211f3f1ff6e54b3f371a442/transformed/play-services-auth-21.1.1/res/values-watch-v20/values.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/4dd4606cf211f3f1ff6e54b3f371a442/transformed/play-services-auth-21.1.1/res/values-watch-v20/values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11",
                         "startColumns": "0,0,0,0,0,0,0,0",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",
@@ -45,7 +45,7 @@
             "outputFile": "com.zankup.googleid.google-id-release-24:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/4dd4606cf211f3f1ff6e54b3f371a442/transformed/play-services-auth-21.1.1/res/values-watch-v20/values.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/4dd4606cf211f3f1ff6e54b3f371a442/transformed/play-services-auth-21.1.1/res/values-watch-v20/values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11",
                         "startColumns": "0,0,0,0,0,0,0,0",
@@ -62,7 +62,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",

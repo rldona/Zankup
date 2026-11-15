@@ -49,7 +49,7 @@ const SKILL_COLOURS: Record<Skill, string> = { sprint: '#0160cf', attack: '#59a6
 export const skillColour = (_c: Palette, skill: Skill) => SKILL_COLOURS[skill];
 
 /** The two radars' colours, as Strava's: all time in purple, the last eight weeks in pink over it. */
-export const radarColours = (_c: Palette) => ({ all: '#823bae', recent: '#d97ed1' });
+export const radarColours = () => ({ all: '#823bae', recent: '#d97ed1' });
 
 /** The best power at each duration, for the last eight weeks and for all time, and the weight. */
 export function useSkills() {
@@ -232,7 +232,7 @@ export function SkillsCard() {
   const skills = useSkills();
   if (skills.isPending) return <CardSkeleton lines={3} />;
   const best = strongest(skills.recent, skills.weight);
-  const colours = radarColours(c);
+  const colours = radarColours();
   return (
     <Pressable
       accessibilityRole="button"

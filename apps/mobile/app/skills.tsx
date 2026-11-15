@@ -33,7 +33,7 @@ export default function SkillsScreen() {
   const [span, setSpan] = useState<Span>('recent');
   const [open, setOpen] = useState<Skill | null>(null);
   const [width, setWidth] = useState(0);
-  const colours = radarColours(c);
+  const colours = radarColours();
   const bests = span === 'recent' ? skills.recent : skills.all;
   const shapes = [
     { bests: skills.all, colour: colours.all, weight: skills.weight },

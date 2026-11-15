@@ -4,7 +4,7 @@
             "outputFile": "com.zankup.googleid.google-id-release-24:/values-en-rIN/values-en-rIN.xml",
             "map": [
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/211a2b39de4d6efe2fe701c441b9afe0/transformed/core-1.15.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/211a2b39de4d6efe2fe701c441b9afe0/transformed/core-1.15.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/bf4af7fee26de9b3f028be4d42f28d64/transformed/biometric-1.1.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/bf4af7fee26de9b3f028be4d42f28d64/transformed/biometric-1.1.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -55,7 +55,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/0d1b9a53220574d248140149752e7f26/transformed/credentials-1.6.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/0d1b9a53220574d248140149752e7f26/transformed/credentials-1.6.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",
@@ -77,7 +77,7 @@
             "outputFile": "com.zankup.googleid.google-id-mergeReleaseResources-22:/values-en-rIN/values-en-rIN.xml",
             "map": [
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/211a2b39de4d6efe2fe701c441b9afe0/transformed/core-1.15.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/211a2b39de4d6efe2fe701c441b9afe0/transformed/core-1.15.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -94,7 +94,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/bf4af7fee26de9b3f028be4d42f28d64/transformed/biometric-1.1.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/bf4af7fee26de9b3f028be4d42f28d64/transformed/biometric-1.1.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
@@ -111,7 +111,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/1c05ec8486c26d617e86cc6dee760cf0/transformed/appcompat-1.2.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -128,7 +128,7 @@
                     }
                 },
                 {
-                    "source": "/home/rldona/.gradle/caches/9.4.1/transforms/0d1b9a53220574d248140149752e7f26/transformed/credentials-1.6.0/res/values-en-rIN/values-en-rIN.xml",
+                    "source": "/Users/raul.lopezcepsa.com/.gradle/caches/9.4.1/transforms/0d1b9a53220574d248140149752e7f26/transformed/credentials-1.6.0/res/values-en-rIN/values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",
