@@ -76,7 +76,19 @@ export function Screen({
         </View>
       ) : null}
       {title ? <BusyBar busy={busy} /> : null}
-      {toolbar ? <View style={{ paddingHorizontal: 16, paddingBottom: 12, gap: 8 }}>{toolbar}</View> : null}
+      {/* The toolbar (period chips, month pickers) belongs to the header: on its colour, white in Strava's light theme. */}
+      {toolbar ? (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingBottom: 12,
+            gap: 8,
+            backgroundColor: header ? c.page : c.bg,
+          }}
+        >
+          {toolbar}
+        </View>
+      ) : null}
       {scroll ? (
         // "handled": a tap on a button works at once, even with the keyboard open.
         <ScrollView
