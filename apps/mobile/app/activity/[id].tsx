@@ -52,9 +52,10 @@ import {
   MatchesBlock,
   PaceZonesBlock,
   ResultsBlock,
-  SplitBars,
   useActivityContext,
 } from '../../src/detail/Context';
+import { SplitBars } from '../../src/detail/SplitsChart';
+import { elevationProfile } from '../../src/detail/splitsElevation';
 import { GoalReachedBanner } from '../../src/detail/GoalReached';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
 import { ExercisesBlock, MuscleCover, Strength } from '../../src/detail/Strength';
@@ -104,6 +105,11 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   const [editing, setEditing] = useState(false);
   const context = useActivityContext(a.id);
   const series = streams.data as Series | undefined;
+  // The altitude behind the workout analysis' bars.
+  const elevation = useMemo(
+    () => elevationProfile(series?.dist, series?.alt, a.distance_m ?? 0),
+    [series, a.distance_m],
+  );
   const metrics = useMemo(() => (series ? availableMetrics(series) : []), [series]);
   const [chosen, setChosen] = useState<Metric | null>(null);
   const metric = chosen && metrics.includes(chosen) ? chosen : (metrics[0] ?? null);
@@ -440,7 +446,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               {context && <EffortBlock context={context} />}
               {context && <GoalsBlock context={context} />}
               {context && <ResultsBlock context={context} ride={false} />}
-              <SplitBars splits={a.splits} pace={pace} />
+              <SplitBars activityId={a.id} splits={a.splits} pace={pace} elevation={elevation} />
               <Splits activity={a} format={format} pace={pace} />
               {track && track.n > 1 && charts.length > 0 && chartsHeading}
               {chartCard('speed')}

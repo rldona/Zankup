@@ -1375,6 +1375,8 @@
   "detail.paceZones": "Ritmo por zonas",
   "detail.paceZonesNote": "Basado en tu ritmo umbral de {pace}.",
   "detail.analysis": "Análisis del entrenamiento",
+  "detail.analysisOpen": "Ver entrenamiento",
+  "detail.analysisHint": "Desplázate por el entrenamiento para ver los detalles de los parciales.",
   "detail.analysisAverage": "Media {pace}",
   "detail.analysisFastest": "Más rápido {pace}",
   "detail.exercises": "Ejercicios",
