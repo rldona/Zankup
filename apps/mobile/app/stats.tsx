@@ -180,10 +180,10 @@ export default function StatsScreen() {
 
       <Fitness range={range} />
       <Volume range={range} unit={period.unit} />
+      <Efficiency range={range} />
       <Curves range={range} />
       <Records range={range} />
       <Progress selected={Number(year) || today.getFullYear()} />
-      <Efficiency range={range} />
       <CompareWithStrava />
       {/* The period's figures against the year before: a table, after the charts the filters change. */}
       <Summary range={range} />
