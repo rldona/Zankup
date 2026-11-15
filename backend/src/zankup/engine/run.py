@@ -128,7 +128,7 @@ def metrics_full(sessions: sessionmaker[Session]):  # type: ignore[no-untyped-de
                 update_user(db, user_id)
                 # With FTP and LTHR estimated, zones that depend on them are now right.
                 who = athlete(db, user_id)
-            if who.ftp or who.zone_method == "lthr":
+            if who.ftp or who.threshold_speed or who.zone_method == "lthr":
                 for start in range(0, len(ids), 100):
                     with sessions.begin() as db:
                         for activity_id in ids[start : start + 100]:

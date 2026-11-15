@@ -62,3 +62,33 @@ export function allThemesCss(): string {
 export function themeBootScript(): string {
   return `(function(){try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(${JSON.stringify(THEMES)}.indexOf(t)>=0)document.documentElement.dataset.theme=t}catch(e){}})();`;
 }
+
+/**
+ * Zone colours as Strava's (sampled from its app): heart rate in reds, pace in blues and power in
+ * purples, from the lightest (Z1) to the darkest, the same on every theme. Each kind's chart on an
+ * activity's page is drawn in its scale's strong colour.
+ */
+export const ZONE_SCALES = {
+  hr: ['#fcd0d1', '#f3a4a3', '#ee7675', '#eb4748', '#de2625'],
+  pace: ['#cce0f2', '#99c0ec', '#66a0e1', '#327fd9', '#0160cf', '#004da7'],
+  power: ['#e8cff9', '#d29ef1', '#bc6eed', '#a63de7', '#910de2', '#730ab2', '#550886'],
+} as const;
+
+export type ZoneScale = keyof typeof ZONE_SCALES;
+
+/** `count` colours of a scale, light to dark: all of them, or spread over the scale's range. */
+export function zoneScale(kind: ZoneScale, count: number): string[] {
+  const scale: readonly string[] = ZONE_SCALES[kind];
+  if (count === scale.length) return [...scale];
+  return Array.from(
+    { length: count },
+    (_, i) => scale[Math.round((i * (scale.length - 1)) / Math.max(1, count - 1))] ?? '#000000',
+  );
+}
+
+/** The chart colours of heart rate, pace (and speed) and power: each scale's strong colour. */
+export const KIND_COLOURS = {
+  hr: ZONE_SCALES.hr[4],
+  pace: ZONE_SCALES.pace[4],
+  power: ZONE_SCALES.power[4],
+} as const;

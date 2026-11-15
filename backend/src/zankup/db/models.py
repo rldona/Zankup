@@ -405,6 +405,9 @@ class ActivityMetrics(Base):
     power_zones: Mapped[list[float] | None] = mapped_column(
         JSONB(none_as_null=True), comment="Seconds per power zone"
     )
+    pace_zones: Mapped[list[float] | None] = mapped_column(
+        JSONB(none_as_null=True), comment="Seconds per pace zone (runs and walks)"
+    )
     gap_distance_m: Mapped[float | None] = mapped_column(Float, comment="Grade-adjusted distance")
     calories: Mapped[float | None] = mapped_column(Float, comment="Estimated kcal (the device's wins)")
     efficiency: Mapped[float | None] = mapped_column(Float, comment="Speed (m/min) per bpm")

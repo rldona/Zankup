@@ -3,7 +3,7 @@ import {
   commonTokens,
   formatDuration,
   nearestIndex,
-  POWER_COLOUR,
+  KIND_COLOURS,
   rangeOf,
   sampleIndices,
   themes,
@@ -64,7 +64,10 @@ export function ChartCard({
   const unitLabel = units === 'metric' ? 'km' : 'mi';
   const kept = useMemo(() => sampleIndices(series.t.length, MAX_POINTS), [series]);
   const tokens = useMemo(() => ({ ...commonTokens, ...themes[theme] }), [theme]);
-  const colour = chart.colour === 'power' ? POWER_COLOUR : tokens[chart.colour];
+  const colour =
+    chart.colour in KIND_COLOURS
+      ? KIND_COLOURS[chart.colour as keyof typeof KIND_COLOURS]
+      : tokens[chart.colour as 'muted' | 'zone4'];
 
   const option = useMemo(() => {
     const x = (i: number) => (axis.values[i] ?? 0) / scale;

@@ -192,3 +192,13 @@ def test_daily_load_carries_fitness_to_today(ctx: Ctx) -> None:  # noqa: F811
     with ctx.sessions() as db:
         last = db.scalar(select(func.max(DailyLoad.day)))
         assert last == datetime.now(UTC).date() or last == date.today()
+
+
+def test_speed_from_distance_is_smoothed_and_still_is_none() -> None:
+    from zankup.engine.activity import speed_series
+
+    t = [float(i) for i in range(31)]
+    dist: list[float | None] = [3.0 * i for i in range(21)] + [60.0] * 10  # 3 m/s, then standing
+    speeds = speed_series(t, dist, None)
+    assert speeds[0] == pytest.approx(3.0) and speeds[-2] is None
+    assert speed_series(t[:2], [0.0, 1.0], [0.2, 4.0]) == [None, 4.0]  # the device's, when it has one

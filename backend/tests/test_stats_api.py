@@ -165,6 +165,9 @@ def test_training_zones_skills_and_best_times(ctx: Ctx) -> None:  # noqa: F811
     assert sum(hr["previous"]) == 0  # nothing in the year before
     power = ctx.http.get("/api/stats/zones", params={"kind": "power", "sport": ["ride"]}).json()
     assert len(power["seconds"]) == 7
+    pace = ctx.http.get("/api/stats/zones", params={"kind": "pace", "sport": ["run"]}).json()
+    assert len(pace["seconds"]) == 5  # bounds (m/s) only once the engine has a critical speed
+    assert not pace["bounds"] or (pace["bounds"][0] == 0 and sum(pace["seconds"]) > 0)
     curve = ctx.http.get("/api/stats/curves", params={"kind": "power"}).json()
     assert {180, 900} <= {p["duration_s"] for p in curve}  # Skills' durations
 

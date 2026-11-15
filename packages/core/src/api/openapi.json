@@ -7,9 +7,7 @@
   "paths": {
     "/api/auth/login": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Login",
         "description": "Step 1: e-mail and password. Returns a challenge to complete with a TOTP code.",
         "operationId": "login",
@@ -49,9 +47,7 @@
     },
     "/api/auth/login/totp": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Login Totp",
         "description": "Step 2: the 6-digit code. Starts a browser session (cookie) or returns tokens for the app.",
         "operationId": "loginTotp",
@@ -99,9 +95,7 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Refresh",
         "description": "App only: exchange a refresh token for a new access token and, unless `rotate` is false, a new\nrefresh token. Either way the session's expiry starts again.",
         "operationId": "refreshTokens",
@@ -141,9 +135,7 @@
     },
     "/api/auth/logout": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Logout",
         "description": "End this session: the device row is deleted, so its cookie or refresh token stops working.",
         "operationId": "logout",
@@ -156,9 +148,7 @@
     },
     "/api/auth/me": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Me",
         "operationId": "getMe",
         "responses": {
@@ -175,9 +165,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Update Me",
         "description": "Edit the profile (OS-218): name, location, date of birth, sex, weight and height.",
         "operationId": "updateMe",
@@ -217,9 +205,7 @@
     },
     "/api/auth/devices": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "List Devices",
         "description": "Open sessions: every browser and app signed in, the current one marked.",
         "operationId": "listDevices",
@@ -243,9 +229,7 @@
     },
     "/api/auth/devices/{device_id}": {
       "delete": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Delete Device",
         "description": "Sign a session out from elsewhere. Signing out this one is POST /logout.",
         "operationId": "deleteDevice",
@@ -279,9 +263,7 @@
     },
     "/api/auth/passkeys": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "List Passkeys",
         "operationId": "listPasskeys",
         "responses": {
@@ -304,9 +286,7 @@
     },
     "/api/auth/passkeys/register/options": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Register Options",
         "description": "Step 1 of adding a passkey: options for navigator.credentials.create().",
         "operationId": "passkeyRegisterOptions",
@@ -326,9 +306,7 @@
     },
     "/api/auth/passkeys/register": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Register",
         "description": "Step 2: verify the new credential and keep its public key.",
         "operationId": "passkeyRegister",
@@ -368,9 +346,7 @@
     },
     "/api/auth/passkeys/{passkey_id}": {
       "delete": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Delete Passkey",
         "operationId": "deletePasskey",
         "parameters": [
@@ -403,9 +379,7 @@
     },
     "/api/auth/passkeys/login/options": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Login Options",
         "description": "Step 1 of signing in: options for navigator.credentials.get(). No e-mail needed.",
         "operationId": "passkeyLoginOptions",
@@ -425,9 +399,7 @@
     },
     "/api/auth/passkeys/login": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Login",
         "description": "Step 2: verify the signature and start a session, like password + TOTP would.",
         "operationId": "passkeyLogin",
@@ -475,9 +447,7 @@
     },
     "/api/auth/password/forgot": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Forgot",
         "description": "E-mail a recovery link. The answer is the same whether or not the account exists.",
         "operationId": "forgotPassword",
@@ -515,9 +485,7 @@
     },
     "/api/auth/password/reset": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Reset",
         "description": "Choose a new password with the link's token and a code. Signs every session out.",
         "operationId": "resetPassword",
@@ -550,9 +518,7 @@
     },
     "/api/auth/google/providers": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Providers",
         "description": "Which extra sign-in methods this instance offers (public: the sign-in screen asks).",
         "operationId": "authProviders",
@@ -572,9 +538,7 @@
     },
     "/api/auth/google/start": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Start",
         "description": "Off to Google. `link` needs a signed-in session (Profile → Account → Sign-in methods).",
         "operationId": "googleStart",
@@ -584,10 +548,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "login",
-                "link"
-              ],
+              "enum": ["login", "link"],
               "type": "string",
               "default": "login",
               "title": "Mode"
@@ -624,9 +585,7 @@
     },
     "/api/auth/google/callback": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Callback",
         "description": "Back from Google: link the account, or sign in the one linked to it.",
         "operationId": "googleCallback",
@@ -699,9 +658,7 @@
     },
     "/api/auth/google/mobile/nonce": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Mobile Nonce",
         "description": "A nonce for the app's native Google sign-in, and the signed state to send back with the token.",
         "operationId": "googleMobileNonce",
@@ -721,9 +678,7 @@
     },
     "/api/auth/google/mobile": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Mobile Sign In",
         "description": "The app's native Google sign-in: tokens for the user linked to that Google account, or 401.",
         "operationId": "googleMobileSignIn",
@@ -763,9 +718,7 @@
     },
     "/api/auth/google": {
       "delete": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Unlink",
         "description": "Unlink Google. Another strong method must remain: password with TOTP, or a passkey.",
         "operationId": "googleUnlink",
@@ -778,9 +731,7 @@
     },
     "/api/auth/dev-login": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Dev Login",
         "description": "Development only: sign in as the first user without a password or code.",
         "operationId": "devLogin",
@@ -800,9 +751,7 @@
     },
     "/api/setup": {
       "get": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Setup Status",
         "operationId": "getSetupStatus",
         "responses": {
@@ -821,9 +770,7 @@
     },
     "/api/setup/account": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Setup Account",
         "description": "Step 1: setup code, name, e-mail and password. Returns the TOTP key for step 2.",
         "operationId": "setupAccount",
@@ -863,9 +810,7 @@
     },
     "/api/setup/totp": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Setup Totp",
         "description": "Step 2: a code from the app turns two-step verification on, closes sign-up and signs in: a\nbrowser session (cookie), or tokens for the Android app (OS-525).",
         "operationId": "setupTotp",
@@ -905,9 +850,7 @@
     },
     "/api/activities/{activity_id}": {
       "patch": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Edit Activity",
         "description": "Change the name, description, sport or gear. Only the fields sent change.",
         "operationId": "editActivity",
@@ -956,9 +899,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Delete Activity",
         "description": "Delete an activity with everything derived from it (streams, laps, metrics, photos, shares…).\n\nA Garmin activity is remembered as deleted, so the next sync does not bring it back. The original\nfile stays in the raw store, which is never rewritten. Records, estimates and the form are\nrecomputed without it.",
         "operationId": "deleteActivity",
@@ -990,9 +931,7 @@
         }
       },
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "Get Activity",
         "description": "Summary, laps, per-km splits and best efforts. The series themselves are in `/streams`.",
         "operationId": "getActivity",
@@ -1033,9 +972,7 @@
     },
     "/api/gear": {
       "get": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "List Gear",
         "operationId": "listGear",
         "responses": {
@@ -1056,9 +993,7 @@
         }
       },
       "post": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Create Gear",
         "operationId": "createGear",
         "requestBody": {
@@ -1097,9 +1032,7 @@
     },
     "/api/gear/{gear_id}": {
       "patch": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Update Gear",
         "operationId": "updateGear",
         "parameters": [
@@ -1147,9 +1080,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Delete Gear",
         "description": "Delete gear. Its activities keep everything else and simply have no gear.",
         "operationId": "deleteGear",
@@ -1183,9 +1114,7 @@
     },
     "/api/activities/{activity_id}/photos": {
       "post": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Add Photo",
         "description": "Add a photo (the image itself as the body). It is stored without its metadata.",
         "operationId": "addPhoto",
@@ -1237,9 +1166,7 @@
     },
     "/api/photos/{photo_id}": {
       "get": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Get Photo",
         "operationId": "getPhoto",
         "parameters": [
@@ -1288,9 +1215,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "library"
-        ],
+        "tags": ["library"],
         "summary": "Delete Photo",
         "operationId": "deletePhoto",
         "parameters": [
@@ -1323,9 +1248,7 @@
     },
     "/api/activities": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "List Activities",
         "description": "The feed: newest first.",
         "operationId": "listActivities",
@@ -1406,9 +1329,7 @@
     },
     "/api/activities/search": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "Search Activities",
         "description": "Advanced search (OS-219): any combination of filters, sorted, with totals of all the matches.",
         "operationId": "searchActivities",
@@ -1740,9 +1661,7 @@
     },
     "/api/activities/months": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "List Months",
         "description": "Totals per month, newest first: the headers of the feed, whole even while it loads by pages.",
         "operationId": "listActivityMonths",
@@ -1799,9 +1718,7 @@
     },
     "/api/activities/{activity_id}/streams": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "Get Activity Streams",
         "description": "All the series of an activity. Sent as stored, gzip-compressed, to clients that accept it.",
         "operationId": "getActivityStreams",
@@ -1848,9 +1765,7 @@
     },
     "/api/activities/{activity_id}/fit": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "Get Activity Fit",
         "description": "The original FIT file, exactly as received from the source.",
         "operationId": "getActivityFit",
@@ -1898,9 +1813,7 @@
     },
     "/api/activities/{activity_id}/shared": {
       "get": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "Preview",
         "description": "What a share link (or share image) of this activity shows, privacy zones applied.",
         "operationId": "previewSharedActivity",
@@ -1951,9 +1864,7 @@
     },
     "/api/activities/{activity_id}/shares": {
       "post": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "Create Share",
         "operationId": "createShare",
         "parameters": [
@@ -2001,9 +1912,7 @@
         }
       },
       "get": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "List Shares",
         "operationId": "listShares",
         "parameters": [
@@ -2047,9 +1956,7 @@
     },
     "/api/shares/{share_id}": {
       "delete": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "Revoke Share",
         "operationId": "revokeShare",
         "parameters": [
@@ -2082,9 +1989,7 @@
     },
     "/api/public/shares/{token}": {
       "get": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "Shared",
         "description": "A shared activity, for anyone with the link.",
         "operationId": "getSharedActivity",
@@ -2125,9 +2030,7 @@
     },
     "/api/public/shares/{token}/photos/{photo_id}": {
       "get": {
-        "tags": [
-          "sharing"
-        ],
+        "tags": ["sharing"],
         "summary": "Shared Photo",
         "operationId": "getSharedPhoto",
         "parameters": [
@@ -2187,9 +2090,7 @@
     },
     "/api/imports": {
       "get": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "List Imports",
         "operationId": "listImports",
         "responses": {
@@ -2210,9 +2111,7 @@
         }
       },
       "post": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Create Import",
         "description": "Start an upload: a FIT, TCX or GPX file, a ZIP of them, a Garmin export or a Strava export.",
         "operationId": "createImport",
@@ -2252,9 +2151,7 @@
     },
     "/api/imports/{import_id}/finish": {
       "post": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Finish Import",
         "description": "Every part is uploaded: queue the import.",
         "operationId": "finishImport",
@@ -2295,9 +2192,7 @@
     },
     "/api/imports/{import_id}": {
       "get": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Get Import",
         "operationId": "getImport",
         "parameters": [
@@ -2335,9 +2230,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Delete Import",
         "description": "Cancel an upload, or remove a finished import from the list (its activities stay).",
         "operationId": "deleteImport",
@@ -2371,9 +2264,7 @@
     },
     "/api/exports": {
       "get": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "List Exports",
         "operationId": "listExports",
         "responses": {
@@ -2394,9 +2285,7 @@
         }
       },
       "post": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Create Export",
         "description": "Prepare a ZIP with all your data: the original files, photos and everything else as JSON.",
         "operationId": "createExport",
@@ -2416,9 +2305,7 @@
     },
     "/api/direct/uploads/{import_id}/{index}": {
       "put": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Upload Part",
         "description": "One part of an upload, authorised by the token `createImport` returned.",
         "operationId": "uploadPart",
@@ -2481,9 +2368,7 @@
     },
     "/api/direct/exports/{export_id}": {
       "get": {
-        "tags": [
-          "transfers"
-        ],
+        "tags": ["transfers"],
         "summary": "Download Export",
         "operationId": "downloadExport",
         "parameters": [
@@ -2533,9 +2418,7 @@
     },
     "/api/notifications/key": {
       "get": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Push Key",
         "operationId": "getPushKey",
         "responses": {
@@ -2554,9 +2437,7 @@
     },
     "/api/notifications/subscriptions": {
       "get": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Subscriptions",
         "operationId": "listPushSubscriptions",
         "responses": {
@@ -2577,9 +2458,7 @@
         }
       },
       "post": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Subscribe",
         "operationId": "subscribePush",
         "requestBody": {
@@ -2618,9 +2497,7 @@
     },
     "/api/notifications/unsubscribe": {
       "post": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Unsubscribe",
         "operationId": "unsubscribePush",
         "requestBody": {
@@ -2652,9 +2529,7 @@
     },
     "/api/notifications/fcm": {
       "put": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Set Fcm Token",
         "description": "The Android app's Firebase token for this signed-in device (OS-507).",
         "operationId": "setFcmToken",
@@ -2687,9 +2562,7 @@
     },
     "/api/notifications/test": {
       "post": {
-        "tags": [
-          "notifications"
-        ],
+        "tags": ["notifications"],
         "summary": "Test",
         "description": "Send a test notification to every subscribed browser, now.",
         "operationId": "testPush",
@@ -2709,9 +2582,7 @@
     },
     "/api/stats/review": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Review",
         "description": "A month or a year in review.",
         "operationId": "getReview",
@@ -2721,10 +2592,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "month",
-                "year"
-              ],
+              "enum": ["month", "year"],
               "type": "string",
               "default": "month",
               "title": "Period"
@@ -2769,9 +2637,7 @@
     },
     "/api/stats/strava-comparison": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Strava Comparison",
         "description": "Our effort, calories and grade-adjusted distance against what Strava computed (OS-323).",
         "operationId": "getStravaComparison",
@@ -2791,9 +2657,7 @@
     },
     "/api/sync": {
       "post": {
-        "tags": [
-          "sync"
-        ],
+        "tags": ["sync"],
         "summary": "Start Sync",
         "description": "Sync Garmin now (or load its whole history). Returns the new run, or the one already going.",
         "operationId": "startSync",
@@ -2841,9 +2705,7 @@
         }
       },
       "get": {
-        "tags": [
-          "sync"
-        ],
+        "tags": ["sync"],
         "summary": "List Syncs",
         "description": "Latest runs, newest first: when the last sync happened and how it went.",
         "operationId": "listSyncs",
@@ -2891,9 +2753,7 @@
     },
     "/api/sync/{run_id}": {
       "get": {
-        "tags": [
-          "sync"
-        ],
+        "tags": ["sync"],
         "summary": "Get Sync",
         "description": "One run and its progress. Poll it every couple of seconds while it is queued or running.",
         "operationId": "getSync",
@@ -2934,9 +2794,7 @@
     },
     "/api/wellness/days": {
       "get": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Health Days",
         "description": "One row per day with health data, one value per metric chosen between sources (OS-605).",
         "operationId": "getHealthDays",
@@ -3008,9 +2866,7 @@
     },
     "/api/wellness/nights/{day}": {
       "get": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Night Detail",
         "description": "A night's stages, and how every source recorded it.",
         "operationId": "getHealthNight",
@@ -3052,9 +2908,7 @@
     },
     "/api/wellness/settings": {
       "get": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Health Settings",
         "operationId": "getHealthSettings",
         "responses": {
@@ -3073,9 +2927,7 @@
     },
     "/api/wellness/priority": {
       "put": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Set Priority",
         "description": "The order of sources per metric; an empty list goes back to the automatic rules.",
         "operationId": "setHealthPriority",
@@ -3115,9 +2967,7 @@
     },
     "/api/wellness/sync": {
       "post": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Sync Now",
         "description": "Fetch new health data from every connected source now.",
         "operationId": "syncHealth",
@@ -3144,9 +2994,7 @@
     },
     "/api/wellness/history": {
       "post": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Import History",
         "description": "Bring the last year of health data from Garmin and Google Health, beyond the 30 days the first\nsync fetched. It runs in the background; a source that is not connected is skipped.",
         "operationId": "importHealthHistory",
@@ -3173,9 +3021,7 @@
     },
     "/api/wellness/sources/{source}/data": {
       "delete": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Delete Data",
         "description": "Delete every sleep and daily figure from one source. The connection stays, and its next sync\nstarts again from the beginning (30 days).",
         "operationId": "deleteHealthData",
@@ -3185,11 +3031,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "garmin",
-                "google_health",
-                "health_connect"
-              ],
+              "enum": ["garmin", "google_health", "health_connect"],
               "type": "string",
               "title": "Source"
             }
@@ -3214,9 +3056,7 @@
     },
     "/api/wellness/health-connect": {
       "post": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Upload Health Connect",
         "description": "What the app read from Health Connect. Upserted: sending the same days again is harmless.",
         "operationId": "uploadHealthConnect",
@@ -3260,9 +3100,7 @@
     },
     "/api/wellness/google": {
       "delete": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Google Disconnect",
         "description": "Revoke Zankup's access at Google and forget the tokens. The data already synced stays.",
         "operationId": "disconnectGoogleHealth",
@@ -3275,9 +3113,7 @@
     },
     "/api/wellness/google/start": {
       "get": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Google Start",
         "description": "Off to Google to allow read-only access to sleep, health measurements and activity.",
         "operationId": "googleHealthStart",
@@ -3290,9 +3126,7 @@
     },
     "/api/wellness/google/callback": {
       "get": {
-        "tags": [
-          "health"
-        ],
+        "tags": ["health"],
         "summary": "Google Callback",
         "operationId": "googleHealthCallback",
         "parameters": [
@@ -3364,9 +3198,7 @@
     },
     "/api/settings": {
       "get": {
-        "tags": [
-          "settings"
-        ],
+        "tags": ["settings"],
         "summary": "Get Preferences",
         "operationId": "getSettings",
         "responses": {
@@ -3383,9 +3215,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "settings"
-        ],
+        "tags": ["settings"],
         "summary": "Update Preferences",
         "operationId": "updateSettings",
         "requestBody": {
@@ -3424,9 +3254,7 @@
     },
     "/api/profile/summary": {
       "get": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "summary": "Profile Summary",
         "operationId": "getProfileSummary",
         "responses": {
@@ -3445,9 +3273,7 @@
     },
     "/api/sources": {
       "get": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "summary": "List Sources",
         "description": "Data sources and their state, for Settings and the profile's Account tab.",
         "operationId": "listSources",
@@ -3471,9 +3297,7 @@
     },
     "/api/stats/fitness": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Fitness",
         "description": "Fitness, fatigue and form per day (OS-303).",
         "operationId": "getFitness",
@@ -3543,9 +3367,7 @@
     },
     "/api/stats/summary": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Summary",
         "description": "Totals for a period, by sport, and the same period one year earlier (OS-321).",
         "operationId": "getSummary",
@@ -3632,9 +3454,7 @@
     },
     "/api/stats/volume": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Volume",
         "description": "Distance, time, elevation and load per day, week, month or year, by sport (OS-308). Empty\nbuckets are included, so charts have no holes.",
         "operationId": "getVolume",
@@ -3678,12 +3498,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month",
-                "year"
-              ],
+              "enum": ["day", "week", "month", "year"],
               "type": "string",
               "default": "week",
               "title": "Unit"
@@ -3741,9 +3556,7 @@
     },
     "/api/stats/curves": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Curves",
         "description": "The best effort for each duration in a period, with the activity it comes from (OS-315).",
         "operationId": "getCurves",
@@ -3753,11 +3566,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "power",
-                "speed",
-                "hr"
-              ],
+              "enum": ["power", "speed", "hr"],
               "type": "string",
               "default": "power",
               "title": "Kind"
@@ -3849,9 +3658,7 @@
     },
     "/api/stats/records": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Records",
         "description": "Running records: all time, the period's bests and how each record progressed (OS-304).",
         "operationId": "getRecords",
@@ -3917,9 +3724,7 @@
     },
     "/api/stats/estimates": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Estimates",
         "description": "Each estimate's latest value, how it was made, the activities behind it and its history (OS-316).",
         "operationId": "getEstimates",
@@ -3943,9 +3748,7 @@
     },
     "/api/stats/progress": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Progress",
         "description": "Cumulative distance per day of the year, one line per year (OS-322).",
         "operationId": "getProgress",
@@ -4014,9 +3817,7 @@
     },
     "/api/stats/efficiency": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Efficiency",
         "description": "Aerobic efficiency over time: pace at equal HR getting better (OS-317).",
         "operationId": "getEfficiency",
@@ -4096,9 +3897,7 @@
     },
     "/api/stats/calendar": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Calendar",
         "description": "Every day of the period with its activities (sized by load) and form (OS-326).",
         "operationId": "getCalendar",
@@ -4168,9 +3967,7 @@
     },
     "/api/stats/streak": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Streak Summary",
         "description": "The weekly streak (Progress → Series): how many weeks in a row, with how many activities.",
         "operationId": "getStreak",
@@ -4190,9 +3987,7 @@
     },
     "/api/stats/heatmap": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Heatmap",
         "description": "Every route of the period, for the personal heatmap (OS-310).",
         "operationId": "getHeatmap",
@@ -4279,9 +4074,7 @@
     },
     "/api/stats/years": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Years",
         "description": "Years with activities, newest first: the period selector's options.",
         "operationId": "getYears",
@@ -4305,11 +4098,9 @@
     },
     "/api/stats/zones": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Zones",
-        "description": "Time in each HR or power zone over a period and the span before it (Progress → Training zones).",
+        "description": "Time in each HR, power or pace zone over a period and the span before it (Progress → Training\nzones). Pace zones are speeds over the latest critical speed, from runs and walks.",
         "operationId": "getZones",
         "parameters": [
           {
@@ -4317,10 +4108,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "hr",
-                "power"
-              ],
+              "enum": ["hr", "power", "pace"],
               "type": "string",
               "default": "hr",
               "title": "Kind"
@@ -4408,9 +4196,7 @@
     },
     "/api/stats/bests": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Bests",
         "description": "Every activity's best at one measure, oldest first: a run distance's time, a ride's best power\nover a duration or a ride's distance (Progress → Best times).",
         "operationId": "getBests",
@@ -4457,9 +4243,7 @@
     },
     "/api/stats/bests/recent": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Recent Bests",
         "description": "The medals of the last days: bests in the top three of all time or of their year, all-time and\nbetter places first (Progress → Best times' card).",
         "operationId": "getRecentBests",
@@ -4507,9 +4291,7 @@
     },
     "/api/stats/devices": {
       "get": {
-        "tags": [
-          "stats"
-        ],
+        "tags": ["stats"],
         "summary": "Devices",
         "description": "The devices and services that recorded activities or health data in the last days, the most\nrecently used first (Progress → Data sources).",
         "operationId": "getDevices",
@@ -4557,9 +4339,7 @@
     },
     "/api/routes": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "List Routes",
         "description": "Routes done more than once, most repeated first.",
         "operationId": "listRoutes",
@@ -4583,9 +4363,7 @@
     },
     "/api/routes/{group_id}": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Get Route",
         "operationId": "getRoute",
         "parameters": [
@@ -4625,9 +4403,7 @@
     },
     "/api/segments": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "List Segments",
         "operationId": "listSegments",
         "responses": {
@@ -4648,9 +4424,7 @@
         }
       },
       "post": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Create Segment",
         "description": "Save a stretch of an activity as a segment; the engine then finds it in every other one.",
         "operationId": "createSegment",
@@ -4690,9 +4464,7 @@
     },
     "/api/segments/{segment_id}": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Get Segment",
         "operationId": "getSegment",
         "parameters": [
@@ -4730,9 +4502,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Delete Segment",
         "operationId": "deleteSegment",
         "parameters": [
@@ -4765,9 +4535,7 @@
     },
     "/api/goals": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "List Goals",
         "description": "Goals with where they stand this period and the end-of-period projection (OS-318).",
         "operationId": "listGoals",
@@ -4789,9 +4557,7 @@
         }
       },
       "post": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Create Goal",
         "operationId": "createGoal",
         "requestBody": {
@@ -4830,9 +4596,7 @@
     },
     "/api/goals/{goal_id}": {
       "patch": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Update Goal",
         "description": "Change a goal: its period, measure, sport and target, all at once.",
         "operationId": "updateGoal",
@@ -4881,9 +4645,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Delete Goal",
         "operationId": "deleteGoal",
         "parameters": [
@@ -4916,9 +4678,7 @@
     },
     "/api/events": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "List Events",
         "description": "What the engine noticed, newest first: records, estimates going up, risky ramps (OS-319).",
         "operationId": "listEvents",
@@ -4964,9 +4724,7 @@
     },
     "/api/engine": {
       "get": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Engine Status",
         "description": "Whether a full recomputation is going on, and how far it is (OS-314).",
         "operationId": "getEngine",
@@ -4986,9 +4744,7 @@
     },
     "/api/engine/recompute": {
       "post": {
-        "tags": [
-          "training"
-        ],
+        "tags": ["training"],
         "summary": "Recompute",
         "description": "Recompute every metric from the stored series, in the background.",
         "operationId": "recompute",
@@ -5008,9 +4764,7 @@
     },
     "/api/week": {
       "get": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "summary": "Week",
         "operationId": "getWeek",
         "parameters": [
@@ -5060,9 +4814,7 @@
     },
     "/api/ai/status": {
       "get": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Ai Status",
         "operationId": "getAiStatus",
         "responses": {
@@ -5081,9 +4833,7 @@
     },
     "/api/activities/{activity_id}/summary": {
       "get": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Get Summary",
         "operationId": "getActivitySummary",
         "parameters": [
@@ -5121,9 +4871,7 @@
         }
       },
       "post": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Create Summary",
         "description": "Write (or rewrite) the summary now.",
         "operationId": "createActivitySummary",
@@ -5164,9 +4912,7 @@
     },
     "/api/activities/{activity_id}/report": {
       "get": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Get Report",
         "operationId": "getActivityReport",
         "parameters": [
@@ -5204,9 +4950,7 @@
         }
       },
       "post": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Create Report",
         "description": "The report now: the one kept if it is in the user's language and with today's metrics (unless\n`again`), else a new one from the model.",
         "operationId": "createActivityReport",
@@ -5257,9 +5001,7 @@
     },
     "/api/ai/weekly": {
       "get": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "List Weekly",
         "description": "The latest reports, newest first.",
         "operationId": "listWeeklyReports",
@@ -5281,9 +5023,7 @@
         }
       },
       "post": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Create Weekly",
         "description": "Write last week's report now, without waiting for Monday's batch.",
         "operationId": "createWeeklyReport",
@@ -5323,9 +5063,7 @@
     },
     "/api/ai/coach": {
       "post": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Ask Coach",
         "description": "Ask the Coach. The answer streams as NDJSON events: `text` pieces, `tool` calls, then `done`\n(or `error`).",
         "operationId": "askCoach",
@@ -5361,9 +5099,7 @@
     },
     "/api/ai/tokens": {
       "get": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "List Tokens",
         "operationId": "listApiTokens",
         "responses": {
@@ -5384,9 +5120,7 @@
         }
       },
       "post": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Create Token",
         "description": "A new personal token for the MCP server; the token itself is returned only here.",
         "operationId": "createApiToken",
@@ -5426,9 +5160,7 @@
     },
     "/api/ai/tokens/{token_id}": {
       "delete": {
-        "tags": [
-          "ai"
-        ],
+        "tags": ["ai"],
         "summary": "Revoke Token",
         "operationId": "revokeApiToken",
         "parameters": [
@@ -5461,9 +5193,7 @@
     },
     "/api/keys": {
       "get": {
-        "tags": [
-          "keys"
-        ],
+        "tags": ["keys"],
         "summary": "List Keys",
         "description": "The service keys: set or not, where from, and their last characters.",
         "operationId": "listKeys",
@@ -5487,9 +5217,7 @@
     },
     "/api/keys/{name}": {
       "put": {
-        "tags": [
-          "keys"
-        ],
+        "tags": ["keys"],
         "summary": "Save Key",
         "description": "Try the key against its service and save it encrypted. A refused key answers 422.",
         "operationId": "saveKey",
@@ -5499,12 +5227,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "garmin",
-                "anthropic",
-                "resend",
-                "backup_s3"
-              ],
+              "enum": ["garmin", "anthropic", "resend", "backup_s3"],
               "type": "string",
               "title": "Name"
             }
@@ -5544,9 +5267,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "keys"
-        ],
+        "tags": ["keys"],
         "summary": "Delete Key",
         "description": "Remove the key saved from the apps; the environment's, if any, is used again.",
         "operationId": "deleteKey",
@@ -5556,12 +5277,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "enum": [
-                "garmin",
-                "anthropic",
-                "resend",
-                "backup_s3"
-              ],
+              "enum": ["garmin", "anthropic", "resend", "backup_s3"],
               "type": "string",
               "title": "Name"
             }
@@ -5593,9 +5309,7 @@
     },
     "/api/instance": {
       "get": {
-        "tags": [
-          "keys"
-        ],
+        "tags": ["keys"],
         "summary": "Get Instance",
         "description": "The settings the apps can change, each with its value in force and where it comes from.",
         "operationId": "getInstance",
@@ -5613,9 +5327,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "keys"
-        ],
+        "tags": ["keys"],
         "summary": "Update Instance",
         "description": "Change some settings; null for one removes the value saved here, so the environment's (or the\ndefault) applies again. A value the environment would refuse answers 422.",
         "operationId": "updateInstance",
@@ -5657,9 +5369,7 @@
     },
     "/api/oauth/client": {
       "get": {
-        "tags": [
-          "oauth"
-        ],
+        "tags": ["oauth"],
         "summary": "Client Info",
         "description": "The assistant asking, for the page: only when the address it sends the answer to is its own.",
         "operationId": "getOAuthClient",
@@ -5709,9 +5419,7 @@
     },
     "/api/oauth/approve": {
       "post": {
-        "tags": [
-          "oauth"
-        ],
+        "tags": ["oauth"],
         "summary": "Approve",
         "description": "The person allows the assistant: a code for it, for ten minutes and one use.",
         "operationId": "approveOAuth",
@@ -5751,9 +5459,7 @@
     },
     "/api/activities/{activity_id}/context": {
       "get": {
-        "tags": [
-          "activities"
-        ],
+        "tags": ["activities"],
         "summary": "Activity Context",
         "description": "Fitness, effort, goals, the same route, results and power figures around one activity.",
         "operationId": "getActivityContext",
@@ -5845,13 +5551,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "code",
-          "display_name",
-          "email",
-          "password",
-          "accept"
-        ],
+        "required": ["code", "display_name", "email", "password", "accept"],
         "title": "AccountRequest"
       },
       "ActivityContext": {
@@ -5936,16 +5636,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "fitness",
-          "effort",
-          "goals",
-          "matches",
-          "medals",
-          "segments",
-          "power",
-          "pace_zones"
-        ],
+        "required": ["fitness", "effort", "goals", "matches", "medals", "segments", "power", "pace_zones"],
         "title": "ActivityContext"
       },
       "ActivityDetail": {
@@ -6420,15 +6111,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "run",
-                  "ride",
-                  "strength",
-                  "walk",
-                  "row",
-                  "swim",
-                  "other"
-                ]
+                "enum": ["run", "ride", "strength", "walk", "row", "swim", "other"]
               },
               {
                 "type": "null"
@@ -6631,10 +6314,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "items",
-          "next_cursor"
-        ],
+        "required": ["items", "next_cursor"],
         "title": "ActivityPage"
       },
       "ActivityStreams": {
@@ -6845,9 +6525,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "t"
-        ],
+        "required": ["t"],
         "title": "ActivityStreams",
         "description": "One array per series, all the same length; missing samples are null. Units are SI."
       },
@@ -7065,12 +6743,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "month_cost_usd",
-          "limit_usd",
-          "warning",
-          "exceeded"
-        ],
+        "required": ["month_cost_usd", "limit_usd", "warning", "exceeded"],
         "title": "AiBudget"
       },
       "AiPreferences": {
@@ -7211,15 +6884,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "prefix",
-          "created_at",
-          "last_used_at",
-          "token",
-          "url"
-        ],
+        "required": ["id", "name", "prefix", "created_at", "last_used_at", "token", "url"],
         "title": "ApiTokenCreated"
       },
       "ApiTokenOut": {
@@ -7256,13 +6921,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "prefix",
-          "created_at",
-          "last_used_at"
-        ],
+        "required": ["id", "name", "prefix", "created_at", "last_used_at"],
         "title": "ApiTokenOut"
       },
       "ApiTokenRequest": {
@@ -7275,9 +6934,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "ApiTokenRequest"
       },
       "AppTokens": {
@@ -7302,11 +6959,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "access_token",
-          "refresh_token",
-          "expires_in"
-        ],
+        "required": ["access_token", "refresh_token", "expires_in"],
         "title": "AppTokens"
       },
       "Approval": {
@@ -7344,11 +6997,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "client_id",
-          "redirect_uri",
-          "code_challenge"
-        ],
+        "required": ["client_id", "redirect_uri", "code_challenge"],
         "title": "Approval"
       },
       "BestEffortOut": {
@@ -7377,13 +7026,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_key",
-          "distance_m",
-          "time_s",
-          "start_s",
-          "start_distance_m"
-        ],
+        "required": ["distance_key", "distance_m", "time_s", "start_s", "start_distance_m"],
         "title": "BestEffortOut"
       },
       "BestOut": {
@@ -7415,12 +7058,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "activity_id",
-          "name",
-          "day",
-          "value"
-        ],
+        "required": ["activity_id", "name", "day", "value"],
         "title": "BestOut"
       },
       "Bucket": {
@@ -7442,11 +7080,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "start",
-          "totals",
-          "by_sport"
-        ],
+        "required": ["start", "totals", "by_sport"],
         "title": "Bucket"
       },
       "CalendarActivity": {
@@ -7515,15 +7149,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "sport",
-          "name",
-          "load",
-          "distance_m",
-          "moving_s",
-          "start"
-        ],
+        "required": ["id", "sport", "name", "load", "distance_m", "moving_s", "start"],
         "title": "CalendarActivity"
       },
       "CalendarDay": {
@@ -7553,11 +7179,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "tsb",
-          "activities"
-        ],
+        "required": ["day", "tsb", "activities"],
         "title": "CalendarDay"
       },
       "Challenge": {
@@ -7574,9 +7196,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "challenge"
-        ],
+        "required": ["challenge"],
         "title": "Challenge"
       },
       "ClientOut": {
@@ -7587,19 +7207,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "ClientOut"
       },
       "CoachMessage": {
         "properties": {
           "role": {
             "type": "string",
-            "enum": [
-              "user",
-              "assistant"
-            ],
+            "enum": ["user", "assistant"],
             "title": "Role"
           },
           "content": {
@@ -7610,10 +7225,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "role",
-          "content"
-        ],
+        "required": ["role", "content"],
         "title": "CoachMessage"
       },
       "CoachRequest": {
@@ -7629,9 +7241,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "messages"
-        ],
+        "required": ["messages"],
         "title": "CoachRequest"
       },
       "Comparison": {
@@ -7655,10 +7265,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "metrics",
-          "effort_scale"
-        ],
+        "required": ["metrics", "effort_scale"],
         "title": "Comparison"
       },
       "ComparisonPoint": {
@@ -7677,11 +7284,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "activity_id",
-          "ours",
-          "strava"
-        ],
+        "required": ["activity_id", "ours", "strava"],
         "title": "ComparisonPoint"
       },
       "Curve": {
@@ -7696,10 +7299,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "duration_s",
-          "value"
-        ],
+        "required": ["duration_s", "value"],
         "title": "Curve"
       },
       "CurvePoint": {
@@ -7724,12 +7324,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "duration_s",
-          "value",
-          "activity_id",
-          "day"
-        ],
+        "required": ["duration_s", "value", "activity_id", "day"],
         "title": "CurvePoint"
       },
       "Day": {
@@ -7748,10 +7343,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "date",
-          "activities"
-        ],
+        "required": ["date", "activities"],
         "title": "Day"
       },
       "DayActivity": {
@@ -7777,11 +7369,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "sport",
-          "name"
-        ],
+        "required": ["id", "sport", "name"],
         "title": "DayActivity"
       },
       "DayUpload": {
@@ -7871,9 +7459,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day"
-        ],
+        "required": ["day"],
         "title": "DayUpload"
       },
       "DeviceOut": {
@@ -7926,15 +7512,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "platform",
-          "created_at",
-          "last_seen",
-          "expires_at",
-          "current"
-        ],
+        "required": ["id", "name", "platform", "created_at", "last_seen", "expires_at", "current"],
         "title": "DeviceOut"
       },
       "DeviceUse": {
@@ -7958,10 +7536,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "activity",
-              "health"
-            ],
+            "enum": ["activity", "health"],
             "title": "Kind"
           },
           "last_used": {
@@ -7971,12 +7546,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "source",
-          "kind",
-          "last_used"
-        ],
+        "required": ["name", "source", "kind", "last_used"],
         "title": "DeviceUse"
       },
       "EditedActivity": {
@@ -8031,14 +7601,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "sport",
-          "gear_id",
-          "edited_fields"
-        ],
+        "required": ["id", "name", "description", "sport", "gear_id", "edited_fields"],
         "title": "EditedActivity"
       },
       "EfficiencyPoint": {
@@ -8070,12 +7633,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "activity_id",
-          "efficiency",
-          "decoupling"
-        ],
+        "required": ["day", "activity_id", "efficiency", "decoupling"],
         "title": "EfficiencyPoint"
       },
       "EffortOut": {
@@ -8100,11 +7658,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "below",
-                  "in",
-                  "above"
-                ]
+                "enum": ["below", "in", "above"]
               },
               {
                 "type": "null"
@@ -8114,11 +7668,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "score",
-          "average",
-          "status"
-        ],
+        "required": ["score", "average", "status"],
         "title": "EffortOut"
       },
       "EffortScale": {
@@ -8148,11 +7698,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "coefficients",
-          "r2",
-          "count"
-        ],
+        "required": ["coefficients", "r2", "count"],
         "title": "EffortScale"
       },
       "EngineStatus": {
@@ -8195,15 +7741,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "running",
-          "reason",
-          "done",
-          "total",
-          "computed",
-          "activities",
-          "metrics_version"
-        ],
+        "required": ["running", "reason", "done", "total", "computed", "activities", "metrics_version"],
         "title": "EngineStatus"
       },
       "EstimateOut": {
@@ -8242,14 +7780,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "kind",
-          "value",
-          "method",
-          "day",
-          "sources",
-          "history"
-        ],
+        "required": ["kind", "value", "method", "day", "sources", "history"],
         "title": "EstimateOut"
       },
       "EstimatePoint": {
@@ -8265,10 +7796,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "value"
-        ],
+        "required": ["day", "value"],
         "title": "EstimatePoint"
       },
       "EventOut": {
@@ -8293,12 +7821,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "kind",
-          "payload",
-          "created_at"
-        ],
+        "required": ["id", "kind", "payload", "created_at"],
         "title": "EventOut"
       },
       "ExportOut": {
@@ -8406,9 +7929,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "title": "FcmToken"
       },
       "FitnessDay": {
@@ -8439,13 +7960,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "load",
-          "ctl",
-          "atl",
-          "tsb"
-        ],
+        "required": ["day", "load", "ctl", "atl", "tsb"],
         "title": "FitnessDay"
       },
       "FitnessOut": {
@@ -8470,11 +7985,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "before",
-          "after",
-          "points"
-        ],
+        "required": ["before", "after", "points"],
         "title": "FitnessOut"
       },
       "FitnessPoint": {
@@ -8490,10 +8001,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "ctl"
-        ],
+        "required": ["day", "ctl"],
         "title": "FitnessPoint"
       },
       "ForgotRequest": {
@@ -8505,20 +8013,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "title": "ForgotRequest"
       },
       "GearIn": {
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "shoe",
-              "bike",
-              "other"
-            ],
+            "enum": ["shoe", "bike", "other"],
             "title": "Kind",
             "default": "shoe"
           },
@@ -8555,15 +8057,7 @@
           "sports": {
             "items": {
               "type": "string",
-              "enum": [
-                "run",
-                "ride",
-                "strength",
-                "walk",
-                "row",
-                "swim",
-                "other"
-              ]
+              "enum": ["run", "ride", "strength", "walk", "row", "swim", "other"]
             },
             "type": "array",
             "title": "Sports",
@@ -8602,9 +8096,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "GearIn"
       },
       "GearOut": {
@@ -8753,11 +8245,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "kind"
-        ],
+        "required": ["id", "name", "kind"],
         "title": "GearRef"
       },
       "GearUpdate": {
@@ -8766,11 +8254,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "shoe",
-                  "bike",
-                  "other"
-                ]
+                "enum": ["shoe", "bike", "other"]
               },
               {
                 "type": "null"
@@ -8820,15 +8304,7 @@
               {
                 "items": {
                   "type": "string",
-                  "enum": [
-                    "run",
-                    "ride",
-                    "strength",
-                    "walk",
-                    "row",
-                    "swim",
-                    "other"
-                  ]
+                  "enum": ["run", "ride", "strength", "walk", "row", "swim", "other"]
                 },
                 "type": "array"
               },
@@ -8894,21 +8370,12 @@
         "properties": {
           "period": {
             "type": "string",
-            "enum": [
-              "week",
-              "month",
-              "year"
-            ],
+            "enum": ["week", "month", "year"],
             "title": "Period"
           },
           "metric": {
             "type": "string",
-            "enum": [
-              "distance",
-              "time",
-              "ascent",
-              "count"
-            ],
+            "enum": ["distance", "time", "ascent", "count"],
             "title": "Metric"
           },
           "sport": {
@@ -8930,11 +8397,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "period",
-          "metric",
-          "target"
-        ],
+        "required": ["period", "metric", "target"],
         "title": "GoalCreate"
       },
       "HTTPValidationError": {
@@ -8954,10 +8417,7 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "ok",
-              "degraded"
-            ],
+            "enum": ["ok", "degraded"],
             "title": "Status",
             "description": "degraded when the database is unreachable"
           },
@@ -8967,10 +8427,7 @@
           },
           "database": {
             "type": "string",
-            "enum": [
-              "ok",
-              "unavailable"
-            ],
+            "enum": ["ok", "unavailable"],
             "title": "Database"
           },
           "schema_revision": {
@@ -8987,12 +8444,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "status",
-          "version",
-          "database",
-          "schema_revision"
-        ],
+        "required": ["status", "version", "database", "schema_revision"],
         "title": "Health"
       },
       "HealthConnectUpload": {
@@ -9107,17 +8559,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "sleep",
-          "resting_hr",
-          "hrv",
-          "spo2",
-          "respiration",
-          "steps",
-          "tsb",
-          "readiness"
-        ],
+        "required": ["day", "sleep", "resting_hr", "hrv", "spo2", "respiration", "steps", "tsb", "readiness"],
         "title": "HealthDay"
       },
       "HealthSettings": {
@@ -9133,23 +8575,12 @@
             "additionalProperties": {
               "items": {
                 "type": "string",
-                "enum": [
-                  "garmin",
-                  "google_health",
-                  "health_connect"
-                ]
+                "enum": ["garmin", "google_health", "health_connect"]
               },
               "type": "array"
             },
             "propertyNames": {
-              "enum": [
-                "sleep",
-                "resting_hr",
-                "hrv",
-                "spo2",
-                "respiration",
-                "steps"
-              ]
+              "enum": ["sleep", "resting_hr", "hrv", "spo2", "respiration", "steps"]
             },
             "type": "object",
             "title": "Priority",
@@ -9157,21 +8588,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "sources",
-          "priority"
-        ],
+        "required": ["sources", "priority"],
         "title": "HealthSettings"
       },
       "HealthSourceStatus": {
         "properties": {
           "source": {
             "type": "string",
-            "enum": [
-              "garmin",
-              "google_health",
-              "health_connect"
-            ],
+            "enum": ["garmin", "google_health", "health_connect"],
             "title": "Source"
           },
           "available": {
@@ -9218,14 +8642,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "source",
-          "available",
-          "connected",
-          "last_sync_at",
-          "nights",
-          "days"
-        ],
+        "required": ["source", "available", "connected", "last_sync_at", "nights", "days"],
         "title": "HealthSourceStatus"
       },
       "Heatmap": {
@@ -9240,9 +8657,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "routes"
-        ],
+        "required": ["routes"],
         "title": "Heatmap"
       },
       "ImportCreate": {
@@ -9261,10 +8676,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "filename",
-          "size"
-        ],
+        "required": ["filename", "size"],
         "title": "ImportCreate"
       },
       "ImportOut": {
@@ -9399,10 +8811,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "file",
-          "error"
-        ],
+        "required": ["file", "error"],
         "title": "ImportProblem"
       },
       "InstanceOut": {
@@ -9424,10 +8833,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "settings",
-          "models"
-        ],
+        "required": ["settings", "models"],
         "title": "InstanceOut"
       },
       "KeyIn": {
@@ -9453,21 +8859,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "value"
-        ],
+        "required": ["value"],
         "title": "KeyIn"
       },
       "KeyStatus": {
         "properties": {
           "name": {
             "type": "string",
-            "enum": [
-              "garmin",
-              "anthropic",
-              "resend",
-              "backup_s3"
-            ],
+            "enum": ["garmin", "anthropic", "resend", "backup_s3"],
             "title": "Name"
           },
           "configured": {
@@ -9478,10 +8877,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "app",
-                  "env"
-                ]
+                "enum": ["app", "env"]
               },
               {
                 "type": "null"
@@ -9516,12 +8912,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "configured",
-          "source",
-          "last4"
-        ],
+        "required": ["name", "configured", "source", "last4"],
         "title": "KeyStatus"
       },
       "LapOut": {
@@ -9664,14 +9055,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "activity_id",
-          "day",
-          "speed_mps",
-          "moving_s",
-          "relative_effort",
-          "this"
-        ],
+        "required": ["activity_id", "day", "speed_mps", "moving_s", "relative_effort", "this"],
         "title": "MatchOut"
       },
       "Me": {
@@ -9743,11 +9127,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "female",
-                  "male",
-                  "other"
-                ]
+                "enum": ["female", "male", "other"]
               },
               {
                 "type": "null"
@@ -9779,23 +9159,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "email",
-          "display_name",
-          "totp_enabled"
-        ],
+        "required": ["id", "email", "display_name", "totp_enabled"],
         "title": "Me"
       },
       "MetricComparison": {
         "properties": {
           "metric": {
             "type": "string",
-            "enum": [
-              "effort",
-              "calories",
-              "grade_adjusted_distance"
-            ],
+            "enum": ["effort", "calories", "grade_adjusted_distance"],
             "title": "Metric"
           },
           "count": {
@@ -9856,15 +9227,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "metric",
-          "count",
-          "r2",
-          "mae",
-          "ratio",
-          "points",
-          "largest"
-        ],
+        "required": ["metric", "count", "r2", "mae", "ratio", "points", "largest"],
         "title": "MetricComparison"
       },
       "MobileNonce": {
@@ -9879,10 +9242,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "nonce",
-          "state"
-        ],
+        "required": ["nonce", "state"],
         "title": "MobileNonce"
       },
       "MobileSignIn": {
@@ -9913,9 +9273,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id_token"
-        ],
+        "required": ["id_token"],
         "title": "MobileSignIn"
       },
       "ModelOut": {
@@ -9936,11 +9294,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "input_usd",
-          "output_usd"
-        ],
+        "required": ["id", "input_usd", "output_usd"],
         "title": "ModelOut"
       },
       "MonthTotals": {
@@ -9969,13 +9323,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "month",
-          "count",
-          "distance_m",
-          "moving_s",
-          "ascent_m"
-        ],
+        "required": ["month", "count", "distance_m", "moving_s", "ascent_m"],
         "title": "MonthTotals",
         "description": "One month of the feed, in the activities' own local time."
       },
@@ -9989,21 +9337,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "import",
-          "upload"
-        ],
+        "required": ["import", "upload"],
         "title": "NewImport"
       },
       "Night": {
         "properties": {
           "source": {
             "type": "string",
-            "enum": [
-              "garmin",
-              "google_health",
-              "health_connect"
-            ],
+            "enum": ["garmin", "google_health", "health_connect"],
             "title": "Source"
           },
           "start_utc": {
@@ -10096,11 +9437,7 @@
           "others": {
             "items": {
               "type": "string",
-              "enum": [
-                "garmin",
-                "google_health",
-                "health_connect"
-              ]
+              "enum": ["garmin", "google_health", "health_connect"]
             },
             "type": "array",
             "title": "Others",
@@ -10150,12 +9487,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "day",
-          "chosen",
-          "stages",
-          "alternatives"
-        ],
+        "required": ["day", "chosen", "stages", "alternatives"],
         "title": "NightDetail"
       },
       "Notifications": {
@@ -10214,9 +9546,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "options"
-        ],
+        "required": ["options"],
         "title": "Options",
         "description": "`publicKey` options for navigator.credentials.create() or .get(), as JSON (binary as base64url)."
       },
@@ -10237,10 +9567,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "threshold_mps",
-          "bounds"
-        ],
+        "required": ["threshold_mps", "bounds"],
         "title": "PaceZonesOut"
       },
       "PasskeyOut": {
@@ -10277,13 +9604,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "created_at",
-          "last_used_at",
-          "backed_up"
-        ],
+        "required": ["id", "name", "created_at", "last_used_at", "backed_up"],
         "title": "PasskeyOut"
       },
       "PhotoOut": {
@@ -10321,14 +9642,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "activity_id",
-          "width",
-          "height",
-          "caption",
-          "source"
-        ],
+        "required": ["id", "activity_id", "width", "height", "caption", "source"],
         "title": "PhotoOut"
       },
       "PhotoRef": {
@@ -10358,12 +9672,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "width",
-          "height",
-          "caption"
-        ],
+        "required": ["id", "width", "height", "caption"],
         "title": "PhotoRef"
       },
       "PowerOut": {
@@ -10409,12 +9718,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "work_kj",
-          "intensity",
-          "load",
-          "ftp"
-        ],
+        "required": ["work_kj", "intensity", "load", "ftp"],
         "title": "PowerOut"
       },
       "Preferences": {
@@ -10439,10 +9743,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "en",
-                  "es"
-                ]
+                "enum": ["en", "es"]
               },
               {
                 "type": "null"
@@ -10453,10 +9754,7 @@
           },
           "units": {
             "type": "string",
-            "enum": [
-              "metric",
-              "imperial"
-            ],
+            "enum": ["metric", "imperial"],
             "title": "Units"
           },
           "hr_max": {
@@ -10497,11 +9795,7 @@
           },
           "zone_model": {
             "type": "string",
-            "enum": [
-              "max",
-              "reserve",
-              "lthr"
-            ],
+            "enum": ["max", "reserve", "lthr"],
             "title": "Zone Model",
             "description": "HR zones: share of max HR, of HR reserve, or of LTHR"
           },
@@ -10590,10 +9884,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "en",
-                  "es"
-                ]
+                "enum": ["en", "es"]
               },
               {
                 "type": "null"
@@ -10605,10 +9896,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "metric",
-                  "imperial"
-                ]
+                "enum": ["metric", "imperial"]
               },
               {
                 "type": "null"
@@ -10646,11 +9934,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "max",
-                  "reserve",
-                  "lthr"
-                ]
+                "enum": ["max", "reserve", "lthr"]
               },
               {
                 "type": "null"
@@ -10730,32 +10014,19 @@
             "additionalProperties": {
               "items": {
                 "type": "string",
-                "enum": [
-                  "garmin",
-                  "google_health",
-                  "health_connect"
-                ]
+                "enum": ["garmin", "google_health", "health_connect"]
               },
               "type": "array"
             },
             "propertyNames": {
-              "enum": [
-                "sleep",
-                "resting_hr",
-                "hrv",
-                "spo2",
-                "respiration",
-                "steps"
-              ]
+              "enum": ["sleep", "resting_hr", "hrv", "spo2", "respiration", "steps"]
             },
             "type": "object",
             "title": "Priority"
           }
         },
         "type": "object",
-        "required": [
-          "priority"
-        ],
+        "required": ["priority"],
         "title": "PriorityIn"
       },
       "PrivacyZone": {
@@ -10791,12 +10062,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "lat",
-          "lon",
-          "radius_m"
-        ],
+        "required": ["id", "lat", "lon", "radius_m"],
         "title": "PrivacyZone"
       },
       "ProfilePoint": {
@@ -10829,11 +10095,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_m",
-          "altitude_m",
-          "speed"
-        ],
+        "required": ["distance_m", "altitude_m", "speed"],
         "title": "ProfilePoint"
       },
       "ProfileSummary": {
@@ -10897,15 +10159,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "year",
-          "this_year",
-          "all_time",
-          "since",
-          "records",
-          "streak_weeks",
-          "device"
-        ],
+        "required": ["year", "this_year", "all_time", "since", "records", "streak_weeks", "device"],
         "title": "ProfileSummary"
       },
       "ProfileUpdate": {
@@ -10951,11 +10205,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "female",
-                  "male",
-                  "other"
-                ]
+                "enum": ["female", "male", "other"]
               },
               {
                 "type": "null"
@@ -11020,9 +10270,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "google"
-        ],
+        "required": ["google"],
         "title": "Providers"
       },
       "PushKey": {
@@ -11034,9 +10282,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "public_key"
-        ],
+        "required": ["public_key"],
         "title": "PushKey"
       },
       "ReachedGoal": {
@@ -11070,13 +10316,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "goal_id",
-          "period",
-          "metric",
-          "sport",
-          "target"
-        ],
+        "required": ["goal_id", "period", "metric", "sport", "target"],
         "title": "ReachedGoal"
       },
       "ReadinessOut": {
@@ -11131,13 +10371,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "score",
-          "hrv",
-          "resting_hr",
-          "sleep",
-          "form"
-        ],
+        "required": ["score", "hrv", "resting_hr", "sleep", "form"],
         "title": "ReadinessOut"
       },
       "RecentRecord": {
@@ -11165,13 +10399,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_key",
-          "distance_m",
-          "time_s",
-          "activity_id",
-          "date"
-        ],
+        "required": ["distance_key", "distance_m", "time_s", "activity_id", "date"],
         "title": "RecentRecord"
       },
       "Record": {
@@ -11199,13 +10427,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_key",
-          "distance_m",
-          "time_s",
-          "activity_id",
-          "date"
-        ],
+        "required": ["distance_key", "distance_m", "time_s", "activity_id", "date"],
         "title": "Record"
       },
       "RecordOut": {
@@ -11233,13 +10455,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_key",
-          "distance_m",
-          "time_s",
-          "activity_id",
-          "day"
-        ],
+        "required": ["distance_key", "distance_m", "time_s", "activity_id", "day"],
         "title": "RecordOut"
       },
       "Records": {
@@ -11272,11 +10488,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "all_time",
-          "period",
-          "progression"
-        ],
+        "required": ["all_time", "period", "progression"],
         "title": "Records"
       },
       "Redirect": {
@@ -11288,9 +10500,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "redirect"
-        ],
+        "required": ["redirect"],
         "title": "Redirect"
       },
       "RefreshRequest": {
@@ -11307,9 +10517,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "refresh_token"
-        ],
+        "required": ["refresh_token"],
         "title": "RefreshRequest"
       },
       "RegisterRequest": {
@@ -11328,9 +10536,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "credential"
-        ],
+        "required": ["credential"],
         "title": "RegisterRequest"
       },
       "ReportOut": {
@@ -11414,20 +10620,14 @@
           }
         },
         "type": "object",
-        "required": [
-          "token",
-          "password"
-        ],
+        "required": ["token", "password"],
         "title": "ResetRequest"
       },
       "Review": {
         "properties": {
           "period": {
             "type": "string",
-            "enum": [
-              "month",
-              "year"
-            ],
+            "enum": ["month", "year"],
             "title": "Period"
           },
           "start": {
@@ -11606,16 +10806,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "sport",
-          "day",
-          "distance_m",
-          "moving_s",
-          "ascent_m",
-          "load"
-        ],
+        "required": ["id", "name", "sport", "day", "distance_m", "moving_s", "ascent_m", "load"],
         "title": "ReviewActivity"
       },
       "ReviewBucket": {
@@ -11639,12 +10830,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "start",
-          "distance_m",
-          "moving_s",
-          "count"
-        ],
+        "required": ["start", "distance_m", "moving_s", "count"],
         "title": "ReviewBucket"
       },
       "ReviewGear": {
@@ -11671,13 +10857,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "kind",
-          "distance_m",
-          "count"
-        ],
+        "required": ["id", "name", "kind", "distance_m", "count"],
         "title": "ReviewGear"
       },
       "ReviewRecord": {
@@ -11713,13 +10893,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_key",
-          "time_s",
-          "activity_id",
-          "day",
-          "previous_s"
-        ],
+        "required": ["distance_key", "time_s", "activity_id", "day", "previous_s"],
         "title": "ReviewRecord"
       },
       "RouteActivity": {
@@ -11772,14 +10946,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "day",
-          "moving_s",
-          "distance_m",
-          "avg_hr"
-        ],
+        "required": ["id", "name", "day", "moving_s", "distance_m", "avg_hr"],
         "title": "RouteActivity"
       },
       "RouteDetail": {
@@ -11836,16 +11003,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "sport",
-          "name",
-          "route",
-          "count",
-          "best",
-          "latest",
-          "activities"
-        ],
+        "required": ["id", "sport", "name", "route", "count", "best", "latest", "activities"],
         "title": "RouteDetail"
       },
       "RouteGroup": {
@@ -11894,15 +11052,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "sport",
-          "name",
-          "route",
-          "count",
-          "best",
-          "latest"
-        ],
+        "required": ["id", "sport", "name", "route", "count", "best", "latest"],
         "title": "RouteGroup"
       },
       "RouteInfo": {
@@ -11922,11 +11072,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "group",
-          "count",
-          "rank"
-        ],
+        "required": ["group", "count", "rank"],
         "title": "RouteInfo"
       },
       "SearchPage": {
@@ -11956,11 +11102,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "items",
-          "totals",
-          "next_offset"
-        ],
+        "required": ["items", "totals", "next_offset"],
         "title": "SearchPage"
       },
       "SearchTotals": {
@@ -11983,12 +11125,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "count",
-          "distance_m",
-          "moving_s",
-          "ascent_m"
-        ],
+        "required": ["count", "distance_m", "moving_s", "ascent_m"],
         "title": "SearchTotals"
       },
       "SegmentCreate": {
@@ -12016,12 +11153,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "activity_id",
-          "start_index",
-          "end_index",
-          "name"
-        ],
+        "required": ["activity_id", "start_index", "end_index", "name"],
         "title": "SegmentCreate"
       },
       "SegmentDetail": {
@@ -12079,16 +11211,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "track",
-          "distance_m",
-          "ascent_m",
-          "efforts",
-          "best_s",
-          "history"
-        ],
+        "required": ["id", "name", "track", "distance_m", "ascent_m", "efforts", "best_s", "history"],
         "title": "SegmentDetail"
       },
       "SegmentEffortOut": {
@@ -12141,14 +11264,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "activity_id",
-          "activity_name",
-          "day",
-          "elapsed_s",
-          "avg_hr",
-          "avg_power"
-        ],
+        "required": ["activity_id", "activity_name", "day", "elapsed_s", "avg_hr", "avg_power"],
         "title": "SegmentEffortOut"
       },
       "SegmentOut": {
@@ -12198,15 +11314,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "track",
-          "distance_m",
-          "ascent_m",
-          "efforts",
-          "best_s"
-        ],
+        "required": ["id", "name", "track", "distance_m", "ascent_m", "efforts", "best_s"],
         "title": "SegmentOut"
       },
       "SegmentPass": {
@@ -12237,14 +11345,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "segment_id",
-          "name",
-          "elapsed_s",
-          "best_s",
-          "rank",
-          "count"
-        ],
+        "required": ["segment_id", "name", "elapsed_s", "best_s", "rank", "count"],
         "title": "SegmentPass"
       },
       "SegmentResult": {
@@ -12283,14 +11384,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "segment_id",
-          "name",
-          "distance_m",
-          "elapsed_s",
-          "avg_power",
-          "rank"
-        ],
+        "required": ["segment_id", "name", "distance_m", "elapsed_s", "avg_power", "rank"],
         "title": "SegmentResult"
       },
       "SetOut": {
@@ -12344,14 +11438,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "start_s",
-          "duration_s",
-          "kind",
-          "reps",
-          "weight_kg",
-          "category"
-        ],
+        "required": ["start_s", "duration_s", "kind", "reps", "weight_kg", "category"],
         "title": "SetOut",
         "description": "A strength set (OS-225)."
       },
@@ -12367,21 +11454,13 @@
           },
           "source": {
             "type": "string",
-            "enum": [
-              "app",
-              "env",
-              "default"
-            ],
+            "enum": ["app", "env", "default"],
             "title": "Source",
             "description": "Saved from the apps, the environment's, or the built-in default"
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "value",
-          "source"
-        ],
+        "required": ["name", "value", "source"],
         "title": "SettingOut"
       },
       "SetupDone": {
@@ -12409,10 +11488,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "me",
-          "recovery_codes"
-        ],
+        "required": ["me", "recovery_codes"],
         "title": "SetupDone"
       },
       "SetupStatus": {
@@ -12423,9 +11499,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "open"
-        ],
+        "required": ["open"],
         "title": "SetupStatus"
       },
       "ShareCreate": {
@@ -12503,15 +11577,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "activity_id",
-          "path",
-          "show_map",
-          "expires_at",
-          "created_at",
-          "views"
-        ],
+        "required": ["id", "activity_id", "path", "show_map", "expires_at", "created_at", "views"],
         "title": "ShareOut"
       },
       "SharedActivity": {
@@ -12726,12 +11792,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "width",
-          "height",
-          "caption"
-        ],
+        "required": ["id", "width", "height", "caption"],
         "title": "SharedPhoto"
       },
       "SharedSplit": {
@@ -12757,11 +11818,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_m",
-          "time_s",
-          "elevation_change_m"
-        ],
+        "required": ["distance_m", "time_s", "elevation_change_m"],
         "title": "SharedSplit"
       },
       "SleepUpload": {
@@ -12818,11 +11875,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "start",
-          "end"
-        ],
+        "required": ["id", "start", "end"],
         "title": "SleepUpload"
       },
       "Source": {
@@ -12853,12 +11906,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "sport",
-          "day"
-        ],
+        "required": ["id", "name", "sport", "day"],
         "title": "Source"
       },
       "SourceStatus": {
@@ -12975,12 +12023,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "distance_m",
-          "time_s",
-          "elevation_change_m",
-          "avg_hr"
-        ],
+        "required": ["distance_m", "time_s", "elevation_change_m", "avg_hr"],
         "title": "SplitOut"
       },
       "SportTotals": {
@@ -13007,13 +12050,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "sport",
-          "count",
-          "distance_m",
-          "moving_s",
-          "ascent_m"
-        ],
+        "required": ["sport", "count", "distance_m", "moving_s", "ascent_m"],
         "title": "SportTotals"
       },
       "StageIn": {
@@ -13030,21 +12067,12 @@
           },
           "stage": {
             "type": "string",
-            "enum": [
-              "awake",
-              "light",
-              "deep",
-              "rem"
-            ],
+            "enum": ["awake", "light", "deep", "rem"],
             "title": "Stage"
           }
         },
         "type": "object",
-        "required": [
-          "start",
-          "end",
-          "stage"
-        ],
+        "required": ["start", "end", "stage"],
         "title": "StageIn"
       },
       "Stage_": {
@@ -13059,21 +12087,12 @@
           },
           "stage": {
             "type": "string",
-            "enum": [
-              "awake",
-              "light",
-              "deep",
-              "rem"
-            ],
+            "enum": ["awake", "light", "deep", "rem"],
             "title": "Stage"
           }
         },
         "type": "object",
-        "required": [
-          "offset_s",
-          "duration_s",
-          "stage"
-        ],
+        "required": ["offset_s", "duration_s", "stage"],
         "title": "Stage_"
       },
       "Streak": {
@@ -13116,12 +12135,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "weeks",
-          "activities",
-          "since",
-          "first_activity"
-        ],
+        "required": ["weeks", "activities", "since", "first_activity"],
         "title": "Streak"
       },
       "StreamsInfo": {
@@ -13140,10 +12154,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "series",
-          "sample_count"
-        ],
+        "required": ["series", "sample_count"],
         "title": "StreamsInfo"
       },
       "SubscriptionIn": {
@@ -13171,10 +12182,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "endpoint",
-          "keys"
-        ],
+        "required": ["endpoint", "keys"],
         "title": "SubscriptionIn"
       },
       "SubscriptionKeys": {
@@ -13191,10 +12199,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "p256dh",
-          "auth"
-        ],
+        "required": ["p256dh", "auth"],
         "title": "SubscriptionKeys"
       },
       "SubscriptionOut": {
@@ -13216,10 +12221,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "title": "SubscriptionOut"
       },
       "Summary": {
@@ -13240,11 +12242,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "current",
-          "previous",
-          "by_sport"
-        ],
+        "required": ["current", "previous", "by_sport"],
         "title": "Summary"
       },
       "SummaryOut": {
@@ -13417,22 +12415,12 @@
           },
           "trigger": {
             "type": "string",
-            "enum": [
-              "cron",
-              "button",
-              "initial",
-              "import"
-            ],
+            "enum": ["cron", "button", "initial", "import"],
             "title": "Trigger"
           },
           "status": {
             "type": "string",
-            "enum": [
-              "queued",
-              "running",
-              "success",
-              "error"
-            ],
+            "enum": ["queued", "running", "success", "error"],
             "title": "Status"
           },
           "started_at": {
@@ -13499,9 +12487,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "sent"
-        ],
+        "required": ["sent"],
         "title": "TestResult"
       },
       "Totals": {
@@ -13550,10 +12536,7 @@
           },
           "client": {
             "type": "string",
-            "enum": [
-              "web",
-              "android"
-            ],
+            "enum": ["web", "android"],
             "title": "Client",
             "default": "web"
           },
@@ -13565,10 +12548,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "setup_token",
-          "code"
-        ],
+        "required": ["setup_token", "code"],
         "title": "TotpConfirm"
       },
       "TotpRequest": {
@@ -13586,10 +12566,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "challenge",
-          "code"
-        ],
+        "required": ["challenge", "code"],
         "title": "TotpRequest"
       },
       "TotpSetup": {
@@ -13615,12 +12592,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "setup_token",
-          "secret",
-          "uri",
-          "qr_svg"
-        ],
+        "required": ["setup_token", "secret", "uri", "qr_svg"],
         "title": "TotpSetup"
       },
       "Unsubscribe": {
@@ -13632,9 +12604,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "endpoint"
-        ],
+        "required": ["endpoint"],
         "title": "Unsubscribe"
       },
       "UploadTarget": {
@@ -13654,11 +12624,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "url",
-          "token",
-          "part_size"
-        ],
+        "required": ["url", "token", "part_size"],
         "title": "UploadTarget"
       },
       "ValidationError": {
@@ -13694,11 +12660,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
       },
       "Value": {
@@ -13709,32 +12671,20 @@
           },
           "source": {
             "type": "string",
-            "enum": [
-              "garmin",
-              "google_health",
-              "health_connect"
-            ],
+            "enum": ["garmin", "google_health", "health_connect"],
             "title": "Source"
           },
           "others": {
             "items": {
               "type": "string",
-              "enum": [
-                "garmin",
-                "google_health",
-                "health_connect"
-              ]
+              "enum": ["garmin", "google_health", "health_connect"]
             },
             "type": "array",
             "title": "Others"
           }
         },
         "type": "object",
-        "required": [
-          "value",
-          "source",
-          "others"
-        ],
+        "required": ["value", "source", "others"],
         "title": "Value"
       },
       "Weather": {
@@ -13850,14 +12800,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "today",
-          "days",
-          "this_week",
-          "previous",
-          "streak_weeks",
-          "records"
-        ],
+        "required": ["today", "days", "this_week", "previous", "streak_weeks", "records"],
         "title": "Week"
       },
       "WeekTotals": {
@@ -13885,13 +12828,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "week_start",
-          "count",
-          "distance_m",
-          "moving_s",
-          "ascent_m"
-        ],
+        "required": ["week_start", "count", "distance_m", "moving_s", "ascent_m"],
         "title": "WeekTotals"
       },
       "WeeklyOut": {
@@ -14041,10 +12978,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "year",
-          "cumulative_m"
-        ],
+        "required": ["year", "cumulative_m"],
         "title": "YearLine"
       },
       "ZonesOut": {
@@ -14059,7 +12993,7 @@
             },
             "type": "array",
             "title": "Bounds",
-            "description": "Each zone's lower bound (bpm or W) with today's settings"
+            "description": "Each zone's lower bound (bpm, W or, for pace, m/s) with today's settings"
           },
           "seconds": {
             "items": {
@@ -14079,12 +13013,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "kind",
-          "bounds",
-          "seconds",
-          "previous"
-        ],
+        "required": ["kind", "bounds", "seconds", "previous"],
         "title": "ZonesOut"
       },
       "zankup__api__insights__GoalOut": {
@@ -14118,13 +13047,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "period",
-          "metric",
-          "sport",
-          "target",
-          "current"
-        ],
+        "required": ["period", "metric", "sport", "target", "current"],
         "title": "GoalOut"
       },
       "zankup__api__insights__Medal": {
@@ -14144,20 +13067,12 @@
           },
           "scope": {
             "type": "string",
-            "enum": [
-              "all",
-              "year"
-            ],
+            "enum": ["all", "year"],
             "title": "Scope"
           }
         },
         "type": "object",
-        "required": [
-          "key",
-          "value",
-          "rank",
-          "scope"
-        ],
+        "required": ["key", "value", "rank", "scope"],
         "title": "Medal"
       },
       "zankup__api__stats__Medal": {
@@ -14186,23 +13101,13 @@
           },
           "scope": {
             "type": "string",
-            "enum": [
-              "all",
-              "year"
-            ],
+            "enum": ["all", "year"],
             "title": "Scope",
             "description": "Of all time, or of its year"
           }
         },
         "type": "object",
-        "required": [
-          "key",
-          "activity_id",
-          "day",
-          "value",
-          "rank",
-          "scope"
-        ],
+        "required": ["key", "activity_id", "day", "value", "rank", "scope"],
         "title": "Medal"
       },
       "zankup__api__training__GoalOut": {
@@ -14255,17 +13160,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "period",
-          "metric",
-          "sport",
-          "target",
-          "start",
-          "end",
-          "current",
-          "projection"
-        ],
+        "required": ["id", "period", "metric", "sport", "target", "start", "end", "current", "projection"],
         "title": "GoalOut"
       },
       "zankup__auth__passkeys__LoginRequest": {
@@ -14282,10 +13177,7 @@
           },
           "client": {
             "type": "string",
-            "enum": [
-              "web",
-              "android"
-            ],
+            "enum": ["web", "android"],
             "title": "Client",
             "default": "web"
           },
@@ -14297,9 +13189,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "credential"
-        ],
+        "required": ["credential"],
         "title": "LoginRequest"
       },
       "zankup__auth__routes__LoginRequest": {
@@ -14321,10 +13211,7 @@
           },
           "client": {
             "type": "string",
-            "enum": [
-              "web",
-              "android"
-            ],
+            "enum": ["web", "android"],
             "title": "Client",
             "default": "web"
           },
@@ -14336,10 +13223,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "title": "LoginRequest"
       }
     }

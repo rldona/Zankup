@@ -4,7 +4,13 @@
  * before, the goals it counts for and its results (medals in best times and power, and on segments).
  * Each block hides itself when it has nothing to say; the page puts them in the sport's order.
  */
-import { activityContextQuery, metricValues, type ActivityContext, type Series } from '@zankup/core';
+import {
+  activityContextQuery,
+  metricValues,
+  zoneScale,
+  type ActivityContext,
+  type Series,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -305,7 +311,7 @@ export function PaceZonesBlock({ context, series }: { context: ActivityContext; 
   const total = seconds.reduce((a, b) => a + b, 0);
   if (!total) return null;
   const unit = imperial ? 1609.344 : 1000;
-  const shades = zoneShades(String(c.fitness), seconds.length);
+  const shades = zoneScale('pace', seconds.length);
   return (
     <Card style={{ gap: 10 }}>
       <Text style={{ color: c.fg, fontSize: 17, fontWeight: '800' }}>{t('detail.paceZones')}</Text>
@@ -340,14 +346,6 @@ export function PaceZonesBlock({ context, series }: { context: ActivityContext; 
         })}
     </Card>
   );
-}
-
-/** One colour in lighter to darker steps (the slow zones light, the fast ones deep). */
-function zoneShades(colour: string, count: number): string[] {
-  return Array.from({ length: count }, (_, i) => {
-    const alpha = Math.round((0.35 + (0.65 * i) / Math.max(1, count - 1)) * 255);
-    return `${colour.slice(0, 7)}${alpha.toString(16).padStart(2, '0')}`;
-  });
 }
 
 /**

@@ -3,7 +3,7 @@
  * (HR, every sport) beside a bar per zone; app/zones.tsx has the zones in full. The zone colours, the
  * card's change badge and the zone rows are shared by both.
  */
-import { zonesQuery } from '@zankup/core';
+import { zonesQuery, zoneScale } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -11,19 +11,18 @@ import { Pressable, Text, View } from 'react-native';
 import { useApi } from '../auth';
 import { Icon } from '../Icon';
 import { t } from '../i18n';
+import { paceRange } from '../detail/paceZones';
+import { useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
-import { useTheme, type Palette } from '../theme';
+import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
 import { isoDay } from './fitness';
 import { changeText } from './raceTimes';
 import { rangeOf } from './volume';
 import { shareChange, topZone, zoneRange, type ZoneKind } from './zones';
 
-/** The theme's five zone colours, spread over seven for power. */
-export function zoneColours(c: Palette, count: number): string[] {
-  const five = [c.zone1, c.zone2, c.zone3, c.zone4, c.zone5].map(String);
-  return Array.from({ length: count }, (_, i) => five[Math.round((i * 4) / Math.max(1, count - 1))]);
-}
+/** A kind's zone colours, as Strava's: reds for heart rate, blues for pace, purples for power. */
+export const zoneColours = (kind: ZoneKind, count: number): string[] => zoneScale(kind, count);
 
 /** A change in points of share: ▲ 4 % or ▼ 3 %. */
 export function ShareBadge({ points }: { points: number }) {
@@ -100,7 +99,7 @@ export function ZonesCard() {
                         borderRadius: 4,
                         width: `${Math.max(12, (s / most) * 100) * 0.8}%`,
                         backgroundColor:
-                          i === top.index ? zoneColours(c, seconds.length)[i] : (c.surface2 as string),
+                          i === top.index ? zoneColours('hr', seconds.length)[i] : (c.surface2 as string),
                       }}
                     />
                   </View>
@@ -116,9 +115,17 @@ export function ZonesCard() {
 /** The zones in full, the highest on top: each one's time as a bar, the time and its range. */
 export function ZoneRows({ kind, seconds, bounds }: { kind: ZoneKind; seconds: number[]; bounds: number[] }) {
   const c = useTheme();
-  const colours = zoneColours(c, seconds.length);
+  const colours = zoneColours(kind, seconds.length);
   const most = Math.max(1, ...seconds);
   const unit = kind === 'hr' ? t('progress.bpm') : 'W';
+  const imperial = useUnits() === 'imperial';
+  // Pace zones come as speeds (m/s): written as paces, the fast ones on top.
+  const range = (i: number) =>
+    !bounds.length
+      ? ''
+      : kind === 'pace'
+        ? paceRange(bounds, i, imperial ? 1609.344 : 1000).replace(/ /g, '')
+        : `${zoneRange(bounds, i)} ${unit}`;
   return (
     <View style={{ gap: 14 }}>
       {seconds
@@ -141,9 +148,7 @@ export function ZoneRows({ kind, seconds, bounds }: { kind: ZoneKind; seconds: n
                 {changeText(s)}
               </Text>
             </View>
-            <Muted style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>
-              {bounds.length ? `${zoneRange(bounds, i)} ${unit}` : ''}
-            </Muted>
+            <Muted style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{range(i)}</Muted>
           </View>
         ))}
     </View>
