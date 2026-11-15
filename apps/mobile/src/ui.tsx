@@ -63,8 +63,10 @@ export function Screen({
   const keyboard = useFieldAboveKeyboard();
   const top = useTopInset(!header);
   return (
-    // Sub-screens (under a stack header) take the page colour: white in Strava's theme.
-    <View style={{ flex: 1, backgroundColor: header ? c.page : c.bg, paddingTop: top }}>
+    // Every screen of cards on the theme's background, so the cards stand out (grey under white cards in
+    // Strava's light theme); the stack's header bar keeps the page colour. Plain lists (Best times, the
+    // workout analysis) set the page colour themselves.
+    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: top }}>
       {title ? (
         <View style={styles.headerBar}>
           <View style={{ flex: 1 }}>
