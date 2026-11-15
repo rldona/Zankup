@@ -1,8 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { Tabs } from 'expo-router';
+import { Image, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MATERIAL_ICONS } from '@zankup/core';
+import { MATERIAL_ICONS, meQuery } from '@zankup/core';
 
+import { useApi } from '../../src/auth';
 import { Icon, type IconName } from '../../src/Icon';
 import { LatestActivity } from '../../src/LatestActivity';
 import { t } from '../../src/i18n';
@@ -19,6 +22,36 @@ const TABS: { name: string; icon: IconName; label: Parameters<typeof t>[0] }[] =
 /** The filled version for the tab you are on, when Material Symbols has one. */
 const filled = (icon: IconName): IconName =>
   `${icon}-fill` in MATERIAL_ICONS ? (`${icon}-fill` as IconName) : icon;
+
+/**
+ * You's tab, as Strava's: your profile photo, ringed in the tab colour when you are on it; without a
+ * photo (or until it loads), the person icon.
+ */
+function YouIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
+  const api = useApi();
+  const me = useQuery(meQuery(api));
+  const photo = me.data?.avatar_url;
+  if (!photo) return <Icon name={focused ? filled('person') : 'person'} color={color} size={28} />;
+  return (
+    <View
+      style={{
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        borderWidth: focused ? 2 : 0,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Image
+        accessible={false}
+        source={{ uri: photo }}
+        style={{ width: focused ? 24 : 28, height: focused ? 24 : 28, borderRadius: 14 }}
+      />
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   const c = useTheme();
@@ -50,9 +83,12 @@ export default function TabsLayout() {
             name={tab.name}
             options={{
               title: t(tab.label),
-              tabBarIcon: ({ color, focused }) => (
-                <Icon name={focused ? filled(tab.icon) : tab.icon} color={color} size={28} />
-              ),
+              tabBarIcon: ({ color, focused }) =>
+                tab.name === 'profile' ? (
+                  <YouIcon color={color} focused={focused} />
+                ) : (
+                  <Icon name={focused ? filled(tab.icon) : tab.icon} color={color} size={28} />
+                ),
             }}
           />
         ))}
