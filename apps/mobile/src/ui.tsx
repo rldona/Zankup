@@ -348,6 +348,7 @@ export function Button({
   accessibilityLabel,
   icon,
   labelColor,
+  fill,
 }: {
   children: string;
   onPress: () => void;
@@ -358,6 +359,8 @@ export function Button({
   icon?: ReactNode;
   /** The label's colour, when it is not the button's usual one (white on "Continue with Google"). */
   labelColor?: string;
+  /** Shares a row with other buttons: grows and shrinks with them, the label on one line, smaller if it must. */
+  fill?: boolean;
 }) {
   const c = useTheme();
   return (
@@ -374,11 +377,13 @@ export function Button({
           borderColor: primary ? 'transparent' : c.muted,
           opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
         },
+        fill && { flexGrow: 1, flexShrink: 1, paddingHorizontal: 10 },
       ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         {icon}
         <Text
+          {...(fill && { numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: 0.7 })}
           style={{ color: labelColor ?? (primary ? onAccent(c) : c.fg), fontWeight: '600', fontSize: 15 }}
         >
           {children}
