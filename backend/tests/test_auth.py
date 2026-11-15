@@ -58,15 +58,16 @@ def next_code(secret: str, steps: int = 1) -> str:
     return pyotp.TOTP(secret).at(datetime.now(UTC) + timedelta(seconds=30 * steps))
 
 
-def sign_in(http: TestClient, secret: str, steps: int = 1, **extra: object) -> dict:  # type: ignore[type-arg]
-    """Password then code; `extra` goes into the login body (remember, client, device_name)."""
+def sign_in(http: TestClient, secret: str, steps: int = 1, code: str | None = None, **extra: object) -> dict:  # type: ignore[type-arg]
+    """Password then code (`code`, or the one for `steps` ahead); `extra` goes into the login body
+    (remember, client, device_name)."""
     challenge = http.post(
         "/api/auth/login", json={"email": "runner@example.com", "password": PASSWORD, **extra}
     )
     assert challenge.status_code == 200, challenge.text
     response = http.post(
         "/api/auth/login/totp",
-        json={"challenge": challenge.json()["challenge"], "code": next_code(secret, steps)},
+        json={"challenge": challenge.json()["challenge"], "code": code or next_code(secret, steps)},
     )
     assert response.status_code == 200, response.text
     return response.json()  # type: ignore[no-any-return]
@@ -117,13 +118,13 @@ def test_errors_never_say_what_was_wrong(ctx: tuple[TestClient, sessionmaker[Ses
 
 def test_a_code_cannot_be_used_twice(ctx: tuple[TestClient, sessionmaker[Session], str]) -> None:
     client, _, secret = ctx
-    sign_in(client, secret, steps=1)
+    # One code, used twice: computing it again could land in the next 30 s step and be a new code.
+    code = next_code(secret, 1)
+    sign_in(client, secret, code=code)
     challenge = client.post(
         "/api/auth/login", json={"email": "runner@example.com", "password": PASSWORD}
     ).json()
-    replay = client.post(
-        "/api/auth/login/totp", json={"challenge": challenge["challenge"], "code": next_code(secret, 1)}
-    )
+    replay = client.post("/api/auth/login/totp", json={"challenge": challenge["challenge"], "code": code})
     assert replay.status_code == 401
 
 
