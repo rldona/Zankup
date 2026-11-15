@@ -14,16 +14,7 @@ import { useApi } from '../src/auth';
 import { Icon, type IconName } from '../src/Icon';
 import { MenuButton } from '../src/Menu';
 import { locale, t } from '../src/i18n';
-import {
-  CompareWithStrava,
-  Curves,
-  Efficiency,
-  Fitness,
-  Progress,
-  Records,
-  Summary,
-  Volume,
-} from '../src/stats/Sections';
+import { Curves, Efficiency, Fitness, Records, Summary, Volume } from '../src/stats/Sections';
 import { useTheme } from '../src/theme';
 import { Card, Choice, Heading, MenuRow, Muted, Screen } from '../src/ui';
 
@@ -32,6 +23,8 @@ import { Card, Choice, Heading, MenuRow, Muted, Screen } from '../src/ui';
 const LINKS: [IconName, MessageKey, string][] = [
   ['route', 'stats.routes', '/routes'],
   ['timeline', 'stats.segments', '/segments'],
+  // Every year against the others: whole years, so not under the period's filter.
+  ['show_chart', 'stats.progress', '/years'],
 ];
 
 const MODES = ['last12', 'year', 'month', 'all'] as const;
@@ -101,8 +94,6 @@ export default function StatsScreen() {
     ...engineQuery(api),
     refetchInterval: (q) => (q.state.data?.running ? 3000 : false),
   });
-  const year =
-    mode === 'year' ? String(shownYear) : mode === 'month' ? String(Math.floor(toMonth / 12)) : null;
 
   return (
     <Screen
@@ -184,8 +175,6 @@ export default function StatsScreen() {
       <Efficiency range={range} />
       <Curves range={range} />
       <Records range={range} />
-      <Progress selected={Number(year) || today.getFullYear()} />
-      <CompareWithStrava />
 
       <Heading>{t('stats.links')}</Heading>
       <Card style={{ paddingVertical: 0, gap: 0 }}>

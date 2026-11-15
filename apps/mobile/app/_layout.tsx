@@ -151,6 +151,7 @@ export default function Root() {
                   <Stack.Screen name="assistants" options={{ title: t('assistants.title') }} />
                   <Stack.Screen name="matches" options={{ title: t('detail.matching') }} />
                   <Stack.Screen name="monthly" options={{ title: t('monthly.title') }} />
+                  <Stack.Screen name="years" options={{ title: t('stats.progress') }} />
                   <Stack.Screen name="sources" options={{ title: t('sources.manageTitle') }} />
                   <Stack.Screen name="app-icon" options={{ title: t('appIcon.title') }} />
                   <Stack.Screen name="weight" options={{ title: t('weight.title') }} />

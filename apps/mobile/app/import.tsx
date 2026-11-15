@@ -1,7 +1,7 @@
 /**
  * Import on the phone (OS-515), as in the PWA (OS-404, OS-406): FIT, TCX, GPX or ZIP files (a Garmin
  * or a Strava export) picked with Android's file picker, uploaded in parts with their progress, and the
- * imports with their counts and problems.
+ * imports with their counts and problems; after a Strava export, how Zankup's metrics compare with its.
  */
 import { importsQuery, type ImportOut } from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { useApi } from '../src/auth';
 import { locale, t } from '../src/i18n';
 import { instanceUrl } from '../src/session';
 import { useTheme } from '../src/theme';
+import { CompareWithStrava } from '../src/stats/Sections';
 import { upload, type Source } from '../src/upload';
 import { Badge, Body, Button, Card, Heading, Muted, ProgressBar, Screen } from '../src/ui';
 
@@ -111,6 +112,8 @@ export default function ImportScreen() {
       {imports.data?.map((i) => (
         <ImportRow key={i.id} item={i} />
       ))}
+      {/* Once a Strava export is in: how close Zankup's metrics are to Strava's. */}
+      <CompareWithStrava />
     </Screen>
   );
 }
