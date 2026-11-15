@@ -50,7 +50,6 @@ import { Chip, CHIP_ICON } from '../src/progress/Chip';
 import { isoDay } from '../src/progress/fitness';
 import { Panel } from '../src/progress/Panel';
 import { racePace, smoothPath } from '../src/progress/raceTimes';
-import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { accent, InfoButton, Muted } from '../src/ui';
 
@@ -82,7 +81,9 @@ export default function BestsScreen() {
   const imperial = useUnits() === 'imperial';
   const params = useLocalSearchParams<{ key?: string }>();
   const today = isoDay(new Date());
-  const [key, setKey] = useState(params.key ?? '5k');
+  const [key, setKey] = useState(params.key ?? '10k');
+  // The measure shown until the picked one loads: it loads in the background, with no skeleton.
+  const [previous, setPrevious] = useState(params.key ?? '10k');
   const [tab, setTab] = useState<'analysis' | 'top'>('analysis');
   // The best at the top of the list (none: the newest): the chart puts it at its right edge.
   const [anchor, setAnchor] = useState<number | null>(null);
@@ -93,14 +94,21 @@ export default function BestsScreen() {
   const sport = sportOf(key);
   const keys = (sport === 'run' ? [...RUN_KEYS] : [...RIDE_KEYS]).filter((k) => effortShown(k, format.unit));
   const bests = useQuery(bestsQuery(api, key));
-  const all = (bests.data ?? []) as Best[];
-  const top = ranked(key, all);
-  const value = (v: number) => bestValue(key, v, locale, imperial);
+  // The last measure's bests, from the cache, while the picked one loads.
+  const before = useQuery({ ...bestsQuery(api, previous), enabled: false });
+  const shownKey = bests.data || !before.data ? key : previous;
+  const all = (bests.data ?? before.data ?? []) as Best[];
+  const loaded = bests.data != null || before.data != null;
+  const top = ranked(shownKey, all);
+  const value = (v: number) => bestValue(shownKey, v, locale, imperial);
   const pace = (v: number) =>
-    sport === 'run' ? `${racePace(v, RUN_METRES[key] ?? 1000, imperial)} /${imperial ? 'mi' : 'km'}` : null;
+    sportOf(shownKey) === 'run'
+      ? `${racePace(v, RUN_METRES[shownKey] ?? 1000, imperial)} /${imperial ? 'mi' : 'km'}`
+      : null;
   const open = (b: Best) => router.push(`/activity/${b.activity_id}`);
 
   const pick = (k: string) => {
+    if (bests.data) setPrevious(key);
     setKey(k);
     setAnchor(null);
     rows.current.clear();
@@ -184,7 +192,7 @@ export default function BestsScreen() {
         ))}
       </ScrollView>
 
-      {tab === 'analysis' && !bests.isPending && top.length ? (
+      {tab === 'analysis' && top.length ? (
         // Analysis: the record, the chart and the filter stay; the list scrolls below them.
         <View style={{ flex: 1 }}>
           <View style={{ paddingHorizontal: 16, gap: 4 }}>
@@ -213,7 +221,7 @@ export default function BestsScreen() {
             </View>
           </View>
           <BestsChart
-            bestKey={key}
+            bestKey={shownKey}
             all={all}
             chrono={chrono}
             focus={focus}
@@ -250,7 +258,7 @@ export default function BestsScreen() {
           >
             {ordered.flatMap((b, i) => {
               const y = b.day.slice(0, 4);
-              const medal = yearMedal(key, all, b);
+              const medal = yearMedal(shownKey, all, b);
               const row = (
                 <Pressable
                   key={b.activity_id}
@@ -314,15 +322,11 @@ export default function BestsScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-          {bests.isPending ? (
-            <View style={{ padding: 16 }}>
-              <ChartSkeleton height={300} />
-            </View>
-          ) : !top.length ? (
+          {!loaded ? null : !top.length ? (
             <Muted style={{ padding: 16 }}>{t('progress.noBests')}</Muted>
           ) : (
             top.slice(0, 10).map((b) => {
-              const place = placeOf(key, all, b);
+              const place = placeOf(shownKey, all, b);
               return (
                 <Pressable
                   key={b.activity_id}
@@ -383,7 +387,7 @@ export default function BestsScreen() {
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
                 onPress={() => {
-                  pick(s === 'run' ? '5k' : 'longest');
+                  pick(s === 'run' ? '10k' : 'longest');
                   setPanel(null);
                 }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 14 }}
