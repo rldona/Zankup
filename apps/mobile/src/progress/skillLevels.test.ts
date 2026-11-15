@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { DURATIONS, levelAt, levelName, scaleAt, segments, skillLevel, strongest } from './skillLevels';
+import {
+  DURATIONS,
+  levelAt,
+  levelName,
+  radialShare,
+  scaleAt,
+  segments,
+  skillLevel,
+  strongest,
+} from './skillLevels';
 
 describe('skills', () => {
   it('has twelve spokes, sprint to climb', () => {
@@ -36,5 +45,12 @@ describe('skills', () => {
     const best = strongest(bests, 75);
     expect(best?.skill).toBe('attack');
     expect(best?.watts).toBeGreaterThan(0);
+  });
+  it("spaces the radar's rings as the bar's segments, the easy levels widest", () => {
+    expect(radialShare(0)).toBe(0);
+    expect(radialShare(9)).toBeCloseTo(1);
+    expect(radialShare(1)).toBeCloseTo(0.3);
+    expect(radialShare(3)).toBeCloseTo(0.55);
+    expect(radialShare(2.5)).toBeCloseTo(0.5);
   });
 });

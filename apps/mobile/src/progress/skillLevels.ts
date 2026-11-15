@@ -92,3 +92,16 @@ export function durationLabel(seconds: number): string {
   if (seconds < 3600) return `${seconds / 60} min`;
   return `${seconds / 3600} h`;
 }
+
+/**
+ * How far out a level sits on the radar, 0 (centre) to 1 (the ring), as Strava's: the rings are as far
+ * apart as the bar's segments are wide, so the easy levels take most of the room and the shape reads
+ * large; a level part-way through a ring sits part-way between its rings.
+ */
+export function radialShare(level: number): number {
+  const total = SEGMENT_WIDTHS.reduce((a, b) => a + b, 0);
+  const clamped = Math.max(0, Math.min(LEVELS, level));
+  const full = Math.floor(clamped);
+  const done = SEGMENT_WIDTHS.slice(0, full).reduce((a, b) => a + b, 0);
+  return (done + (clamped - full) * (SEGMENT_WIDTHS[full] ?? 0)) / total;
+}

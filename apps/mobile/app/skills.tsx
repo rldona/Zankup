@@ -37,7 +37,9 @@ export default function SkillsScreen() {
   const bests = span === 'recent' ? skills.recent : skills.all;
   const shapes = [
     { bests: skills.all, colour: colours.all, weight: skills.weight },
-    ...(span === 'recent' ? [{ bests: skills.recent, colour: colours.recent, weight: skills.weight }] : []),
+    ...(span === 'recent'
+      ? [{ bests: skills.recent, colour: colours.recent, weight: skills.weight, dots: true }]
+      : []),
   ];
 
   return (
