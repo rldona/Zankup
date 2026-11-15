@@ -6,7 +6,7 @@ vi.mock('react-native-gesture-handler', () => ({}));
 vi.mock('./theme', () => ({}));
 vi.mock('react-native-reanimated', () => ({ Easing: { out: (f: unknown) => f, cubic: (t: number) => t } }));
 
-const { circlesPath, dayTicks, domainOf, linePath, niceScale, polyline, rectsPath, shortNumber } =
+const { circlesPath, dayTicks, resample, domainOf, linePath, niceScale, polyline, rectsPath, shortNumber } =
   await import('./charts');
 
 /** A path's commands, without their numbers: two paths with the same ones can slide into each other. */
@@ -86,5 +86,22 @@ describe('charts', () => {
       ),
     ).toContain('M11 9');
     expect(rectsPath([{ x: 1, y: 2, w: 3, h: 0 }])).toBe('M1 2L4 2L4 2L1 2Z');
+  });
+
+  it('stretches a line over other days, so a longer range starts from the one on screen', () => {
+    const line = [
+      [0, 10],
+      [10, 30],
+    ] as const;
+    expect(resample(line, [0, 2.5, 5, 10])).toEqual([
+      [0, 10],
+      [2.5, 15],
+      [5, 20],
+      [10, 30],
+    ]);
+    expect(resample([[0, 7]], [0, 4])).toEqual([
+      [0, 7],
+      [4, 7],
+    ]);
   });
 });

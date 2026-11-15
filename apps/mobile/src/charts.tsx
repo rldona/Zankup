@@ -235,6 +235,22 @@ export function polyline(points: readonly (readonly [number, number])[], base: n
   return { line, area };
 }
 
+/**
+ * A line resampled at other x's (each between the two points around it), so a line of another length can
+ * turn into it instead of growing from the floor: a longer range starts as the shorter one, stretched.
+ */
+export function resample(points: readonly (readonly [number, number])[], xs: readonly number[]) {
+  return xs.map((x) => {
+    if (!points.length) return [x, 0] as const;
+    let i = 0;
+    while (i < points.length - 2 && points[i + 1][0] < x) i++;
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[Math.min(i + 1, points.length - 1)];
+    const t = x1 === x0 ? 0 : Math.max(0, Math.min(1, (x - x0) / (x1 - x0)));
+    return [x, y0 + (y1 - y0) * t] as const;
+  });
+}
+
 /** A hollow ring on each point, sliding with the line: drawn as two paths (the fill, then the ring). */
 export function Rings({
   points,
@@ -244,10 +260,12 @@ export function Rings({
   colour,
   strokeWidth = 2.5,
   ready,
+  from,
 }: {
   points: readonly (readonly [number, number])[];
-  /** Where they grow from. */
+  /** Where they grow from: the floor, or points of their own (as many). */
   base: number;
+  from?: readonly (readonly [number, number])[];
   r: number | ((i: number) => number);
   fill: string;
   colour: string;
@@ -255,10 +273,7 @@ export function Rings({
   ready: boolean;
 }) {
   const d = circlesPath(points, r);
-  const flat = circlesPath(
-    points.map(([px]) => [px, base - 1] as const),
-    0.5,
-  );
+  const flat = circlesPath(from ?? points.map(([px]) => [px, base - 1] as const), 0.5);
   return (
     <>
       <MorphPath d={d} flat={flat} ready={ready} color={fill} />
