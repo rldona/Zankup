@@ -53,7 +53,6 @@ export default function ReviewScreen() {
       toolbar={
         <>
           <Choice
-            center
             label={t('review.period')}
             value={period}
             onChange={switchTo}
