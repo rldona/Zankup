@@ -1,18 +1,26 @@
 /**
  * Best times, from Progress (as Strava's): one measure (a run distance, a ride's best power over a
  * duration or its distance) with two tabs. Analysis: the record and the second and third, a chart of
- * twelve months of bests with their trend (swiped sideways a year at a time, or a year picked), and
- * those bests by year below, each with its medal of the year. Top 10: the ten best. Each best opens
- * its activity.
+ * the bests with their trend, twelve at a time, that scrolls sideways with the finger, and those bests
+ * by year below, each with its medal of the year; the chart and the list move together. Top 10: the ten
+ * best. Each best opens its activity.
  */
 import { bestsQuery, effortShown, SPORT_ICONS } from '@zankup/core';
-import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, Line, Path, rect, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import {
+  cancelAnimation,
+  Easing,
+  useAnimatedReaction,
+  useDerivedValue,
+  useSharedValue,
+  withDecay,
+  withTiming,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useApi } from '../src/auth';
@@ -21,18 +29,18 @@ import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { useFormat, useUnits } from '../src/prefs';
 import {
-  bestsBetween,
   bestValue,
+  CHART_SLOTS,
   lowerIsBetter,
-  monthStarts,
+  chartScale,
+  offsetFor,
+  offsetRange,
   placeOf,
   ranked,
   RIDE_KEYS,
   RUN_KEYS,
   RUN_METRES,
   trend,
-  windowOf,
-  windowShare,
   yearMedal,
   yearsOf,
   type Best,
@@ -40,7 +48,6 @@ import {
 import { bestName, Medal, MEDAL_COLOURS, sportOf } from '../src/progress/BestsCard';
 import { Chip, CHIP_ICON } from '../src/progress/Chip';
 import { isoDay } from '../src/progress/fitness';
-import { addDays } from '../src/progress/weeks';
 import { Panel } from '../src/progress/Panel';
 import { racePace, smoothPath } from '../src/progress/raceTimes';
 import { ChartSkeleton } from '../src/Skeleton';
@@ -77,8 +84,8 @@ export default function BestsScreen() {
   const today = isoDay(new Date());
   const [key, setKey] = useState(params.key ?? '5k');
   const [tab, setTab] = useState<'analysis' | 'top'>('analysis');
-  // The best at the top of the list (none: the newest): the chart's twelve months end on its day.
-  const [anchor, setAnchor] = useState<string | null>(null);
+  // The best at the top of the list (none: the newest): the chart puts it at its right edge.
+  const [anchor, setAnchor] = useState<number | null>(null);
   const list = useRef<ScrollViewInstance>(null);
   const rows = useRef(new Map<number, { y: number; h: number }>());
   const yearHeader = useRef(44);
@@ -101,28 +108,29 @@ export default function BestsScreen() {
   };
   // Newest first, as the list shows them.
   const ordered = [...all].sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
-  const end = anchor ?? ordered[0]?.day ?? today;
-  const months = windowOf(end);
-  const shown = bestsBetween(all, months.from, months.to);
-  // The list and the chart move together (as Strava's): scrolling the list moves the chart's months to
-  // end on the best at the top, and dragging the chart scrolls the list to the day it moved to.
+  // Oldest first, as the chart draws them; the list's top best is the chart's right edge.
+  const chrono = [...ordered].reverse();
+  const at = chrono.findIndex((b) => b.activity_id === anchor);
+  const focus = at >= 0 ? at : chrono.length - 1;
+  const focusYear = chrono[focus]?.day.slice(0, 4) ?? today.slice(0, 4);
+  // The list and the chart move together (as Strava's): scrolling the list scrolls the chart to the
+  // best at the top, and dragging the chart scrolls the list to the best at its right edge.
   const onListScroll = (offset: number) => {
     const line = offset + yearHeader.current;
     const atTop = ordered.find((b) => {
       const r = rows.current.get(b.activity_id);
       return r != null && r.y + r.h > line;
     });
-    if (atTop && atTop.day !== end) setAnchor(atTop.day);
+    if (atTop && atTop.activity_id !== (anchor ?? ordered[0]?.activity_id)) setAnchor(atTop.activity_id);
   };
-  const scrollToDay = (target: string) => {
-    const best = ordered.find((b) => b.day <= target) ?? ordered.at(-1);
+  const scrollToBest = (best: Best | undefined, animated: boolean) => {
     const r = best && rows.current.get(best.activity_id);
     if (!best || r == null) return;
     const y = best === ordered[0] ? 0 : Math.max(0, r.y - yearHeader.current);
-    list.current?.scrollTo({ y, animated: true });
+    list.current?.scrollTo({ y, animated });
   };
-  // A drag of the whole chart's width is a year.
-  const onChartPan = (share: number) => scrollToDay(addDays(end, Math.round(share * 365)));
+  const scrollToDay = (target: string) =>
+    scrollToBest(ordered.find((b) => b.day <= target) ?? ordered.at(-1), true);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.page }}>
@@ -207,11 +215,11 @@ export default function BestsScreen() {
           <BestsChart
             bestKey={key}
             all={all}
-            shown={shown}
-            from={months.from}
-            to={months.to}
+            chrono={chrono}
+            focus={focus}
+            focusYear={focusYear}
             label={value}
-            onPan={onChartPan}
+            onMove={(i) => scrollToBest(chrono[i], false)}
           />
           <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
             <Pressable
@@ -292,20 +300,13 @@ export default function BestsScreen() {
               if (i > 0 && ordered[i - 1].day.startsWith(y)) return [row];
               // The year's header stays on top while its bests scroll under it.
               return [
-                <Text
+                <View
                   key={`y${y}`}
                   onLayout={(e) => (yearHeader.current = e.nativeEvent.layout.height)}
-                  style={{
-                    color: c.fg,
-                    fontSize: 15,
-                    fontWeight: '800',
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    backgroundColor: c.surface,
-                  }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: c.surface }}
                 >
-                  {y}
-                </Text>,
+                  <Text style={{ color: c.fg, fontSize: 15, fontWeight: '800' }}>{y}</Text>
+                </View>,
                 row,
               ];
             })}
@@ -401,7 +402,7 @@ export default function BestsScreen() {
             <Pressable
               key={y ?? 'last'}
               accessibilityRole="radio"
-              accessibilityState={{ checked: y === end.slice(0, 4) }}
+              accessibilityState={{ checked: y === focusYear }}
               onPress={() => {
                 if (y) scrollToDay(`${y}-12-31`);
                 else list.current?.scrollTo({ y: 0, animated: true });
@@ -409,10 +410,10 @@ export default function BestsScreen() {
               }}
               style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}
             >
-              <Text style={{ flex: 1, color: y === end.slice(0, 4) ? accent(c) : c.fg, fontSize: 15 }}>
+              <Text style={{ flex: 1, color: y === focusYear ? accent(c) : c.fg, fontSize: 15 }}>
                 {y ?? t('progress.last12Months')}
               </Text>
-              {y === end.slice(0, 4) && <Icon name="check" color={accent(c)} size={24} />}
+              {y === focusYear && <Icon name="check" color={accent(c)} size={24} />}
             </Pressable>
           ))}
         </ScrollView>
@@ -422,108 +423,152 @@ export default function BestsScreen() {
 }
 
 /**
- * Twelve months of bests, as Strava's: each best at its date, a line a month, the better ones higher (a
- * faster time or more watts), the year's medals in their colours, and the trend through them as a smooth
- * line. The axis goes from the slowest shown to the record. Swiped sideways, it follows the finger and
- * moves a year back or forward; the list below changes with it.
+ * The bests as Strava's chart: one slot each, oldest to newest, twelve on screen, the better ones higher
+ * (a faster time or more watts), the year's medals in their colours, the bests of the list's year filled
+ * and the rest hollow, and the trend through them as a smooth line. The scale goes from the record to
+ * the slow days and stays while it scrolls. It follows the finger sideways and keeps going a little after
+ * a fling; the list below scrolls with it.
  */
 function BestsChart({
   bestKey,
   all,
-  shown,
-  from,
-  to,
+  chrono,
+  focus,
+  focusYear,
   label,
-  onPan,
+  onMove,
 }: {
   bestKey: string;
   all: Best[];
-  shown: Best[];
-  from: string;
-  to: string;
+  /** Every best, oldest first. */
+  chrono: Best[];
+  /** The best at the list's top: the chart scrolls to put it at the right edge. */
+  focus: number;
+  focusYear: string;
   label: (v: number) => string;
-  /** The chart was dragged: by this share of its width, positive to later days. */
-  onPan: (share: number) => void;
+  /** The chart was dragged: the best now at its right edge, oldest first. */
+  onMove: (index: number) => void;
 }) {
   const c = useTheme();
   const [width, setWidth] = useState(0);
   const ready = useCanvasReady(width);
-  const shift = useSharedValue(0);
-  const pan = Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-12, 12])
-    .onUpdate((e) => {
-      shift.set(e.translationX);
-    })
-    .onEnd((e) => {
-      // Dragged right shows earlier days (as Strava's), a fling a little further.
-      const fling = Math.max(-0.5, Math.min(0.5, e.velocityX / 4000));
-      const share = -(e.translationX / Math.max(1, plotWidth) + fling);
-      if (Math.abs(e.translationX) > 8) scheduleOnRN(onPan, share);
-      shift.set(withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) }));
-    });
-  const plotWidth = Math.max(1, width - 70 - 16);
-  const moving = useAnimatedStyle(() => ({ transform: [{ translateX: shift.get() * 0.5 }] }));
   const height = 260;
   const axis = 70;
   const top = 14;
   const base = height - 34;
+  const plot = Math.max(1, width - axis - 8);
+  const slot = plot / CHART_SLOTS;
+  const n = chrono.length;
+  const [low, high] = offsetRange(n);
+  const offset = useSharedValue(offsetFor(focus, n));
+  const start = useSharedValue(0);
+  const dragging = useSharedValue(false);
+  const [first, setFirst] = useState(() => Math.round(offsetFor(focus, n)));
+  // The list moved (or another measure was picked): scroll to its top best, unless the finger is on the chart.
+  useEffect(() => {
+    if (!dragging.get())
+      offset.set(withTiming(offsetFor(focus, n), { duration: 250, easing: Easing.out(Easing.cubic) }));
+  }, [focus, n, offset, dragging]);
+  useAnimatedReaction(
+    () => Math.round(offset.get()),
+    (now, before) => {
+      if (now === before) return;
+      scheduleOnRN(setFirst, now);
+      if (dragging.get()) scheduleOnRN(onMove, Math.min(n - 1, Math.max(0, now + CHART_SLOTS - 1)));
+    },
+    [n, onMove],
+  );
+  const pan = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-12, 12])
+    .onStart(() => {
+      cancelAnimation(offset);
+      start.set(offset.get());
+      dragging.set(true);
+    })
+    .onUpdate((e) => {
+      // Dragged right shows earlier bests, as Strava's.
+      offset.set(Math.min(high, Math.max(low, start.get() - e.translationX / slot)));
+    })
+    .onEnd((e) => {
+      offset.set(
+        withDecay({ velocity: -e.velocityX / slot, clamp: [low, high], deceleration: 0.994 }, (finished) => {
+          if (finished) dragging.set(false);
+        }),
+      );
+    });
+  const shift = useDerivedValue(() => [{ translateX: -offset.get() * slot }]);
   const lower = lowerIsBetter(bestKey);
-  const record = ranked(bestKey, all)[0]?.value ?? 0;
-  const worst = shown.reduce((w, b) => (lower ? Math.max(w, b.value) : Math.min(w, b.value)), record);
+  const { record, worst } = chartScale(bestKey, all);
   const span = Math.abs(worst - record) || Math.abs(record) * 0.1 || 1;
-  // Better is higher: the record at the top, the worst shown at the bottom.
-  const y = (v: number) => top + (Math.abs(v - record) / span) * (base - top);
-  const plot = Math.max(1, width - axis - 16);
-  const x = (day: string) => axis + 8 + windowShare(day, from, to) * plot;
+  // Better is higher: the record at the top, the slow days at the bottom (slower ones sit on it).
+  const y = (v: number) => {
+    const behind = lower ? v - record : record - v;
+    return top + Math.min(1, Math.max(0, behind / span)) * (base - top);
+  };
+  const x = (i: number) => axis + 8 + slot / 2 + i * slot;
   const middle = (record + worst) / 2;
-  const medal = (b: Best) => yearMedal(bestKey, all, b);
-  const line = trend(shown, 45, all);
+  const line = trend(chrono, 45, chrono);
+  const left = chrono[Math.max(0, first)];
+  const right = chrono[Math.min(n - 1, first + CHART_SLOTS - 1)];
   return (
     <GestureDetector gesture={pan}>
       <View
         onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-        style={{ height, marginTop: 16, opacity: ready ? 1 : 0, overflow: 'hidden' }}
+        style={{ height, marginTop: 16, opacity: ready ? 1 : 0 }}
       >
         {width > 0 && (
           <>
             <Canvas style={{ position: 'absolute', width, height }}>
-              {ready &&
-                [record, middle, worst].map((v, i) => (
-                  <Line key={i} p1={vec(axis, y(v))} p2={vec(width, y(v))} color={c.line} strokeWidth={1} />
-                ))}
-            </Canvas>
-            <Animated.View style={[{ position: 'absolute', width, height }, moving]}>
-              <Canvas style={{ width, height }}>
-                {ready && (
-                  <>
-                    {monthStarts(from, to).map((m) => (
-                      <Line key={m} p1={vec(x(m), top)} p2={vec(x(m), base)} color={c.line} strokeWidth={1} />
-                    ))}
-                    {shown.length > 1 && (
-                      <Path
-                        path={smoothPath(shown.map((b, i) => ({ x: x(b.day), y: y(line[i]) })))}
-                        style="stroke"
-                        strokeWidth={2.5}
-                        color={String(c.fitness)}
-                      />
-                    )}
-                    {shown.map((b) => {
-                      const m = medal(b);
-                      return (
-                        <Circle
-                          key={b.activity_id}
-                          cx={x(b.day)}
-                          cy={y(b.value)}
-                          r={5}
-                          color={m ? MEDAL_COLOURS[m - 1] : String(c.muted)}
+              {ready && (
+                <>
+                  {[record, middle, worst].map((v, i) => (
+                    <Line key={i} p1={vec(axis, y(v))} p2={vec(width, y(v))} color={c.line} strokeWidth={1} />
+                  ))}
+                  <Group clip={rect(axis, 0, width - axis, height)}>
+                    <Group transform={shift}>
+                      {chrono.map((b, i) => (
+                        <Line
+                          key={`l${b.activity_id}`}
+                          p1={vec(x(i), top)}
+                          p2={vec(x(i), base)}
+                          color={c.line}
+                          strokeWidth={1}
                         />
-                      );
-                    })}
-                  </>
-                )}
-              </Canvas>
-            </Animated.View>
+                      ))}
+                      {n > 1 && (
+                        <Path
+                          path={smoothPath(chrono.map((_, i) => ({ x: x(i), y: y(line[i] ?? record) })))}
+                          style="stroke"
+                          strokeWidth={2.5}
+                          color={String(c.fitness)}
+                        />
+                      )}
+                      {chrono.map((b, i) => {
+                        const m = yearMedal(bestKey, all, b);
+                        const colour = m ? MEDAL_COLOURS[m - 1] : String(c.muted);
+                        const filled = b.day.startsWith(focusYear);
+                        return filled ? (
+                          <Circle key={b.activity_id} cx={x(i)} cy={y(b.value)} r={6} color={colour} />
+                        ) : (
+                          <Group key={b.activity_id}>
+                            <Circle cx={x(i)} cy={y(b.value)} r={6} color={String(c.page)} />
+                            <Circle
+                              cx={x(i)}
+                              cy={y(b.value)}
+                              r={5}
+                              style="stroke"
+                              strokeWidth={2}
+                              color={colour}
+                            />
+                          </Group>
+                        );
+                      })}
+                    </Group>
+                  </Group>
+                </>
+              )}
+            </Canvas>
             {[record, middle, worst].map((v, i) => (
               <Text
                 key={i}
@@ -539,12 +584,9 @@ function BestsChart({
                 {label(v)}
               </Text>
             ))}
-            <Muted style={{ position: 'absolute', left: axis + 8, top: base + 10, fontSize: 12 }}>
-              {day(from)} – {day(to)}
-            </Muted>
-            {!shown.length && (
-              <Muted style={{ position: 'absolute', left: axis + 8, top: base / 2, fontSize: 13 }}>
-                {t('progress.noBestsHere')}
+            {left && right && (
+              <Muted style={{ position: 'absolute', left: axis + 8, top: base + 10, fontSize: 12 }}>
+                {day(left.day)} – {day(right.day)}
               </Muted>
             )}
           </>

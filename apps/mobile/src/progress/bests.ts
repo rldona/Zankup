@@ -103,24 +103,38 @@ export const RUN_METRES: Record<string, number> = {
   marathon: 42195,
 };
 
-/** The same day a year before (29 February becomes the 28th). */
-export function yearBefore(iso: string): string {
-  const y = Number(iso.slice(0, 4)) - 1;
-  const rest = iso.slice(4) === '-02-29' ? '-02-28' : iso.slice(4);
-  return `${y}${rest}`;
+/**
+ * The chart, as Strava's: one slot per best, oldest to newest, `CHART_SLOTS` of them on screen at a
+ * time, scrolled sideways. `offset` is the slot at the left edge (fractional while it moves); with fewer
+ * bests than slots they sit on the right, the newest at the edge.
+ */
+export const CHART_SLOTS = 12;
+
+export function offsetRange(count: number, slots = CHART_SLOTS): [number, number] {
+  const low = Math.min(0, count - slots);
+  return [low, Math.max(low, count - slots)];
+}
+
+/** The offset that puts a best (its index, oldest first) at the right edge, as far as the bests allow. */
+export function offsetFor(index: number, count: number, slots = CHART_SLOTS): number {
+  const [low, high] = offsetRange(count, slots);
+  return Math.min(high, Math.max(low, index - (slots - 1)));
+}
+
+/** The best at the right edge for an offset: the one the list shows at its top. */
+export function rightIndex(offset: number, count: number, slots = CHART_SLOTS): number {
+  return Math.min(count - 1, Math.max(0, Math.round(offset) + slots - 1));
 }
 
 /**
- * The twelve months the chart shows, as Strava's: after `yearBefore(end)` up to `end`, both ISO days.
- * Swiping moves it a year at a time; a year from the filter is its 1 January to 31 December.
+ * The vertical scale, the same while the chart scrolls: from the record (top) to the 90th percentile of
+ * the rest (bottom), so a few very slow days do not squash everything; worse ones sit on the bottom.
  */
-export function windowOf(end: string): { from: string; to: string } {
-  return { from: yearBefore(end), to: end };
-}
-
-/** The bests inside a window (after `from`, up to `to`), oldest first. */
-export function bestsBetween(bests: Best[], from: string, to: string): Best[] {
-  return bests.filter((b) => b.day > from && b.day <= to).sort((a, b) => (a.day < b.day ? -1 : 1));
+export function chartScale(key: string, bests: Best[]): { record: number; worst: number } {
+  const order = ranked(key, bests);
+  const record = order[0]?.value ?? 0;
+  const worst = order[Math.floor(0.9 * (order.length - 1))]?.value ?? record;
+  return { record, worst };
 }
 
 const dayNumber = (iso: string) =>
@@ -137,24 +151,4 @@ export function trend(points: Best[], days = 45, context: Best[] = points): numb
     const near = context.filter((b) => Math.abs(dayNumber(b.day) - at) <= days);
     return near.reduce((s, b) => s + b.value, 0) / Math.max(1, near.length);
   });
-}
-
-/** Where a day falls in a window, from 0 (its start) to 1 (its end). */
-export function windowShare(day: string, from: string, to: string): number {
-  const span = dayNumber(to) - dayNumber(from);
-  return span > 0 ? Math.min(1, Math.max(0, (dayNumber(day) - dayNumber(from)) / span)) : 0;
-}
-
-/** The first of each month inside a window: the chart's vertical lines. */
-export function monthStarts(from: string, to: string): string[] {
-  const out: string[] = [];
-  let y = Number(from.slice(0, 4));
-  let m = Number(from.slice(5, 7));
-  for (;;) {
-    m += 1;
-    if (m > 12) [y, m] = [y + 1, 1];
-    const iso = `${y}-${String(m).padStart(2, '0')}-01`;
-    if (iso > to) return out;
-    out.push(iso);
-  }
 }
