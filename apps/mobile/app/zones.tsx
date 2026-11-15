@@ -19,7 +19,14 @@ import { Panel } from '../src/progress/Panel';
 import { SportSheet } from '../src/progress/SportSheet';
 import { PROGRESS_RANGES, rangeOf, type ProgressRange } from '../src/progress/volume';
 import { sportIcon } from '../src/progress/VolumeCard';
-import { glance, shareChange, topZone, zoneKinds, type ZoneKind } from '../src/progress/zones';
+import {
+  defaultZoneKind,
+  glance,
+  shareChange,
+  topZone,
+  zoneKinds,
+  type ZoneKind,
+} from '../src/progress/zones';
 import { ShareBadge, ZoneRows } from '../src/progress/ZonesCard';
 import { useTheme } from '../src/theme';
 import { accent, Card, InfoButton, Muted, onAccent, Screen } from '../src/ui';
@@ -166,6 +173,8 @@ export default function ZonesScreen() {
           found={[]}
           onPick={(s) => {
             setSport(s);
+            // Each sport opens on its own zones: a run on pace, a ride on power.
+            setKind(defaultZoneKind(s));
             setPicking(false);
           }}
         />
