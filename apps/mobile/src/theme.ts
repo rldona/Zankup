@@ -34,6 +34,9 @@ export const dynamicOnAccent = {
   dark: PlatformColor('@android:color/system_accent1_800'),
 };
 
+/** Strava's themes draw cards as Strava does: their surface on the background, with no edge. */
+export const borderlessCards = (c: Palette) => c.name === 'strava' || c.name === 'stravaDark';
+
 export const ThemeContext = createContext<{ choice: ThemeChoice; setChoice: (c: ThemeChoice) => void }>({
   choice: 'system',
   setChoice: () => undefined,

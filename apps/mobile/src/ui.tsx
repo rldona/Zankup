@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
 import { t } from './i18n';
 import { PageSkeleton } from './Skeleton';
-import { dynamicAccent, dynamicOnAccent, useTheme, type Palette } from './theme';
+import { borderlessCards, dynamicAccent, dynamicOnAccent, useTheme, type Palette } from './theme';
 
 const scheme = (c: Palette) => (c.scheme === 'dark' ? 'dark' : 'light');
 
@@ -302,7 +302,16 @@ export function Body({ children }: { children: ReactNode }) {
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const c = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.line }, style]}>{children}</View>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: c.surface, borderColor: c.line },
+        borderlessCards(c) && { borderWidth: 0 },
+        style,
+      ]}
+    >
+      {children}
+    </View>
   );
 }
 
