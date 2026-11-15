@@ -16,9 +16,19 @@ export function savedTheme(): ThemeChoice {
   return isThemeChoice(saved) ? saved : 'system';
 }
 
+const palettes = new Map<string, Palette>();
+
+/**
+ * The colours of a theme. The same object every time for the same theme, so what is built from the
+ * colours (memoised charts, styles) is not rebuilt on every render.
+ */
 export function palette(choice: ThemeChoice, scheme: 'light' | 'dark'): Palette {
   const name: ThemeName = choice === 'system' ? scheme : choice;
-  return { ...commonTokens, ...themes[name], name, dynamic: choice === 'system' };
+  const key = `${name}|${choice === 'system'}`;
+  let kept = palettes.get(key);
+  if (!kept)
+    palettes.set(key, (kept = { ...commonTokens, ...themes[name], name, dynamic: choice === 'system' }));
+  return kept;
 }
 
 /**
