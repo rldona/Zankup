@@ -434,8 +434,8 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               {sectionCard}
               <Photos activity={a} />
               <RouteAndSegments activity={a} />
+              {/* No splits on a ride, as Strava's: its laps say it. */}
               <Laps activity={a} format={format} pace={pace} />
-              <Splits activity={a} format={format} pace={pace} />
             </>
           ) : sport === 'run' ? (
             // A run as Strava's: the same blocks, then the training analysis and splits, pace with its
