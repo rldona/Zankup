@@ -61,9 +61,7 @@ def main() -> None:
     fb.setupHorizontalMetrics({name: (EM, 0) for name in names})
     fb.setupHorizontalHeader(ascent=EM, descent=0)
     fb.setupNameTable({"familyName": FAMILY, "styleName": "Regular"})
-    fb.setupOS2(
-        sTypoAscender=EM, sTypoDescender=0, sTypoLineGap=0, usWinAscent=EM, usWinDescent=0, fsType=0
-    )
+    fb.setupOS2(sTypoAscender=EM, sTypoDescender=0, sTypoLineGap=0, usWinAscent=EM, usWinDescent=0, fsType=0)
     fb.setupPost()
     FONT.parent.mkdir(parents=True, exist_ok=True)
     fb.save(str(FONT))
