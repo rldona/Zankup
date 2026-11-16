@@ -3,8 +3,8 @@ import {
   activityFigures,
   ApiError,
   activityQuery,
-  curvesQuery,
   availableMetrics,
+  elevationProfile,
   formatActivityDate,
   formatDuration,
   formatters,
@@ -15,13 +15,13 @@ import {
   quantile,
   RAMP,
   sectionStats,
+  splitSpeeds,
   SPORTS,
   streamsQuery,
-  timeInZones,
   trackPoints,
   usesPace,
-  ZONE_SHARES,
-  zoneLimits,
+  type ActivityChart,
+  type ActivityContext,
   type ActivityDetail,
   type Metric,
   type MessageKey,
@@ -33,20 +33,31 @@ import {
 } from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 
 import { api } from '../api';
-import { ZoneBar } from '../charts/static';
 import { ChartCard } from '../detail/ChartCard';
+import {
+  EffortBlock,
+  ExercisesBlock,
+  FitnessBlock,
+  GoalsBlock,
+  MatchesBlock,
+  PaceZonesBlock,
+  ResultsBlock,
+} from '../detail/Context';
+import { contextHasBlocks, powerFigures, useActivityContext } from '../detail/activityContext';
+import { GoalReachedBanner } from '../detail/GoalReached';
 import { MapControls } from '../detail/MapControls';
 import { useReplay } from '../detail/replay';
+import { HrZones, PowerCurve, PowerZones, RouteAndSegments } from '../detail/Sections';
+import { SplitsTable, TrainingAnalysis } from '../detail/Splits';
 import { ActivityActions, Meta, Photos } from '../detail/Tools';
 import { RouteMap } from '../detail/RouteMap';
 import { MuscleCover } from '../detail/BodyMap';
 import { Strength } from '../detail/Strength';
 import { Summary } from '../detail/Summary';
 import { workoutTypeSuffix } from '../detail/workoutTypes';
-import { CurveChart } from '../stats/charts';
 import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
 import { SportIcon } from '../SportIcon';
@@ -55,6 +66,7 @@ import { ActivitySkeleton, ChartSkeleton, Pulse } from '../Skeleton';
 import { CardTitle } from '../ui';
 import { MaterialIcon } from '../MaterialIcon';
 import { PHONE, useMedia } from '../media';
+import '../detail/activity.css';
 
 type Format = ReturnType<typeof formatters>;
 
@@ -62,14 +74,17 @@ const asSport = (value: string): Sport =>
   (SPORTS as readonly string[]).includes(value) ? (value as Sport) : 'other';
 
 /**
- * Activity detail (OS-205 to OS-208, OS-216): header and figures, the route on a map coloured by a
- * metric, the profile synced with the map and a section picked on it, HR zones, best efforts, laps and
- * splits, and the original file.
+ * Activity detail (OS-205 to OS-208, OS-216; laid out as Strava's in OS-1006 to OS-1008, as the app's):
+ * header and figures, the route on a map coloured by a metric, the goals it reached and the Coach, then
+ * per sport what it did for fitness, the same route, its effort, goals and results beside the charts,
+ * zones, splits and the rest, and the original file.
  */
 export function Activity() {
   const id = Number(useParams().id);
   const valid = Number.isInteger(id) && id > 0;
   const activity = useQuery({ ...activityQuery(api, id), enabled: valid });
+  // How it compares loads beside the activity, not after it (Detail reads it from the cache).
+  useActivityContext(id, valid);
 
   if (!valid || (activity.error instanceof ApiError && activity.error.status === 404)) {
     return (
@@ -95,28 +110,32 @@ export function Activity() {
   );
 }
 
+/** The charts drawn over the elevation, as Strava's. */
+const OVER_ELEVATION = new Set(['power', 'hr', 'speed', 'pace', 'gap', 'cad']);
+
 function Detail({ activity }: { activity: ActivityDetail }) {
   const prefs = usePrefs();
   const format = useMemo(() => formatters(prefs), [prefs]);
+  const theme = useResolvedTheme();
   const sport = asSport(activity.sport);
   const pace = usesPace(sport);
   const streams = useQuery({ ...streamsQuery(api, activity.id), enabled: activity.streams != null });
   const series = streams.data as Series | undefined;
+  const context = useActivityContext(activity.id);
   // The cursor and the section, shared by the map and every chart.
   const [hover, setHover] = useState<number | null>(null);
   const [section, setSection] = useState<[number, number] | null>(null);
+  const [selecting, setSelecting] = useState(false);
   const hasMap = useMemo(() => (series ? trackPoints(series).length > 1 : false), [series]);
-  const hrZones = series?.hr?.some((v) => v != null) && (
-    <Zones
-      series={series}
-      hrMax={prefs.hrMax}
-      estimated={prefs.hrMaxEstimated}
-      engine={
-        activity.metrics?.hr_zones && activity.metrics.hr_zone_bounds
-          ? { seconds: activity.metrics.hr_zones, bounds: activity.metrics.hr_zone_bounds }
-          : null
-      }
-    />
+  const charts = useMemo(
+    () =>
+      series ? activityCharts(series, { sport, pace, units: prefs.units, format, activity, t, locale }) : [],
+    [series, sport, pace, prefs.units, format, activity],
+  );
+  // The altitude behind the training analysis' bars.
+  const elevation = useMemo(
+    () => elevationProfile(series?.dist, series?.alt, activity.distance_m ?? 0),
+    [series, activity.distance_m],
   );
 
   const phone = useMedia(PHONE);
@@ -138,64 +157,187 @@ function Detail({ activity }: { activity: ActivityDetail }) {
     [activity.sets, activity.workout_type],
   );
   const cover = map || (muscles.size > 0 && !activity.has_gps && <MuscleCover worked={muscles} />);
-  const summary = <Summary activityId={activity.id} name={activity.name} />;
   const figures = <Figures {...activityFigures(activity, { pace, format, t, locale })} />;
-  const charts = (
+
+  // The charts' pieces, laid out per sport below: the heading with the section switch, one card per
+  // chart (its figures under it) and the selected section's figures.
+  const loading = activity.streams && !series && (
+    <Pulse>
+      <ChartSkeleton height={280} />
+    </Pulse>
+  );
+  const heading = charts.length > 0 && (
+    <ProfileHeading
+      selecting={selecting}
+      section={section}
+      onToggle={() => {
+        // Turning "Section" off drops the band, its figures and the map's highlight.
+        if (selecting) setSection(null);
+        setSelecting(!selecting);
+      }}
+    />
+  );
+  const fastestSplit = Math.max(0, ...splitSpeeds(activity.splits));
+  const extraFigures = (chart: ActivityChart): [string, string][] => {
+    if (sport === 'run' && (chart.key === 'pace' || chart.key === 'speed'))
+      return [
+        [t('detail.moving'), formatDuration(activity.moving_s ?? activity.duration_s)],
+        [t('detail.elapsed'), formatDuration(activity.duration_s)],
+        ...(fastestSplit
+          ? ([[t('detail.fastestSplit'), format.speedFor(fastestSplit, true)]] as [string, string][])
+          : []),
+      ];
+    // A ride's power chart also gets its work, intensity and training load (the server's).
+    return chart.key === 'power' ? powerFigures(context) : [];
+  };
+  const altitude = charts.find((c) => c.key === 'alt')?.values;
+  const chartCard = (key: string) => {
+    const chart = charts.find((c) => c.key === key || (key === 'speed' && c.key === 'pace'));
+    if (!chart || !series) return null;
+    const extra = extraFigures(chart);
+    return (
+      <ChartCard
+        key={chart.key}
+        chart={extra.length ? { ...chart, footer: [...chart.footer, ...extra] } : chart}
+        series={series}
+        units={prefs.units}
+        theme={theme}
+        section={section}
+        selecting={selecting}
+        onHover={setHover}
+        onSection={setSection}
+        backdrop={OVER_ELEVATION.has(chart.key) ? altitude : undefined}
+      />
+    );
+  };
+  const sectionCard = series && section && (
+    <SectionFigures
+      series={series}
+      section={section}
+      format={format}
+      pace={pace}
+      onClear={() => setSection(null)}
+      activityId={activity.id}
+    />
+  );
+  const hrZones = series && (
+    <HrZones series={series} activity={activity} hrMax={prefs.hrMax} estimated={prefs.hrMaxEstimated} />
+  );
+  const photos = <Photos activityId={activity.id} photos={activity.photo_list ?? []} />;
+  const laps = <Laps activity={activity} format={format} pace={pace} />;
+  const sets = (activity.sets ?? []).length > 0 && <Strength sets={activity.sets} cover={!map && !!cover} />;
+
+  // What it did around its own numbers, in the sport's order: beside the charts on a large screen.
+  const ctx = (blocks: (c: ActivityContext) => ReactNode) => context && blocks(context);
+  const rideOrRunBlocks = ctx((c) => (
     <>
-      {activity.streams && !series && (
-        <Pulse>
-          <ChartSkeleton height={280} />
-        </Pulse>
-      )}
-      {series && (
-        <ActivityCharts
-          series={series}
-          sport={sport}
+      <FitnessBlock context={c} />
+      <MatchesBlock context={c} activityId={activity.id} pace={pace} />
+      <EffortBlock context={c} />
+      <GoalsBlock context={c} />
+      <ResultsBlock context={c} ride={sport === 'ride'} />
+    </>
+  ));
+  let blocks: ReactNode = null;
+  let body: ReactNode;
+  if (sport === 'ride') {
+    // A ride as Strava's: each chart with what belongs to it (the power curve and zones round power,
+    // HR zones after HR). No splits on a ride, as Strava's: its laps say it.
+    blocks = rideOrRunBlocks;
+    body = (
+      <>
+        {loading}
+        {heading}
+        <PowerCurve activity={activity} />
+        {chartCard('power')}
+        <PowerZones activity={activity} />
+        {chartCard('hr')}
+        {hrZones}
+        {chartCard('speed')}
+        {chartCard('cad')}
+        {chartCard('alt')}
+        {sectionCard}
+        {photos}
+        <RouteAndSegments activity={activity} />
+        {laps}
+      </>
+    );
+  } else if (sport === 'run') {
+    // A run as Strava's: the training analysis and splits, pace with its zones, heart rate with its
+    // zones, cadence and elevation.
+    blocks = rideOrRunBlocks;
+    body = (
+      <>
+        <TrainingAnalysis
+          activityId={activity.id}
+          splits={activity.splits}
           pace={pace}
-          format={format}
-          units={prefs.units}
-          activity={activity}
-          section={section}
-          onHover={setHover}
-          onSection={setSection}
+          elevation={elevation}
         />
-      )}
-    </>
-  );
-  // The sections in the app's order (OS-909): on a ride the heart-rate zones share a row with the power
-  // zones, and the power curve follows; on a run the splits follow the heart-rate zones.
-  const rest = (
-    <>
-      <Photos activityId={activity.id} photos={activity.photo_list ?? []} />
-      {sport !== 'ride' && hrZones}
-      {sport === 'run' && <Splits activity={activity} format={format} pace={pace} />}
-      {/* Kept offline before sets existed, an activity may come without them. */}
-      {(activity.sets ?? []).length > 0 && <Strength sets={activity.sets} cover={!map && !!cover} />}
-      <EngineExtras activity={activity} hrZones={sport === 'ride' ? hrZones : undefined} />
-      <Laps activity={activity} format={format} pace={pace} />
-      {sport !== 'run' && <Splits activity={activity} format={format} pace={pace} />}
-      {activity.description && (
-        <section className="panel">
-          <p className="desc">{activity.description}</p>
-        </section>
-      )}
-      <BestEfforts activity={activity} format={format} />
-      <p className="note origin">
-        {t('activity.origin')}: {sourceLabel(activity.source)}
-        {activity.has_fit && (
+        <SplitsTable activity={activity} format={format} pace={pace} />
+        {loading}
+        {heading}
+        {chartCard('speed')}
+        {chartCard('gap')}
+        {ctx((c) => (
+          <PaceZonesBlock context={c} series={series ?? null} />
+        ))}
+        {chartCard('hr')}
+        {hrZones}
+        {chartCard('cad')}
+        {chartCard('alt')}
+        {sectionCard}
+        {photos}
+        <RouteAndSegments activity={activity} />
+        {laps}
+      </>
+    );
+  } else if (sport === 'strength') {
+    // A strength workout as Strava's: its exercises at a glance, effort and goals, heart rate and its
+    // zones, then the full sets.
+    blocks = (
+      <>
+        <ExercisesBlock activity={activity} />
+        {ctx((c) => (
           <>
-            {' · '}
-            <a href={`/api/activities/${activity.id}/fit`} download>
-              {t('activity.download')}
-              {activity.original_format && activity.original_format !== 'fit'
-                ? ` (${activity.original_format.toUpperCase()})`
-                : ''}
-            </a>
+            <EffortBlock context={c} />
+            <GoalsBlock context={c} />
           </>
-        )}
-      </p>
-    </>
-  );
+        ))}
+      </>
+    );
+    body = (
+      <>
+        {loading}
+        {heading}
+        {chartCard('hr')}
+        {hrZones}
+        {sectionCard}
+        {sets}
+        {photos}
+        {laps}
+      </>
+    );
+  } else {
+    body = (
+      <>
+        {loading}
+        {heading}
+        {charts.length > 0 && <div className="chartgrid">{charts.map((c) => chartCard(c.key))}</div>}
+        {sectionCard}
+        {photos}
+        {hrZones}
+        {sets}
+        <RouteAndSegments activity={activity} />
+        <PowerZones activity={activity} />
+        <PowerCurve activity={activity} />
+        {laps}
+        <SplitsTable activity={activity} format={format} pace={pace} />
+      </>
+    );
+  }
+  const aside =
+    (sport === 'strength' && (activity.sets ?? []).length > 0) || contextHasBlocks(context, sport);
 
   return (
     <article className={`page detail${cover ? ' withmap' : ''}`}>
@@ -217,12 +359,62 @@ function Detail({ activity }: { activity: ActivityDetail }) {
         {!phone && <ActivityActions activity={activity} />}
       </header>
 
-      {/* As on the app: the figures, the Coach's summary below them, then the charts and the rest. */}
+      {/* As on the app: the figures, the goals it reached, the Coach's summary, then the rest. */}
       {figures}
-      {summary}
-      {charts}
-      {rest}
+      <GoalReachedBanner goals={context?.goals_reached} />
+      <Summary activityId={activity.id} name={activity.name} />
+      <div className={`dlayout${aside ? ' withside' : ''}`}>
+        {aside && (
+          <aside className="dside" aria-label={t('activity.context')}>
+            {blocks}
+          </aside>
+        )}
+        <div className="dmain">{body}</div>
+      </div>
+      {activity.description && (
+        <section className="panel">
+          <p className="desc">{activity.description}</p>
+        </section>
+      )}
+      <BestEfforts activity={activity} format={format} />
+      <p className="note origin">
+        {t('activity.origin')}: {sourceLabel(activity.source)}
+        {activity.has_fit && (
+          <>
+            {' · '}
+            <a href={`/api/activities/${activity.id}/fit`} download>
+              {t('activity.download')}
+              {activity.original_format && activity.original_format !== 'fit'
+                ? ` (${activity.original_format.toUpperCase()})`
+                : ''}
+            </a>
+          </>
+        )}
+      </p>
     </article>
+  );
+}
+
+/** The charts' heading (OS-907), with the switch that turns picking a section on and off. */
+function ProfileHeading({
+  selecting,
+  section,
+  onToggle,
+}: {
+  selecting: boolean;
+  section: [number, number] | null;
+  onToggle: () => void;
+}) {
+  return (
+    <>
+      <div className="titlebar profilehead">
+        <h2>{t('activity.profile')}</h2>
+        <button type="button" className="chip" aria-pressed={selecting} onClick={onToggle}>
+          {t('mobile.selectSection')}
+        </button>
+      </div>
+      {selecting && !section && <p className="note">{t('activity.sectionHint')}</p>}
+    </>
   );
 }
 
@@ -340,82 +532,6 @@ function ActivityMap({
   );
 }
 
-/** The activity's charts, each on its own card (OS-907), under one heading with the section switch. */
-function ActivityCharts({
-  series,
-  sport,
-  pace,
-  format,
-  units,
-  activity,
-  section,
-  onHover,
-  onSection,
-}: {
-  series: Series;
-  sport: Sport;
-  pace: boolean;
-  format: Format;
-  units: 'metric' | 'imperial';
-  activity: ActivityDetail;
-  section: [number, number] | null;
-  onHover: (index: number | null) => void;
-  onSection: (range: [number, number] | null) => void;
-}) {
-  const theme = useResolvedTheme();
-  const [selecting, setSelecting] = useState(false);
-  const charts = useMemo(
-    () => activityCharts(series, { sport, pace, units, format, activity, t, locale }),
-    [series, sport, pace, units, format, activity],
-  );
-  if (!charts.length) return null;
-  return (
-    <>
-      <div className="titlebar profilehead">
-        <h2>{t('activity.profile')}</h2>
-        <button
-          type="button"
-          className="chip"
-          aria-pressed={selecting}
-          onClick={() => {
-            // Turning "Section" off drops the band, its figures and the map's highlight.
-            if (selecting) onSection(null);
-            setSelecting(!selecting);
-          }}
-        >
-          {t('mobile.selectSection')}
-        </button>
-      </div>
-      {selecting && !section && <p className="note">{t('activity.sectionHint')}</p>}
-      <div className="chartgrid">
-        {charts.map((chart) => (
-          <ChartCard
-            key={chart.key}
-            chart={chart}
-            series={series}
-            units={units}
-            theme={theme}
-            section={section}
-            selecting={selecting}
-            onHover={onHover}
-            onSection={onSection}
-          />
-        ))}
-      </div>
-      {section && (
-        <SectionFigures
-          series={series}
-          section={section}
-          format={format}
-          pace={pace}
-          onClear={() => onSection(null)}
-          activityId={activity.id}
-        />
-      )}
-    </>
-  );
-}
-
 function sportColour(theme: ThemeName, sport: Sport): string {
   return themes[theme][sport];
 }
@@ -474,64 +590,6 @@ function SectionFigures({
         ))}
       </dl>
       {series.lat?.some((v) => v != null) && <SaveSegment activityId={activityId} section={section} />}
-    </section>
-  );
-}
-
-function Zones({
-  series,
-  hrMax,
-  estimated,
-  engine,
-}: {
-  series: Series;
-  hrMax: number | null;
-  estimated: boolean;
-  engine: { seconds: number[]; bounds: number[] } | null;
-}) {
-  if (!hrMax && !engine) {
-    return (
-      <section className="panel">
-        <CardTitle>{t('activity.zones')}</CardTitle>
-        <p className="note">{t('activity.zonesNone')}</p>
-      </section>
-    );
-  }
-  // The engine's zones follow your zone model (OS-301); without them, share of max HR here.
-  const seconds = engine?.seconds ?? timeInZones(series, hrMax ?? 190);
-  const total = seconds.reduce((a, b) => a + b, 0) || 1;
-  const limits = engine?.bounds ?? zoneLimits(hrMax ?? 190);
-  return (
-    <section className="panel zones">
-      <CardTitle>{t('activity.zones')}</CardTitle>
-      <ZoneBar seconds={seconds} label={t('activity.zones')} />
-      <table className="num">
-        <tbody>
-          {seconds.map((s, i) => (
-            <tr key={i}>
-              <th scope="row">Z{i + 1}</th>
-              <td className="track">
-                <i style={{ width: `${(s / total) * 100}%`, background: `var(--zone-${i + 1})` }} />
-              </td>
-              <td className="muted">
-                {limits[i]}
-                {i < 4 ? `–${(limits[i + 1] ?? 0) - 1}` : '+'} bpm
-              </td>
-              <td>{formatDuration(s)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!engine && hrMax && (
-        <p className="note">
-          {t('activity.zonesNote', {
-            low: Math.round((ZONE_SHARES[0] ?? 0) * 100),
-            high: Math.round((ZONE_SHARES.at(-1) ?? 0) * 100),
-            hrMax,
-          })}
-          {estimated && ` ${t('activity.zonesEstimate', { hrMax })}`}
-        </p>
-      )}
     </section>
   );
 }
@@ -627,34 +685,6 @@ function Laps({ activity, format, pace }: { activity: ActivityDetail; format: Fo
   );
 }
 
-function Splits({ activity, format, pace }: { activity: ActivityDetail; format: Format; pace: boolean }) {
-  if (activity.splits.length < 2) return null;
-  const speeds = activity.splits.map((s) => s.distance_m / s.time_s);
-  const fastest = Math.max(...speeds);
-  return (
-    <section className="panel">
-      <CardTitle>{t('activity.splits')}</CardTitle>
-      <table className="num splits">
-        <tbody>
-          {activity.splits.map((s, i) => (
-            <tr key={i}>
-              <th scope="row">
-                {format.distance(activity.splits.slice(0, i + 1).reduce((a, x) => a + x.distance_m, 0))}
-              </th>
-              <td>{format.speedFor(s.distance_m / s.time_s, pace)}</td>
-              <td className="track">
-                <i style={{ width: `${((speeds[i] ?? 0) / fastest) * 100}%` }} />
-              </td>
-              <td>{s.elevation_change_m != null ? format.elevation(s.elevation_change_m) : ''}</td>
-              <td>{s.avg_hr ?? ''}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
-}
-
 /** Save the selected section as a personal segment (OS-325). */
 function SaveSegment({ activityId, section }: { activityId: number; section: [number, number] }) {
   const [name, setName] = useState('');
@@ -705,101 +735,5 @@ function SaveSegment({ activityId, section }: { activityId: number; section: [nu
       </button>
       {save.isError && <span className="note">{save.error.message}</span>}
     </form>
-  );
-}
-
-/** What the engine adds (OS-312): power zones and curve, the matched route and the segments. */
-function EngineExtras({ activity, hrZones }: { activity: ActivityDetail; hrZones?: ReactNode }) {
-  const theme = useResolvedTheme();
-  const metrics = activity.metrics;
-  const allTime = useQuery({
-    ...curvesQuery(api, 'power', { from: '2000-01-01' }),
-    enabled: Boolean(metrics?.power_curve.length),
-  });
-  if (!metrics && !activity.route_group && !activity.segments?.length) return null;
-  const powerZones = metrics?.power_zones;
-  const bounds = metrics?.power_zone_bounds;
-  const curve = (metrics?.power_curve ?? []).map((c) => ({
-    duration_s: c.duration_s,
-    value: c.value,
-    activity_id: activity.id,
-    day: activity.start_utc.slice(0, 10),
-  }));
-  return (
-    <>
-      {activity.route_group && (
-        <p className="note routeinfo">
-          <Link to={`/routes/${activity.route_group.group}`}>
-            {t('activity.routeRank', { count: activity.route_group.count, rank: activity.route_group.rank })}{' '}
-            ›
-          </Link>
-        </p>
-      )}
-      {(activity.segments ?? []).length > 0 && (
-        <section className="panel">
-          <CardTitle>{t('activity.segmentsTitle')}</CardTitle>
-          <ul className="rows">
-            {(activity.segments ?? []).map((s) => (
-              <li key={s.segment_id}>
-                <Link to={`/segments/${s.segment_id}`}>
-                  <b>{s.name}</b>
-                </Link>
-                <span className="num">
-                  {formatDuration(s.elapsed_s)} · {s.rank === 1 ? '🏆 ' : ''}
-                  {t('activity.segmentRank', {
-                    rank: s.rank,
-                    count: s.count,
-                    best: formatDuration(s.best_s),
-                  })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {(powerZones && bounds) || hrZones ? (
-        <div className="zonesgrid">
-          {hrZones}
-          {powerZones && bounds && (
-            <section className="panel zones">
-              <CardTitle>{t('activity.powerZones')}</CardTitle>
-              <table className="num">
-                <tbody>
-                  {powerZones.map((sec, i) => (
-                    <tr key={i}>
-                      <th scope="row">Z{i + 1}</th>
-                      <td className="track">
-                        <i
-                          style={{
-                            width: `${(sec / (powerZones.reduce((a, b) => a + b, 0) || 1)) * 100}%`,
-                          }}
-                        />
-                      </td>
-                      <td className="muted">
-                        {bounds[i]}
-                        {i < bounds.length - 1 ? `–${(bounds[i + 1] ?? 0) - 1}` : '+'} W
-                      </td>
-                      <td>{formatDuration(sec)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
-        </div>
-      ) : null}
-      {curve.length > 0 && allTime.data && (
-        <section className="panel">
-          <CardTitle>{t('activity.powerCurve')}</CardTitle>
-          <CurveChart
-            period={curve}
-            allTime={allTime.data}
-            theme={theme}
-            format={(v) => `${Math.round(v)} W`}
-            colour={themes[theme].ride}
-          />
-        </section>
-      )}
-    </>
   );
 }

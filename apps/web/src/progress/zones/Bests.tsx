@@ -51,8 +51,8 @@ import { useResolvedTheme } from '../../theme';
 import { CardTitle, InfoTip } from '../../ui';
 import { bestName, longDate, sportOf } from './data';
 
-/** A medal with its place, as Strava's: the first is "PR". */
-function Medal({ rank, size = 40 }: { rank: number; size?: number }) {
+/** A medal with its place, as Strava's: the first is "PR" (also on the activity's Results). */
+export function Medal({ rank, size = 40 }: { rank: number; size?: number }) {
   return (
     <span
       className={`pb-medal${rank === 1 ? ' pr' : ''}`}

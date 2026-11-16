@@ -12,6 +12,7 @@ import {
   shareChange,
   topZone,
   zoneRange,
+  paceRange,
   type ZoneKind,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
@@ -23,7 +24,6 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
 import { useApi } from '../auth';
 import { Icon } from '../Icon';
 import { t } from '../i18n';
-import { paceRange } from '../detail/paceZones';
 import { useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';

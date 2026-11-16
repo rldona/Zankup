@@ -321,8 +321,9 @@ describe('app skeleton', () => {
     expect(kpis.getByRole('group', { name: 'Replay speed' })).toHaveTextContent('10×30×100×');
 
     const zones = kpis.getByRole('heading', { name: 'Heart rate zones' }).closest('section');
-    expect(zones).toHaveTextContent('Z2114–132 bpm5:00'); // 120 bpm, 300 s
-    expect(zones).toHaveTextContent('Z4152–170 bpm5:00'); // 170 bpm, 300 s
+    // As the app's (#283): a thick bar per zone, the time beside it, the range on the right.
+    expect(zones).toHaveTextContent('Z25:00114–132 bpm'); // 120 bpm, 300 s
+    expect(zones).toHaveTextContent('Z45:00152–170 bpm'); // 170 bpm, 300 s
     expect(kpis.getByRole('row', { name: /5 km 24:10 4:50 \/km/ })).toBeInTheDocument();
     expect(kpis.getByRole('heading', { name: 'Laps' }).closest('section')).toHaveTextContent(
       '3.00 km15:005:00 /km',

@@ -4,7 +4,7 @@
  * the pace on the left; with `numbers`, each split's number under it. A finger on it (when `onSelect`
  * is given) picks the split under it.
  */
-import { ZONE_SCALES } from '@zankup/core';
+import { splitAt, ZONE_SCALES } from '@zankup/core';
 import { Canvas, Path } from '@shopify/react-native-skia';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
@@ -16,7 +16,6 @@ import { useUnits } from '../prefs';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
 import { speedText } from './Context';
-import { splitAt } from './splitsElevation';
 
 /** The bars' blues, as Strava's: the lighter pace blue, and a darker one for the two fastest splits. */
 export const SPLIT_BLUE = ZONE_SCALES.pace[2];
