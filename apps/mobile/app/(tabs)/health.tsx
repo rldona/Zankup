@@ -22,7 +22,7 @@ import { HealthSkeleton } from '../../src/Skeleton';
 import { SleepTiles, StageLanes } from '../../src/SleepNight';
 import { Chart } from '../../src/charts';
 import { lastRead, readAndSend } from '../../src/healthConnect';
-import { Icon, SourceIcon, SpinningIcon } from '../../src/Icon';
+import { Icon, SourceIcon, SpinningIcon, ZankupMark } from '../../src/Icon';
 import { MenuButton } from '../../src/Menu';
 import { locale, t } from '../../src/i18n';
 import { useTheme } from '../../src/theme';
@@ -300,7 +300,14 @@ function LastNight({ day, sleep }: { day: HealthDay; sleep: NonNullable<HealthDa
           ? t('health.lastNight')
           : t('health.nightOf', { day: longDay(day.day) })}
       </Heading>
-      <SleepTiles sleep={sleep} />
+      <SleepTiles
+        sleep={sleep}
+        sourceMark={
+          <View accessible accessibilityLabel={from(sleep.source, sleep.others)}>
+            <SourceIcon source={sleep.source} color={c.muted} />
+          </View>
+        }
+      />
       <Card>
         {night.data && night.data.stages.length > 0 ? (
           <StageLanes night={night.data} sleep={sleep} colors={stageColor} />
@@ -404,6 +411,14 @@ function Today({ day }: { day: HealthDay }) {
     <>
       <Heading>{dayTitle(day.day)}</Heading>
       <Card>
+        {/* Readiness is Zankup's own, from the figures below: its mark says so. */}
+        <View
+          accessible
+          accessibilityLabel={t('health.zankupScore')}
+          style={{ position: 'absolute', top: 14, right: 14 }}
+        >
+          <ZankupMark color={c.muted} />
+        </View>
         <Text style={{ color: c.fg, fontWeight: '600' }}>{t('health.readiness')}</Text>
         <Text style={[ui.statValue, { color: c.fg, fontSize: 28 }]}>{r ? r.score : '–'}</Text>
         <Muted>

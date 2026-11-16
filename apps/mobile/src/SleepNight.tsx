@@ -93,8 +93,11 @@ function Tile({
   );
 }
 
-/** The score and the hours asleep, side by side. */
-export function SleepTiles({ sleep }: { sleep: Sleep }) {
+/**
+ * The score and the hours asleep, side by side, each with whose figure it is in its corner: Zankup's
+ * mark on the score (worked out here), the source's (`sourceMark`) on the hours.
+ */
+export function SleepTiles({ sleep, sourceMark }: { sleep: Sleep; sourceMark?: ReactNode }) {
   const c = useTheme();
   const tone = { excellent: c.sleepLight, good: c.sleepLight, fair: c.sleepAwake, poor: c.zone5 };
   const asleep = sleep.asleep_s ?? 0;
@@ -117,7 +120,7 @@ export function SleepTiles({ sleep }: { sleep: Sleep }) {
           </Pill>
         )}
       </Tile>
-      <Tile label={t('health.duration')} value={formatHoursMinutes(asleep)}>
+      <Tile label={t('health.duration')} value={formatHoursMinutes(asleep)} corner={sourceMark}>
         <Pill color={length === 'met' ? c.sleepLight : length === 'almost' ? c.sleepAwake : c.zone5}>
           {t(`health.goal.${length}` as MessageKey)}
         </Pill>
