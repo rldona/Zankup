@@ -37,6 +37,7 @@ import { useParams } from 'react-router';
 
 import { api } from '../api';
 import { ChartCard } from '../detail/ChartCard';
+import { cursorStore, type CursorStore } from '../detail/cursorStore';
 import {
   EffortBlock,
   ExercisesBlock,
@@ -122,8 +123,9 @@ function Detail({ activity }: { activity: ActivityDetail }) {
   const streams = useQuery({ ...streamsQuery(api, activity.id), enabled: activity.streams != null });
   const series = streams.data as Series | undefined;
   const context = useActivityContext(activity.id);
-  // The cursor and the section, shared by the map and every chart.
-  const [hover, setHover] = useState<number | null>(null);
+  // The cursor and the section, shared by the map and every chart. The cursor is a store, not state:
+  // moving over a chart moves the map's dot without redrawing the page (OS-1013).
+  const [cursor] = useState(cursorStore);
   const [section, setSection] = useState<[number, number] | null>(null);
   const [selecting, setSelecting] = useState(false);
   const hasMap = useMemo(() => (series ? trackPoints(series).length > 1 : false), [series]);
@@ -145,9 +147,8 @@ function Detail({ activity }: { activity: ActivityDetail }) {
       sport={sport}
       pace={pace}
       format={format}
-      hover={hover}
+      cursor={cursor}
       section={section}
-      onHover={setHover}
     />
   );
   // A strength workout without a route has its body map for a cover, as a route has its map.
@@ -204,7 +205,7 @@ function Detail({ activity }: { activity: ActivityDetail }) {
         theme={theme}
         section={section}
         selecting={selecting}
-        onHover={setHover}
+        onHover={cursor.set}
         onSection={setSection}
         backdrop={OVER_ELEVATION.has(chart.key) ? altitude : undefined}
       />
@@ -460,23 +461,21 @@ function ActivityMap({
   sport,
   pace,
   format,
-  hover,
+  cursor,
   section,
-  onHover,
 }: {
   series: Series;
   sport: Sport;
   pace: boolean;
   format: Format;
-  hover: number | null;
+  cursor: CursorStore;
   section: [number, number] | null;
-  onHover: (index: number | null) => void;
 }) {
   const theme = useResolvedTheme();
   const metrics = useMemo(() => availableMetrics(series), [series]);
   const [chosen, setMetric] = useState<Metric | null>(null);
   const metric = chosen && metrics.includes(chosen) ? chosen : (metrics[0] ?? null);
-  const replay = useReplay(series, hover, onHover);
+  const replay = useReplay(series, cursor);
 
   const formatMetric = useCallback(
     (m: Metric, v: number) => {
@@ -516,9 +515,8 @@ function ActivityMap({
         series={series}
         metric={metric}
         theme={theme}
-        hover={hover}
+        cursor={cursor}
         section={section}
-        onHover={onHover}
         colour={sportColour(theme, sport)}
       />
       <MapControls

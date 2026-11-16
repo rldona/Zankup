@@ -2,6 +2,7 @@ import type { Series } from '@zankup/core';
 import { useEffect, useRef, useState } from 'react';
 
 import { reducedMotion } from '../charts/inView';
+import type { CursorStore } from './cursorStore';
 
 export const SPEEDS = [10, 30, 100] as const;
 
@@ -20,17 +21,18 @@ function indexAt(times: number[], seconds: number): number {
 export type ReplaySpeed = (typeof SPEEDS)[number];
 
 /**
- * Activity replay (OS-414): moves the shared cursor (map marker and charts) along the activity at 10×
- * to 100×, with pause and seeking. With reduced motion it advances in steps once a second instead of
- * every frame. A hook, so the play button can sit on the map and the speed in the map's options.
+ * Activity replay (OS-414): moves the shared cursor (the map's marker) along the activity at 10× to
+ * 100×, with pause and seeking. With reduced motion it advances in steps once a second instead of
+ * every frame. A hook, so the play button can sit on the map and the speed in the map's options. The
+ * cursor lives in its store (OS-1013): playing does not redraw what holds the hook.
  */
-export function useReplay(series: Series, index: number | null, onIndex: (index: number | null) => void) {
+export function useReplay(series: Series, cursor: CursorStore) {
   const times = series.t;
   const total = times[times.length - 1] ?? 0;
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<ReplaySpeed>(30);
   const position = useRef(0);
-  const current = index != null ? (times[index] ?? 0) : 0;
+  const onIndex = cursor.set;
 
   useEffect(() => {
     if (!playing) return;
@@ -63,9 +65,12 @@ export function useReplay(series: Series, index: number | null, onIndex: (index:
     playing,
     speed,
     setSpeed,
-    current,
+    cursor,
+    /** The time of a sample, in seconds from the start (0 for none). */
+    timeAt: (index: number | null) => (index != null ? (times[index] ?? 0) : 0),
     total,
     toggle: () => {
+      const index = cursor.get();
       if (!playing && position.current >= total) position.current = 0;
       if (!playing && index != null) position.current = times[index] ?? 0;
       setPlaying(!playing);

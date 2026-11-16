@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { t } from '../i18n';
 import { MaterialIcon } from '../MaterialIcon';
+import { useCursor } from './cursorStore';
 import { SPEEDS, type Replay } from './replay';
 
 /**
@@ -103,19 +104,29 @@ export function MapControls<M extends string>({
           >
             <MaterialIcon name={replay.playing ? 'pause' : 'play_arrow'} />
           </button>
-          <input
-            type="range"
-            min={0}
-            max={Math.round(replay.total)}
-            step={1}
-            value={Math.round(replay.current)}
-            aria-label={t('replay.seek')}
-            aria-valuetext={formatDuration(replay.current)}
-            onChange={(e) => replay.seek(Number(e.target.value))}
-          />
-          <span className="num">{formatDuration(replay.current)}</span>
+          <Seek replay={replay} />
         </div>
       )}
+    </>
+  );
+}
+
+/** The seek bar and the time: where the cursor is, the only part of the controls that follows it. */
+function Seek({ replay }: { replay: Replay }) {
+  const current = replay.timeAt(useCursor(replay.cursor));
+  return (
+    <>
+      <input
+        type="range"
+        min={0}
+        max={Math.round(replay.total)}
+        step={1}
+        value={Math.round(current)}
+        aria-label={t('replay.seek')}
+        aria-valuetext={formatDuration(current)}
+        onChange={(e) => replay.seek(Number(e.target.value))}
+      />
+      <span className="num">{formatDuration(current)}</span>
     </>
   );
 }
