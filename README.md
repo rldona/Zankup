@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/cover.png" alt="Zankup: your sports and health data. Together, and yours." width="860">
+</p>
+
 # Zankup
 
 **Your sports and health data together.**
