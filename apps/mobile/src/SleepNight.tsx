@@ -19,6 +19,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ZankupMark } from './Icon';
 import { t } from './i18n';
 import { useTheme } from './theme';
 
@@ -50,7 +51,18 @@ function Pill({ color, children }: { color: string; children: string }) {
   );
 }
 
-function Tile({ label, value, children }: { label: string; value: string; children?: ReactNode }) {
+function Tile({
+  label,
+  value,
+  corner,
+  children,
+}: {
+  label: string;
+  value: string;
+  /** A mark in the top right corner (whose figure it is). */
+  corner?: ReactNode;
+  children?: ReactNode;
+}) {
   const c = useTheme();
   return (
     <View
@@ -76,6 +88,7 @@ function Tile({ label, value, children }: { label: string; value: string; childr
         {value}
       </Text>
       {children}
+      {corner && <View style={{ position: 'absolute', top: 14, right: 14 }}>{corner}</View>}
     </View>
   );
 }
@@ -88,7 +101,16 @@ export function SleepTiles({ sleep }: { sleep: Sleep }) {
   const length = sleepDurationBand(asleep);
   return (
     <View style={{ flexDirection: 'row', gap: 12 }}>
-      <Tile label={t('health.score')} value={sleep.score != null ? String(sleep.score) : '–'}>
+      <Tile
+        label={t('health.score')}
+        value={sleep.score != null ? String(sleep.score) : '–'}
+        // Zankup works the score out itself (the sources do not give theirs): its mark says so.
+        corner={
+          <View accessible accessibilityLabel={t('health.zankupScore')}>
+            <ZankupMark color={c.muted} />
+          </View>
+        }
+      >
         {sleep.score != null && (
           <Pill color={tone[sleepScoreBand(sleep.score)]}>
             {t(`health.band.${sleepScoreBand(sleep.score)}`)}

@@ -787,6 +787,7 @@
   "health.stage.light": "Light",
   "health.stage.awake": "Awake",
   "health.score": "Sleep score",
+  "health.zankupScore": "Score worked out by Zankup",
   "health.sleepSummary": "Last night {hours} h asleep, score {score}",
   "health.empty": "No data in this period",
   "health.hrv": "HRV",

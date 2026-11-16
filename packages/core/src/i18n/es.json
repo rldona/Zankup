@@ -787,6 +787,7 @@
   "health.stage.light": "Ligero",
   "health.stage.awake": "Despierto",
   "health.score": "Puntuación del sueño",
+  "health.zankupScore": "Puntuación calculada por Zankup",
   "health.sleepSummary": "Anoche {hours} h dormido, puntuación {score}",
   "health.empty": "Sin datos en este periodo",
   "health.hrv": "VFC",
