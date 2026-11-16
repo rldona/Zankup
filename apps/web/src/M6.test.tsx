@@ -172,6 +172,35 @@ describe('phase 6: health', () => {
     await waitFor(() => expect(new Set(starts).size).toBe(2));
   });
 
+  it('keeps its charts on screen while another period loads, so they slide to it (OS-1012)', async () => {
+    let release = () => {};
+    const later = new Promise<void>((resolve) => (release = resolve));
+    let asked = 0;
+    mockApi({
+      '/api/wellness/days': async () => {
+        asked += 1;
+        if (asked > 1) await later;
+        return Response.json(DAYS);
+      },
+    });
+    renderAt('/health');
+    const sleep = (await screen.findByRole('heading', { name: 'Sleep' })).closest('section');
+    const chart = sleep?.querySelector('[role="img"]');
+    expect(chart).toBeTruthy();
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Period' })).getByRole('button', { name: '90 days' }),
+    );
+    await waitFor(() => expect(asked).toBe(2));
+    // The same chart, not a skeleton, while the new period is on its way, and after it arrives.
+    expect(chart).toBeInTheDocument();
+    expect(document.querySelector('.skeleton, [aria-busy="true"]')).toBeNull();
+    release();
+    await waitFor(() => expect(chart).toBeInTheDocument());
+    expect(
+      screen.getByRole('heading', { name: 'Sleep' }).closest('section')?.querySelector('[role="img"]'),
+    ).toBe(chart);
+  });
+
   it('without data, it points to connecting a source', async () => {
     mockApi({ '/api/wellness/days': () => Response.json([]) });
     renderAt('/health');

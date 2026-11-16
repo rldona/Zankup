@@ -116,15 +116,15 @@ export function VolumeChart({
       ),
     [buckets],
   );
-  const label = (start: string) => {
-    const d = new Date(`${start}T12:00:00`);
-    if (unit === 'year') return String(d.getFullYear());
-    if (unit === 'month') return d.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
-    return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-  };
   const scale = distanceUnit === 'km' ? 1000 : 1609.344;
-  const option = useMemo(
-    () => ({
+  const option = useMemo(() => {
+    const label = (start: string) => {
+      const d = new Date(`${start}T12:00:00`);
+      if (unit === 'year') return String(d.getFullYear());
+      if (unit === 'month') return d.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
+      return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    };
+    return {
       grid: { left: 44, right: 12, top: 30, bottom: 26 },
       legend: {
         top: 0,
@@ -146,10 +146,8 @@ export function VolumeChart({
           return metric === 'time' ? +(v.moving_s / 3600).toFixed(1) : +(v.distance_m / scale).toFixed(1);
         }),
       })),
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [buckets, sports, metric, scale, c],
-  );
+    };
+  }, [buckets, sports, metric, scale, c, unit]);
   const total = buckets.reduce(
     (s, b) => s + (metric === 'time' ? b.totals.moving_s : b.totals.distance_m),
     0,
@@ -188,13 +186,13 @@ export function CurveChart({
     () => [...new Set([...allTime, ...period].map((p) => p.duration_s))].sort((a, b) => a - b),
     [allTime, period],
   );
-  const points = (curve: CurvePoint[]) =>
-    durations.map((d) => {
-      const p = curve.find((x) => x.duration_s === d);
-      return p ? { value: p.value, activityId: p.activity_id, day: p.day } : null;
-    });
-  const option = useMemo(
-    () => ({
+  const option = useMemo(() => {
+    const points = (curve: CurvePoint[]) =>
+      durations.map((d) => {
+        const p = curve.find((x) => x.duration_s === d);
+        return p ? { value: p.value, activityId: p.activity_id, day: p.day } : null;
+      });
+    return {
       grid: { left: 56, right: 12, top: 30, bottom: 26 },
       legend: { top: 0, data: [t('stats.thisPeriod'), t('stats.allTime')] },
       tooltip: {
@@ -221,10 +219,8 @@ export function CurveChart({
           symbolSize: 7,
         },
       ],
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [durations, period, allTime, c, colour, format],
-  );
+    };
+  }, [durations, period, allTime, c, colour, format]);
   return (
     <EChart
       option={option}
@@ -386,7 +382,10 @@ export function ComparisonChart({
   const c = palette(theme);
   const open = useOpenActivity();
   const option = useMemo(() => {
-    const max = Math.max(...points.flatMap((p) => [p.ours, p.strava]), 1);
+    // Both axes end at the same tightest round value, so the diagonal is the chart's.
+    const axis = tightScale([0, Math.max(...points.flatMap((p) => [p.ours, p.strava]), 1)]);
+    const max = axis.domain[1];
+    const interval = (axis.domain[1] - axis.domain[0]) / Math.max(1, axis.ticks.length - 1);
     return {
       grid: { left: 48, right: 16, top: 16, bottom: 36 },
       tooltip: {
@@ -394,8 +393,8 @@ export function ComparisonChart({
         formatter: (p: { data: { value: number[] } }) =>
           `Strava ${p.data.value[0]} · Zankup ${p.data.value[1]}`,
       },
-      xAxis: { type: 'value', name: 'Strava', nameLocation: 'middle', nameGap: 24, max },
-      yAxis: { type: 'value', name: 'Zankup', max },
+      xAxis: { type: 'value', name: 'Strava', nameLocation: 'middle', nameGap: 24, min: 0, max, interval },
+      yAxis: { type: 'value', name: 'Zankup', min: 0, max, interval },
       series: [
         {
           type: 'scatter',

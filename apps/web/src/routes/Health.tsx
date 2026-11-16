@@ -7,7 +7,7 @@ import {
   type HealthSourceName,
   type MessageKey,
 } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -111,7 +111,11 @@ export function Health() {
     start.setDate(start.getDate() - PERIODS[period]);
     return { start: isoDay(start), end: isoDay(end) };
   }, [today, period]);
-  const days = useQuery(healthDaysQuery(api, range.start, range.end));
+  // Another period keeps the charts on screen while it loads, so they slide into the new one.
+  const days = useQuery({
+    ...healthDaysQuery(api, range.start, range.end),
+    placeholderData: keepPreviousData,
+  });
   const theme = useResolvedTheme();
   const sync = useHealthSync();
 

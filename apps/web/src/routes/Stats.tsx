@@ -17,7 +17,7 @@ import {
   compare,
   comparisonLabels,
 } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -191,7 +191,8 @@ export function Stats() {
       )}
 
       {/* Only what follows the period (#318), the summary first (#314): the period's figures against the
-          year before, then its charts, aerobic efficiency right under volume (#287), and its bests. */}
+          year before, then its charts, aerobic efficiency right under volume (#287), and its bests. Each
+          keeps the last period on screen while the next one loads, so its chart slides (OS-1012). */}
       <div className="statgrid">
         <Summary range={range} format={format} />
         <FitnessSection range={range} theme={theme} />
@@ -257,7 +258,7 @@ function Summary({
   range: { from: string; to: string };
   format: ReturnType<typeof formatters>;
 }) {
-  const summary = useQuery(summaryQuery(api, range));
+  const summary = useQuery({ ...summaryQuery(api, range), placeholderData: keepPreviousData });
   if (!summary.data) return null;
   const { current, previous } = summary.data;
   const labels = comparisonLabels(range, locale, t); // null for All: nothing to compare with
@@ -316,7 +317,7 @@ function FitnessSection({
   range: { from: string; to: string };
   theme: ReturnType<typeof useResolvedTheme>;
 }) {
-  const fitness = useQuery(fitnessQuery(api, range));
+  const fitness = useQuery({ ...fitnessQuery(api, range), placeholderData: keepPreviousData });
   const days: FitnessDay[] = fitness.data ?? [];
   return (
     <section className="panel">
@@ -338,7 +339,7 @@ function Volume({
   format: ReturnType<typeof formatters>;
 }) {
   const [metric, setMetric] = useState<'time' | 'distance'>('time');
-  const volume = useQuery(volumeQuery(api, range, unit));
+  const volume = useQuery({ ...volumeQuery(api, range, unit), placeholderData: keepPreviousData });
   const total = (volume.data ?? []).reduce(
     (s, b) => s + (metric === 'time' ? b.totals.moving_s : b.totals.distance_m),
     0,
@@ -391,8 +392,15 @@ function Curves({
 }) {
   const [kind, setKind] = useState<'speed' | 'power'>('power'); // power first, as the app (#286)
   const sport = kind === 'speed' ? ['run'] : undefined;
-  const period = useQuery(curvesQuery(api, kind, range, sport));
-  const all = useQuery(curvesQuery(api, kind, { from: '2000-01-01' }, sport));
+  // Another period keeps the curve on screen while it loads; another kind (power, pace) is another
+  // chart, so it waits for its own.
+  const sameKind = <T,>(previous: T | undefined, query?: { queryKey: readonly unknown[] }) =>
+    (query?.queryKey[3] as { kind?: string } | undefined)?.kind === kind ? previous : undefined;
+  const period = useQuery({ ...curvesQuery(api, kind, range, sport), placeholderData: sameKind });
+  const all = useQuery({
+    ...curvesQuery(api, kind, { from: '2000-01-01' }, sport),
+    placeholderData: sameKind,
+  });
   const show = (v: number) => (kind === 'power' ? `${Math.round(v)} W` : format.pace(v));
   return (
     <section className="panel">
@@ -426,7 +434,7 @@ function Curves({
  * of all time, their progression and the top ten live on the best times' page.
  */
 function PeriodBests({ range, unit }: { range: { from: string; to: string }; unit: 'km' | 'mi' }) {
-  const records = useQuery(recordsQuery(api, range));
+  const records = useQuery({ ...recordsQuery(api, range), placeholderData: keepPreviousData });
   if (!records.data?.all_time.length) return null;
   const bests = records.data.period.filter((r) => effortShown(r.distance_key, unit));
   const day = (iso: string) =>
@@ -470,7 +478,7 @@ function Efficiency({
   range: { from: string; to: string };
   theme: ReturnType<typeof useResolvedTheme>;
 }) {
-  const points = useQuery(efficiencyQuery(api, range));
+  const points = useQuery({ ...efficiencyQuery(api, range), placeholderData: keepPreviousData });
   if (!points.data || points.data.length < 3) return null;
   const values = points.data.map((p) => p.efficiency);
   const first = values.slice(0, Math.ceil(values.length / 3));
