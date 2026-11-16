@@ -1,5 +1,5 @@
 /** Progress's Fitness card: today's score, its change over the last month and the month's line. */
-import { fitnessQuery } from '@zankup/core';
+import { fitnessQuery, fitnessChange, rangePeriod, untilToday } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
@@ -10,7 +10,6 @@ import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { fitnessChange, rangePeriod, untilToday } from './fitness';
 import { FitnessSparkline } from './FitnessChart';
 
 export function FitnessCard() {

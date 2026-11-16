@@ -28,7 +28,14 @@ export function dayAmount(goal: Pick<GoalOut, 'metric' | 'sport'>, day: Calendar
     .filter((a) => !goal.sport || a.sport === goal.sport)
     .reduce(
       (sum, a) =>
-        sum + (goal.metric === 'distance' ? (a.distance_m ?? 0) : goal.metric === 'time' ? a.moving_s : 1),
+        sum +
+        (goal.metric === 'distance'
+          ? (a.distance_m ?? 0)
+          : goal.metric === 'time'
+            ? a.moving_s
+            : goal.metric === 'ascent'
+              ? (a.ascent_m ?? 0)
+              : 1),
       0,
     );
 }
@@ -89,14 +96,18 @@ export function goalPoints(
   });
 }
 
-/** A goal's target as typed in its form: km (or mi), hours or sessions. */
-export function goalInput(metric: 'distance' | 'time' | 'count', target: number, unit: string): number {
+type FormMetric = 'distance' | 'time' | 'ascent' | 'count';
+
+/** A goal's target as typed in its form: km (or mi), hours, metres (or feet, with miles) or sessions. */
+export function goalInput(metric: FormMetric, target: number, unit: string): number {
   if (metric === 'distance') return target / (unit === 'km' ? 1000 : 1609.344);
+  if (metric === 'ascent') return unit === 'km' ? target : target / 0.3048;
   return metric === 'time' ? target / 3600 : target;
 }
 
-/** What is typed in the form, as the API stores it: metres, seconds or sessions. */
-export function goalTarget(metric: 'distance' | 'time' | 'count', value: number, unit: string): number {
+/** What is typed in the form, as the API stores it: metres, seconds, metres of elevation or sessions. */
+export function goalTarget(metric: FormMetric, value: number, unit: string): number {
   if (metric === 'distance') return value * (unit === 'km' ? 1000 : 1609.344);
+  if (metric === 'ascent') return unit === 'km' ? value : value * 0.3048;
   return metric === 'time' ? value * 3600 : value;
 }

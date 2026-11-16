@@ -32,14 +32,18 @@ const ANCHORS: [number, number, number][] = [
 export function scaleAt(duration: number): [number, number] {
   const t = Math.log(duration);
   for (let i = 0; i < ANCHORS.length - 1; i++) {
-    const [d0, lo0, hi0] = ANCHORS[i];
-    const [d1, lo1, hi1] = ANCHORS[i + 1];
+    const a = ANCHORS[i];
+    const b = ANCHORS[i + 1];
+    if (!a || !b) break;
+    const [d0, lo0, hi0] = a;
+    const [d1, lo1, hi1] = b;
     if (duration <= d1 || i === ANCHORS.length - 2) {
       const f = Math.min(1, Math.max(0, (t - Math.log(d0)) / (Math.log(d1) - Math.log(d0))));
       return [lo0 + (lo1 - lo0) * f, hi0 + (hi1 - hi0) * f];
     }
   }
-  return [ANCHORS[0][1], ANCHORS[0][2]];
+  const [, lo, hi] = ANCHORS[0] ?? [0, 0, 0];
+  return [lo, hi];
 }
 
 /** Where watts put a rider at a duration: from 0 (nothing) to 9 (the best), fractional. */
@@ -89,7 +93,8 @@ export function strongest(
     if (level > top) {
       top = level;
       const i = levels.indexOf(Math.max(...levels));
-      out = { skill, duration: durations[i], watts: bests.get(durations[i]) ?? 0, level };
+      const duration = durations[i] ?? 0;
+      out = { skill, duration, watts: bests.get(duration) ?? 0, level };
     }
   }
   return out;

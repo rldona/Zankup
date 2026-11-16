@@ -373,8 +373,8 @@ describe('app skeleton', () => {
     if (!sidebar || !tabbar) throw new Error('missing navigation');
     const names = (nav: HTMLElement) => Array.from(nav.querySelectorAll('a')).map((a) => a.textContent);
     // The app's tabs (OS-903) in the tab bar; the rail adds the training calendar under Activities.
-    expect(names(tabbar)).toEqual(['Home', 'Feed', 'Health', 'Goals', 'You']);
-    expect(names(sidebar)).toEqual(['Home', 'Feed', 'Calendar', 'Health', 'Goals', 'You']);
+    expect(names(tabbar)).toEqual(['Home', 'Feed', 'Progress', 'Health', 'You']);
+    expect(names(sidebar)).toEqual(['Home', 'Feed', 'Calendar', 'Progress', 'Health', 'You']);
     expect(sidebar.querySelector('a.on')?.textContent).toBe('Home');
     // The rail's foot has the notifications and Settings (and the Coach when there is a model), not
     // a sync button: that is in the Activities header, as in the app.

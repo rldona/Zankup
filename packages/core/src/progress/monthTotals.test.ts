@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { months, monthsRange, monthSports } from './monthTotals';
+import { months, monthPairRange, monthSports } from './monthTotals';
 
 const act = (sport: string, moving_s: number, distance_m = 0) => ({
   id: 1,
@@ -23,7 +23,7 @@ describe('monthly activities', () => {
   ];
 
   it('asks the calendar for last month and this one', () => {
-    expect(monthsRange(today)).toEqual({ from: '2026-10-01', to: '2026-12-01' });
+    expect(monthPairRange(today)).toEqual({ from: '2026-10-01', to: '2026-12-01' });
   });
 
   it('adds up this month to today and the whole of last month, day by day', () => {

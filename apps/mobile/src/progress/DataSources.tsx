@@ -2,7 +2,7 @@
  * Data sources (as Strava's): the devices and services that recorded something in the last 30 days,
  * when each was last used, and a way into the apps and devices.
  */
-import { devicesUsedQuery, type DeviceUse } from '@zankup/core';
+import { daysAgo, devicesUsedQuery, SOURCE_NAMES, type DeviceUse } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -14,22 +14,8 @@ import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
 
-const SOURCE_NAMES: Record<string, string> = {
-  garmin: 'Garmin',
-  strava: 'Strava',
-  google_health: 'Google Health',
-  health_connect: 'Health Connect',
-};
-
 /** The device's name, or its source's when the source names none. */
 export const deviceName = (d: DeviceUse) => d.name ?? SOURCE_NAMES[d.source] ?? t('sources.file');
-
-/** Days since a moment, as whole calendar days. */
-export function daysAgo(iso: string, now = new Date()): number {
-  const then = new Date(iso);
-  const start = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  return Math.max(0, Math.round((start(now) - start(then)) / 86_400_000));
-}
 
 /** "hoy", "Hace 1 día", "Hace 2 semanas". */
 export function lastUsed(iso: string, now = new Date()): string {

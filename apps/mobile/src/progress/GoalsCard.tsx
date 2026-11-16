@@ -3,7 +3,15 @@
  * them all with their numbers and charts. The ring, the goal's words and its chart are shared.
  */
 import { Canvas, Circle, Group, Line, Path, vec } from '@shopify/react-native-skia';
-import { goalsQuery, SPORT_ICONS, type GoalOut } from '@zankup/core';
+import {
+  goalsQuery,
+  SPORT_ICONS,
+  type GoalOut,
+  fraction,
+  runningTotal,
+  type GoalMetric,
+  type GoalPeriod,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -17,7 +25,6 @@ import { asSport } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { fraction, runningTotal, type GoalMetric, type GoalPeriod } from './goals';
 import { useVolumeFormat } from './VolumeCard';
 
 export const goalIcon = (sport: string | null): IconName =>

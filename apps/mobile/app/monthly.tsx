@@ -2,20 +2,19 @@
  * Monthly activities (as Strava's): this month against the last for all sports, then for each sport
  * done in either, with its time, distance, elevation and count.
  */
+import { months, monthSports, type MonthFigures, hoursMinutes } from '@zankup/core';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { t } from '../src/i18n';
 import { asSport } from '../src/prefs';
 import { MonthChart, useMonths } from '../src/progress/Monthly';
-import { months, monthSports, type MonthTotals } from '../src/progress/monthTotals';
-import { hoursMinutes } from '../src/progress/volume';
 import { useVolumeFormat } from '../src/progress/VolumeCard';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { Muted } from '../src/ui';
 
-function Figures({ totals, count }: { totals: MonthTotals; count: boolean }) {
+function Figures({ totals, count }: { totals: MonthFigures; count: boolean }) {
   const c = useTheme();
   const format = useVolumeFormat();
   // A sport with nothing this month shows only its count, as Strava's.

@@ -1,0 +1,789 @@
+/* Training zones, Skills and Best times on Progress (OS-1004): pz- zones, pk- skills, pb- bests. */
+
+/* --- cards ------------------------------------------------------------------------------------ */
+.pz-card,
+.pk-card,
+.pb-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pz-card:hover,
+.pk-card:hover,
+.pb-card:hover {
+  border-color: var(--muted);
+}
+
+.pz-card .ph h2,
+.pk-card .ph h2,
+.pb-card .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pz-card .ph h2 > svg.i,
+.pk-card .ph h2 > svg.i,
+.pb-card .ph h2 > svg.i {
+  color: var(--accent);
+  width: 24px;
+  height: 24px;
+}
+
+.pz-card .ph > svg.i,
+.pk-card .ph > svg.i,
+.pb-card .ph > svg.i,
+.pz-more svg.i {
+  color: var(--muted);
+}
+
+.pz-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pz-cardbody,
+.pk-cardbody {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.pz-cardbody > div,
+.pk-cardbody > div {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.pz-figure {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pz-figure > b,
+.pk-figure {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.pz-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 14px;
+}
+
+.pz-badge i {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.pz-mini {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 120px;
+  display: grid;
+  gap: 4px;
+}
+
+.pz-mini li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pz-mini small {
+  width: 18px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pz-mini i {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+/* --- Training zones' page ------------------------------------------------------------------------ */
+.pz-main {
+  display: grid;
+  gap: 16px;
+}
+
+.pz-main .chips {
+  margin: 0;
+  padding: 0;
+}
+
+.pz-main .chip svg.i {
+  width: 18px;
+  height: 18px;
+}
+
+.pz-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.pz-head > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.pz-head h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.pz-change {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.pz-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.pz-rows li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pz-rows li > b {
+  width: 26px;
+  font-weight: 800;
+}
+
+.pz-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Thick bars, the time beside them; a new time slides there instead of jumping. */
+.pz-track i {
+  width: var(--w);
+  min-width: 8px;
+  height: 22px;
+  border-radius: 6px;
+  transition: width 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.pz-range {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pz-ranges {
+  display: flex;
+  width: 100%;
+}
+
+.pz-ranges button {
+  flex: 1;
+  font-weight: 700;
+}
+
+.pz-glance p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pz-glance .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+@media (min-width: 1024px) {
+  .pz-page {
+    max-width: 880px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-track i {
+    transition: none;
+  }
+}
+
+/* --- Skills ------------------------------------------------------------------------------------- */
+.pk-card .pk-radar {
+  width: 150px;
+  flex: none;
+}
+
+.pk-radar {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.pk-radar.big {
+  max-width: 520px;
+}
+
+.pk-radar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pk-grid {
+  fill: none;
+  stroke: var(--muted);
+  stroke-opacity: 0.45;
+  stroke-width: 0.8;
+}
+
+.pk-radar.big .pk-grid {
+  stroke-width: 1.2;
+}
+
+.pk-grid.on {
+  stroke: var(--fg);
+  stroke-opacity: 1;
+  stroke-width: 2;
+}
+
+.pk-ringtext {
+  font-weight: 700;
+}
+
+.pk-shape {
+  opacity: 0.9;
+}
+
+.pk-dot {
+  fill: white;
+}
+
+.pk-watts {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 20%;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-size: clamp(12px, 3.6cqi, 15px);
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+}
+
+.pk-radar.big {
+  container-type: inline-size;
+}
+
+/* Underlined as Strava's: a thick line a little below the figure, as wide as it. */
+.pk-watts.set {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.pk-watts:hover:not(:disabled),
+.pk-watts:focus-visible {
+  color: var(--accent);
+}
+
+.pk-watts:disabled {
+  cursor: default;
+}
+
+.pk-legend {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pk-card .pk-legend {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.pk-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pk-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.pk-layout {
+  display: grid;
+  gap: 0 16px;
+}
+
+@media (min-width: 1024px) {
+  .pk-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.pk-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.pk-span {
+  display: flex;
+  width: 100%;
+}
+
+.pk-span button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pk-span svg.i {
+  width: 18px;
+  height: 18px;
+}
+
+.pk-skills {
+  display: grid;
+  gap: 4px;
+}
+
+.pk-skills > .pk-span {
+  margin-bottom: 10px;
+}
+
+.pk-skill {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+  display: grid;
+  gap: 12px;
+}
+
+.pk-skill > button {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pk-skillhead {
+  display: flex;
+  align-items: center;
+}
+
+.pk-skillhead > span {
+  flex: 1;
+  display: grid;
+}
+
+.pk-skillhead b {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.pk-bar {
+  display: flex;
+  gap: 3px;
+}
+
+.pk-bar > span {
+  flex-basis: 0;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.pk-bar.thin > span {
+  height: 6px;
+}
+
+.pk-bar i {
+  display: block;
+  height: 100%;
+}
+
+.pk-durations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pk-durations li {
+  display: grid;
+  grid-template-columns: 54px 64px 1fr;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.pk-levels {
+  display: grid;
+  gap: 14px;
+}
+
+.pk-levels > p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pk-levels table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pk-levels th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  background: var(--surface-2);
+}
+
+.pk-levels td {
+  padding: 11px 12px;
+  border-left: 4px solid transparent;
+}
+
+.pk-levels td + td,
+.pk-levels th + th {
+  width: 30%;
+  border-left: 0;
+}
+
+.pk-levels tr.here td {
+  background: var(--surface-2);
+  font-weight: 800;
+}
+
+.pk-levels tr.here td:first-child {
+  border-left-color: var(--accent);
+}
+
+/* --- Best times --------------------------------------------------------------------------------- */
+.pb-medal {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+}
+
+.pb-medal svg.i {
+  width: 100%;
+  height: 100%;
+}
+
+.pb-medal b {
+  position: absolute;
+  bottom: 12%;
+  color: var(--bg);
+  font-size: calc(var(--size) * 0.26);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.pb-medal.pr b {
+  font-size: calc(var(--size) * 0.2);
+}
+
+.pb-medals {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pb-medals li {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.pb-medals li > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-medals li > b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.pb-medals li > b svg.i {
+  width: 18px;
+  height: 18px;
+}
+
+.pb-filters .chips {
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.pb-filters .chip svg.i {
+  width: 18px;
+  height: 18px;
+}
+
+.pb-analysis {
+  display: grid;
+  gap: 0 16px;
+}
+
+@media (min-width: 1024px) {
+  .pb-analysis {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .pb-chartcard {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.pb-chartcard h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.pb-record {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pb-record > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+}
+
+.pb-record > div > b {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.pb-record > div > small {
+  flex-basis: 100%;
+}
+
+.pb-record ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.pb-record li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+}
+
+/* Dragged sideways with a mouse or a finger; the page still scrolls up and down over it. */
+.pb-chart {
+  margin-top: 12px;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+
+.pb-chart:active {
+  cursor: grabbing;
+}
+
+.pb-span {
+  margin: 2px 0 0 70px;
+}
+
+.pb-yearpick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.pb-yearpick select {
+  flex: 1;
+}
+
+.pb-listcard {
+  padding-bottom: 4px;
+}
+
+.pb-list {
+  position: relative;
+  max-height: min(60vh, 560px);
+  overflow-y: auto;
+  margin: 0 -14px;
+  overscroll-behavior: contain;
+}
+
+.pb-year {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 800;
+  background: var(--surface-2);
+}
+
+.pb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.pb-row:hover {
+  background: var(--surface-2);
+}
+
+.pb-row > span:first-child {
+  flex: 1;
+}
+
+.pb-row > b {
+  font-weight: 500;
+}
+
+.pb-row > .note {
+  margin: 0;
+  width: 82px;
+  text-align: right;
+  font-size: 14px;
+}
+
+.pb-yearmedal {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pb-top {
+  list-style: none;
+  padding: 4px 0;
+}
+
+.pb-top a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pb-top a:hover {
+  background: var(--surface-2);
+}
+
+.pb-top a > span:nth-child(2) {
+  flex: 1;
+  display: grid;
+}
+
+.pb-top a > span:nth-child(2) > b {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pb-top a > svg.i {
+  color: var(--muted);
+}
+
+.pb-place {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pb-place.medal {
+  background: color-mix(in srgb, var(--medal) 20%, transparent);
+}

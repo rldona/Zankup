@@ -40,7 +40,7 @@ export function chartPeriods(
 ): { from: string; to: string; unit: 'week' | 'month' } {
   const tomorrow = addDays(today, 1);
   if (period === 'week') return { from: addDays(mondayOf(today), -77), to: tomorrow, unit: 'week' };
-  const [y, m] = today.split('-').map(Number);
+  const [y = 0, m = 1] = today.split('-').map(Number);
   if (period === 'month') {
     const d = new Date(y, m - 1 - 11, 1);
     const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;

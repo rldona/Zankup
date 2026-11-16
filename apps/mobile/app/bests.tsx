@@ -5,7 +5,27 @@
  * by year below, each with its medal of the year; the chart and the list move together. Top 10: the ten
  * best. Each best opens its activity.
  */
-import { bestsQuery, effortShown, SPORT_ICONS } from '@zankup/core';
+import {
+  bestsQuery,
+  effortShown,
+  SPORT_ICONS,
+  bestValue,
+  CHART_SLOTS,
+  lowerIsBetter,
+  chartScale,
+  offsetRange,
+  placeOf,
+  ranked,
+  RIDE_KEYS,
+  RUN_KEYS,
+  RUN_METRES,
+  trend,
+  yearMedal,
+  yearsOf,
+  type Best,
+  racePace,
+  smoothPath,
+} from '@zankup/core';
 import { Canvas, Circle, Group, Line, Path, rect, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -30,26 +50,9 @@ import { useCanvasReady } from '../src/charts';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { useFormat, useUnits } from '../src/prefs';
-import {
-  bestValue,
-  CHART_SLOTS,
-  lowerIsBetter,
-  chartScale,
-  offsetRange,
-  placeOf,
-  ranked,
-  RIDE_KEYS,
-  RUN_KEYS,
-  RUN_METRES,
-  trend,
-  yearMedal,
-  yearsOf,
-  type Best,
-} from '../src/progress/bests';
 import { bestName, Medal, MEDAL_COLOURS, sportOf } from '../src/progress/BestsCard';
 import { Chip, CHIP_ICON } from '../src/progress/Chip';
 import { Panel } from '../src/progress/Panel';
-import { racePace, smoothPath } from '../src/progress/raceTimes';
 import { useTheme } from '../src/theme';
 import { accent, InfoButton, Muted } from '../src/ui';
 

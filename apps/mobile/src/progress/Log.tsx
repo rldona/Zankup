@@ -3,7 +3,20 @@
  * coloured by sport, grey when a day has several), with their time. The screen behind it is in
  * app/training-log.tsx; the week rows of both are here.
  */
-import { calendarQuery, formatHoursMinutes, type CalendarDay } from '@zankup/core';
+import {
+  calendarQuery,
+  formatHoursMinutes,
+  type CalendarDay,
+  isoDay,
+  addDays,
+  bubbleLabel,
+  bubbleSize,
+  valueOf,
+  weekAt,
+  weekDays,
+  weekRange,
+  type LogMetric,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -16,17 +29,6 @@ import { CardSkeleton } from '../Skeleton';
 import { sportColour } from '../stats/Sections';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import {
-  addDays,
-  bubbleLabel,
-  bubbleSize,
-  valueOf,
-  weekAt,
-  weekDays,
-  weekRange,
-  type LogMetric,
-} from './weeks';
 
 export type Activities = CalendarDay['activities'];
 

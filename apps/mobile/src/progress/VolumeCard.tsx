@@ -2,7 +2,22 @@
  * Progress's first card (as Strava's): a chip per sport, this week's totals (or the week touched on the
  * chart) and the last 12 weeks of the sport's main measure, with a way into the detail screen.
  */
-import { SPORT_ICONS, SPORTS, volumeQuery } from '@zankup/core';
+import {
+  SPORT_ICONS,
+  SPORTS,
+  volumeQuery,
+  isoDay,
+  bucketValue,
+  metricsFor,
+  monthLabels as coreMonthLabels,
+  sportsIn,
+  type Bucket,
+  type VolumeMetric,
+  addDays,
+  volumeFormat,
+  weekAt,
+  weekTitle as coreWeekTitle,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -16,80 +31,18 @@ import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { Chip, CHIP_ICON } from './Chip';
 import { Card } from '../ui';
-import { isoDay } from './fitness';
-import {
-  axisTicks,
-  bucketValue,
-  hoursMinutes,
-  metricsFor,
-  sportsIn,
-  type Bucket,
-  type VolumeMetric,
-} from './volume';
 import { VolumeChart } from './VolumeChart';
-import { addDays, weekAt } from './weeks';
-
-const MILE = 1609.344;
 
 /** Totals, axis labels and dates written for the person's units and language. */
 export function useVolumeFormat() {
-  const imperial = useUnits() === 'imperial';
-  const distanceUnit = imperial ? MILE : 1000;
-  const n = (v: number, digits = 0) =>
-    v.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
-  return {
-    imperial,
-    /** A total: 4h 17min · 28,97 km · 1.421 m · 22. */
-    value(metric: VolumeMetric, v: number, digits = 2) {
-      if (metric === 'time') return hoursMinutes(v);
-      if (metric === 'distance') return `${n(v / distanceUnit, v ? digits : 0)} ${imperial ? 'mi' : 'km'}`;
-      if (metric === 'ascent') return `${n(imperial ? v * 3.28084 : v)} ${imperial ? 'ft' : 'm'}`;
-      return n(v);
-    },
-    /** An axis label: 4h 0min · 30 km · 2.500 m · 5. */
-    tick(metric: VolumeMetric, v: number) {
-      if (metric === 'time') return hoursMinutes(v);
-      if (metric === 'distance')
-        return `${n(v / distanceUnit, Number.isInteger(v / distanceUnit) ? 0 : 1)} ${imperial ? 'mi' : 'km'}`;
-      if (metric === 'ascent') return `${n(v)} ${imperial ? 'ft' : 'm'}`;
-      return n(v);
-    },
-    /** Ticks in the person's units (miles and feet round as miles and feet). */
-    ticks(max: number, metric: VolumeMetric, intervals: number) {
-      if (metric === 'ascent' && imperial)
-        return axisTicks(max * 3.28084, 'ascent', intervals).map((v) => v / 3.28084);
-      return axisTicks(max, metric, intervals, metric === 'distance' && imperial ? MILE / 1000 : 1);
-    },
-  };
+  return volumeFormat(useUnits() === 'imperial', locale);
 }
 
 /** "7 sept - 13 sept 2026": a week as the headers write it. */
-export function weekTitle(monday: string) {
-  const day = (iso: string, year = false) =>
-    new Date(`${iso}T12:00:00`).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'short',
-      ...(year ? { year: 'numeric' } : {}),
-    });
-  return `${day(monday)} - ${day(addDays(monday, 6), true)}`;
-}
+export const weekTitle = (monday: string) => coreWeekTitle(monday, locale);
 
 /** Months under a weekly chart: one where a month starts, as SEP · OCT · NOV. */
-export function monthLabels(starts: string[]) {
-  return starts.flatMap((s, i) =>
-    i > 0 && s.slice(5, 7) !== starts[i - 1].slice(5, 7)
-      ? [
-          {
-            index: i,
-            text: new Date(`${s}T12:00:00`)
-              .toLocaleDateString(locale, { month: 'short' })
-              .replace('.', '')
-              .toUpperCase(),
-          },
-        ]
-      : [],
-  );
-}
+export const monthLabels = (starts: string[]) => coreMonthLabels(starts, locale);
 
 /** A sport's chip or row icon, and the all-sports one. */
 export const sportIcon = (sport: string | null): IconName =>

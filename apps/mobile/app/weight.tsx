@@ -3,7 +3,7 @@
  * every weighing below, newest first. "+" adds one (a day can have one: a second replaces it), a
  * weighing opens to be changed, and a long press deletes it. The latest is the profile's weight.
  */
-import { weightQuery } from '@zankup/core';
+import { weightQuery, isoDay } from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
@@ -13,7 +13,6 @@ import { useApi } from '../src/auth';
 import { Chart } from '../src/charts';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
-import { isoDay } from '../src/progress/fitness';
 import { Panel } from '../src/progress/Panel';
 import { fromDayMonthYear, toDayMonthYear, typeDayMonthYear } from '../src/profile/helpers';
 import { useTheme } from '../src/theme';

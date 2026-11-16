@@ -1,0 +1,945 @@
+/* Volume, Series and the Training log (OS-1002), as the app's: every selector under their own classes. */
+
+/* --- shared ------------------------------------------------------------------------------------- */
+
+.vfigs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.vfigs dt {
+  font-size: 13px;
+}
+
+.vfigs dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.vchips.chips {
+  margin: 0 0 12px;
+  padding: 0;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.vchips .chip {
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  padding: 6px 12px;
+}
+
+.vchips .chip svg.i {
+  fill: currentColor;
+}
+
+.vchart {
+  border-radius: 8px;
+}
+
+.vchart:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- the Volume card ------------------------------------------------------------------------------ */
+
+.vcard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vcard .vchips.chips {
+  margin: 0;
+}
+
+.vcard .ph {
+  margin: 0;
+}
+
+.vcard .ph h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.vsub {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.vmore {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.vmore:hover {
+  background: var(--surface-2);
+}
+
+/* --- the Volume page ------------------------------------------------------------------------------ */
+
+.vlayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.vlayout .panel {
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .vlayout {
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    align-items: start;
+  }
+}
+
+.vmain {
+  display: grid;
+  gap: 10px;
+}
+
+.vlabel {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.vtotals {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.vtotals .end {
+  text-align: right;
+}
+
+.vtotals .note {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vtotals .end .note {
+  justify-content: flex-end;
+}
+
+.vbig {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.vbig.small {
+  font-size: 22px;
+}
+
+.vchange {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fg);
+}
+
+.vchange.up {
+  color: var(--form-positive);
+}
+
+.vdot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+
+/* The box over the chart: what the pointer last read, a click away from its activities. */
+.vreadout {
+  min-height: 58px;
+  display: flex;
+  justify-content: center;
+}
+
+.vbox,
+.vbox:hover:not(:disabled) {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.vbox span {
+  display: grid;
+}
+
+.vbox b {
+  font-size: 18px;
+}
+
+.vbox small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vbox svg.i {
+  fill: var(--muted);
+}
+
+.vranges {
+  display: flex;
+  gap: 6px;
+}
+
+.vranges button {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.vranges button[aria-checked='true'],
+.vranges button[aria-checked='true']:hover {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.vside {
+  display: grid;
+  gap: 14px;
+}
+
+.vcompare {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vcomparebtn,
+.vcomparebtn:hover:not(:disabled) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.vcomparebtn:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.vcomparebtn svg.i {
+  fill: currentColor;
+}
+
+.vswatch {
+  width: 22px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fatigue);
+}
+
+.vcompare .iconbtn {
+  border-radius: 999px;
+}
+
+.vcompare .iconbtn svg.i {
+  fill: currentColor;
+}
+
+.vglance {
+  display: grid;
+  gap: 10px;
+}
+
+.vglance h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.vglance h2 svg.i {
+  fill: currentColor;
+}
+
+.vglance p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* The dialogs' lists of choices (sport, comparison): a row each, the chosen one in the accent. */
+.vchoices {
+  display: grid;
+}
+
+.vchoices button,
+.vchoices button:hover:not(:disabled) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+}
+
+.vchoices button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.vchoices button > span {
+  flex: 1;
+  display: grid;
+}
+
+.vchoices small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vchoices svg.i {
+  fill: currentColor;
+  width: 24px;
+  height: 24px;
+}
+
+.vchoices.sports button[aria-checked='true'] {
+  color: var(--accent);
+}
+
+.vchoices.sports button[aria-checked='true'] small {
+  color: inherit;
+}
+
+.vradio {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--fg);
+  display: grid;
+  place-items: center;
+}
+
+.vchoices button[aria-checked='true'] .vradio {
+  border-color: var(--accent);
+}
+
+.vchoices button[aria-checked='true'] .vradio::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.vsearch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  margin-bottom: 6px;
+}
+
+.vsearch svg.i {
+  fill: var(--muted);
+}
+
+.vsearch input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  padding: 11px 0;
+  outline: none;
+}
+
+.vbuckettotals {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.vacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vacts a {
+  display: grid;
+  gap: 10px;
+  padding: 14px 4px;
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.vacts li:last-child a {
+  border-bottom: 0;
+}
+
+.vacts a:hover b {
+  color: var(--accent);
+}
+
+.vacthead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vacthead > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.vacthead b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vacthead small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* --- Series ------------------------------------------------------------------------------------- */
+
+.vseries {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.vseries:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.vseries .ph svg.i {
+  fill: var(--muted);
+}
+
+/* The title's button stretches over the card, so the whole card opens the month. */
+.vstretch,
+.vstretch:hover:not(:disabled) {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.vstretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
+.vstretch:focus-visible {
+  outline: none;
+}
+
+.vstretch:focus-visible::after {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.vflamebox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.vflame {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.vflame svg {
+  position: absolute;
+  inset: 0;
+  fill: var(--accent);
+}
+
+.vflame b {
+  position: relative;
+  top: 0.35em;
+  color: var(--accent-fg);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.modal.vmonthmodal {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.vmonth {
+  display: grid;
+  gap: 14px;
+}
+
+.vmonthhead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vmonthhead h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.vmonthhead h3::first-letter {
+  text-transform: uppercase;
+}
+
+.vmonthhead .iconbtn {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.vmonthhead .iconbtn svg.i {
+  fill: currentColor;
+  width: 26px;
+  height: 26px;
+}
+
+.vmonthhead .iconbtn:disabled {
+  color: var(--line);
+  cursor: default;
+}
+
+.vweek {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) 52px;
+  align-items: center;
+  height: 50px;
+}
+
+.vweek.head {
+  height: auto;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.vweek > span {
+  display: grid;
+  place-items: center;
+}
+
+.vday {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.vday.out {
+  color: var(--muted);
+}
+
+.vday.past {
+  background: var(--surface-2);
+}
+
+.vday.ahead {
+  border: 1.5px solid var(--line);
+}
+
+.vday.today {
+  border: 2px solid var(--fg);
+}
+
+.vday.done {
+  background: var(--fg);
+  color: var(--bg);
+  text-decoration: none;
+}
+
+.vday.done.today {
+  border-color: var(--accent);
+}
+
+.vday.done svg.i {
+  fill: currentColor;
+  width: 22px;
+  height: 22px;
+}
+
+.vday.done:hover {
+  background: color-mix(in srgb, var(--fg) 80%, var(--accent));
+}
+
+.vplus {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--fg);
+  border: 2px solid var(--surface);
+}
+
+.vmark {
+  position: relative;
+  height: 100%;
+}
+
+.vband {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.vband.up {
+  top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.vband.down {
+  bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.vmark > .vflame,
+.vmark > .vtick {
+  position: relative;
+}
+
+.vtick {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-fg);
+  display: grid;
+  place-items: center;
+}
+
+.vtick svg.i {
+  fill: currentColor;
+  width: 18px;
+  height: 18px;
+}
+
+.vtick.empty {
+  background: transparent;
+  border: 2px solid var(--line);
+}
+
+/* --- the Training log card ----------------------------------------------------------------------- */
+
+.vlogcard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.vlogcard:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.vlogcard .ph {
+  margin: 0;
+  flex-wrap: nowrap;
+}
+
+.vlogcard .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vlogcard .ph h2 svg.i {
+  fill: var(--accent);
+}
+
+.vlogcard .ph > svg.i {
+  fill: var(--muted);
+}
+
+.vline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.vdots {
+  display: flex;
+  height: 28px;
+  align-items: center;
+}
+
+.vdots > span {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+.vdots i {
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.vdots i.on {
+  background: var(--dot);
+}
+
+.vdots i.today {
+  background: transparent;
+  border: 2px solid var(--muted);
+}
+
+/* --- the Training log page ----------------------------------------------------------------------- */
+
+.vlogpage .titlebar .iconbtn svg.i {
+  fill: currentColor;
+}
+
+.vlogpage .titlebar a.iconbtn {
+  display: grid;
+  place-items: center;
+}
+
+.vfilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.vfilters > div {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  flex: 1;
+  max-width: 280px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vlog {
+  padding-top: 0;
+}
+
+.vletters {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 10px 0;
+  background: var(--surface);
+  text-align: center;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.vrow {
+  height: 124px;
+  display: flex;
+  flex-direction: column;
+  padding-top: 14px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 48px;
+}
+
+.vrow:last-child {
+  border-bottom: 0;
+}
+
+.vrowhead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.vbubbles {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.vcell {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.vbubble,
+.vbubble:hover:not(:disabled) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dot);
+  color: white;
+  font-size: 11px;
+}
+
+.vbubble:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot) 35%, transparent);
+}
+
+.vbubble.several {
+  color: var(--bg);
+}
+
+.vbubble b {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 11px;
+}
+
+.vspeck {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.vtoday {
+  position: absolute;
+  bottom: 6px;
+  font-size: 11px;
+}
+
+.vdaylist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vdaylist a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.vdaylist a:hover span {
+  color: var(--accent);
+}
+
+.vdaylist i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--dot);
+  flex: none;
+}
+
+.vdaylist span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vdaylist small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vmonths h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 12px 0 8px;
+}
+
+.vmonths section > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+}
+
+.vmonths button::first-letter {
+  text-transform: uppercase;
+}
+
+.vmonths button {
+  text-align: left;
+  padding: 10px 12px;
+}

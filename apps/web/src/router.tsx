@@ -10,6 +10,11 @@ import { Home } from './routes/Home';
 import { Health } from './routes/Health';
 import { NotFound } from './routes/NotFound';
 import { Profile } from './routes/Profile';
+import { Progress } from './routes/Progress';
+import { BestsPage, SkillsPage, ZonesPage } from './progress/Zones';
+import { EffortPage, FitnessPage, PredictionsPage } from './progress/Fitness';
+import { MonthlyPage, SourcesPage } from './progress/More';
+import { LogPage, VolumePage } from './progress/Volume';
 import { Authorize } from './routes/Authorize';
 import { RequireSession } from './routes/RequireSession';
 import { Setup } from './routes/Setup';
@@ -43,6 +48,18 @@ const screens: RouteObject[] = [
     children: [{ path: ':id', element: <Activity /> }],
   },
   { path: 'goals', element: <Goals /> },
+  // Progress (OS-1001 to OS-1005): its cards, each opening its page.
+  { path: 'progress', element: <Progress /> },
+  { path: 'progress/volume', element: <VolumePage /> },
+  { path: 'progress/log', element: <LogPage /> },
+  { path: 'progress/fitness', element: <FitnessPage /> },
+  { path: 'progress/effort', element: <EffortPage /> },
+  { path: 'progress/predictions', element: <PredictionsPage /> },
+  { path: 'progress/zones', element: <ZonesPage /> },
+  { path: 'progress/skills', element: <SkillsPage /> },
+  { path: 'progress/bests', element: <BestsPage /> },
+  { path: 'progress/monthly', element: <MonthlyPage /> },
+  { path: 'progress/sources', element: <SourcesPage /> },
   { path: 'estimates', element: <Estimates /> },
   { path: 'notifications', element: <Notifications /> },
   { path: 'search', element: <Search /> },

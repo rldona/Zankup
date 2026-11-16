@@ -5,7 +5,20 @@
  * Weeks load eight at a time as they scroll into view; a bubble opens its activity, or lists the day's.
  */
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { calendarQuery, SPORTS, streakQuery, type CalendarDay } from '@zankup/core';
+import {
+  calendarQuery,
+  SPORTS,
+  streakQuery,
+  type CalendarDay,
+  isoDay,
+  addDays,
+  indexOfWeek,
+  monthsBack,
+  weekAt,
+  weekCount,
+  weekDays,
+  type LogMetric,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -14,8 +27,6 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useApi } from '../src/auth';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
-import { isoDay } from '../src/progress/fitness';
-import { addDays, indexOfWeek, weekAt, weekCount, weekDays, type LogMetric } from '../src/progress/weeks';
 import { DayList, ROW_HEIGHT, WeekRow, type Activities } from '../src/progress/Log';
 import { Panel } from '../src/progress/Panel';
 import { useTheme } from '../src/theme';
@@ -175,10 +186,7 @@ function Week({
 /** Every month from this one back to the first activity's, under its year; a tap goes to its first week. */
 function Months({ first, today, onPick }: { first: string; today: string; onPick: (iso: string) => void }) {
   const c = useTheme();
-  const months: { year: number; month: number }[] = [];
-  const end = new Date(`${first.slice(0, 7)}-15T12:00:00`);
-  for (let d = new Date(`${today.slice(0, 7)}-15T12:00:00`); d >= end; d.setMonth(d.getMonth() - 1))
-    months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  const months = monthsBack(first, today);
   return (
     <ScrollView>
       {months.map(({ year, month }, i) => {

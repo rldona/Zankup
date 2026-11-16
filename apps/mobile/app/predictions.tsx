@@ -3,6 +3,20 @@
  * they changed in 30 days; over a month, three or six, one race with its line. The range is chosen at
  * the bottom of the screen, always there.
  */
+import {
+  isoDay,
+  predictionLabelDays,
+  PREDICTION_DAYS,
+  type PredictionRange,
+  racePace,
+  RACES,
+  raceTime,
+  series,
+  timeTicks,
+  valueOn,
+  type RaceKind,
+  addDays,
+} from '@zankup/core';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -11,25 +25,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { useUnits } from '../src/prefs';
-import { isoDay } from '../src/progress/fitness';
 import { ChangeBadge, PredictionChart, RaceBadge, usePredictions } from '../src/progress/Predictions';
-import {
-  racePace,
-  RACES,
-  raceTime,
-  series,
-  timeTicks,
-  valueOn,
-  type RaceKind,
-} from '../src/progress/raceTimes';
-import { addDays } from '../src/progress/weeks';
 import { PageSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { Chip } from '../src/progress/Chip';
 import { InfoButton, Muted, Screen } from '../src/ui';
 
-type Range = 'today' | '1m' | '3m' | '6m';
-const DAYS = { '1m': 30, '3m': 83, '6m': 166 } as const;
 const at = (iso: string) => new Date(`${iso}T12:00:00`);
 
 export default function PredictionsScreen() {
@@ -37,7 +38,7 @@ export default function PredictionsScreen() {
   const insets = useSafeAreaInsets();
   const imperial = useUnits() === 'imperial';
   const { byKind, isPending } = usePredictions();
-  const [range, setRange] = useState<Range>('today');
+  const [range, setRange] = useState<PredictionRange>('today');
   const [race, setRace] = useState<RaceKind>('race_5k');
   const today = isoDay(new Date());
   const unit = imperial ? '/mi' : '/km';
@@ -94,28 +95,20 @@ export default function PredictionsScreen() {
         </>
       );
     }
-    const from = addDays(today, -DAYS[range]);
+    const from = addDays(today, -PREDICTION_DAYS[range]);
     const history = byKind.get(race) ?? [];
     const points = series(history, from, today);
     const now = valueOn(history, today);
     const values = points.map((p) => p.value);
     const ticks = values.length ? timeTicks(Math.min(...values), Math.max(...values)) : [];
     // Under the chart: Mondays over a month, the first of each month over longer ranges.
-    const labels: { day: string; text: string }[] = [];
-    for (let day = addDays(from, 1); day < today; day = addDays(day, 1)) {
-      const d = at(day);
-      if (range === '1m' ? d.getDay() === 1 : d.getDate() === 1)
-        labels.push({
-          day,
-          text: d
-            .toLocaleDateString(
-              locale,
-              range === '1m' ? { day: 'numeric', month: 'short' } : { month: 'short' },
-            )
-            .replace('.', '')
-            .toUpperCase(),
-        });
-    }
+    const labels = predictionLabelDays(range, from, today).map((day) => ({
+      day,
+      text: at(day)
+        .toLocaleDateString(locale, range === '1m' ? { day: 'numeric', month: 'short' } : { month: 'short' })
+        .replace('.', '')
+        .toUpperCase(),
+    }));
     return (
       <>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>

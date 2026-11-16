@@ -4,7 +4,22 @@
  * weeks over all time. The card shows the strongest skill beside both radars; app/skills.tsx the
  * radar in full with each skill's level.
  */
-import { curvesQuery, meQuery } from '@zankup/core';
+import {
+  curvesQuery,
+  meQuery,
+  isoDay,
+  DURATIONS,
+  durationLabel,
+  LEVELS,
+  levelAt,
+  radialShare,
+  SKILLS,
+  strongest,
+  type Skill,
+  addDays,
+  RADAR_COLOURS,
+  SKILL_COLOURS,
+} from '@zankup/core';
 import {
   Canvas,
   Circle,
@@ -27,29 +42,14 @@ import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme, type Palette } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import {
-  DURATIONS,
-  durationLabel,
-  LEVELS,
-  levelAt,
-  radialShare,
-  SKILLS,
-  strongest,
-  type Skill,
-} from './skillLevels';
-import { addDays } from './weeks';
 
 /** Without a weight in the profile, the scale is read for a rider of this much. */
 export const REFERENCE_KG = 75;
 
-/** The skills' colours, as Strava's (sampled from its app), the same on every theme. */
-const SKILL_COLOURS: Record<Skill, string> = { sprint: '#0160cf', attack: '#59a61c', climb: '#fb7432' };
-
 export const skillColour = (_c: Palette, skill: Skill) => SKILL_COLOURS[skill];
 
 /** The two radars' colours, as Strava's: all time in purple, the last eight weeks in pink over it. */
-export const radarColours = () => ({ all: '#823bae', recent: '#d97ed1' });
+export const radarColours = () => RADAR_COLOURS;
 
 /** The best power at each duration, for the last eight weeks and for all time, and the weight. */
 export function useSkills() {

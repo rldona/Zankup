@@ -3,7 +3,19 @@
  * year, for every sport or one, the zone with most time and how its share moved against the span
  * before, and a sentence on what changed most. The pencil opens the zones' settings.
  */
-import { zonesQuery } from '@zankup/core';
+import {
+  zonesQuery,
+  isoDay,
+  PROGRESS_RANGES,
+  volumeRange,
+  type ProgressRange,
+  defaultZoneKind,
+  glance,
+  shareChange,
+  topZone,
+  zoneKinds,
+  type ZoneKind,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
@@ -14,19 +26,9 @@ import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { asSport } from '../src/prefs';
 import { Chip, CHIP_ICON } from '../src/progress/Chip';
-import { isoDay } from '../src/progress/fitness';
 import { Panel } from '../src/progress/Panel';
 import { SportSheet } from '../src/progress/SportSheet';
-import { PROGRESS_RANGES, rangeOf, type ProgressRange } from '../src/progress/volume';
 import { sportIcon } from '../src/progress/VolumeCard';
-import {
-  defaultZoneKind,
-  glance,
-  shareChange,
-  topZone,
-  zoneKinds,
-  type ZoneKind,
-} from '../src/progress/zones';
 import { ShareBadge, ZoneRows } from '../src/progress/ZonesCard';
 import { useTheme } from '../src/theme';
 import { accent, Card, InfoButton, Muted, onAccent, Screen } from '../src/ui';
@@ -51,7 +53,7 @@ export default function ZonesScreen() {
   const kind = kinds.includes(chosen) ? chosen : 'hr';
   const [range, setRange] = useState<ProgressRange>('1m');
   const [picking, setPicking] = useState(false);
-  const { current } = rangeOf(range, today);
+  const { current } = volumeRange(range, today);
   // Loaded in the background: while a new range or sport loads, the zones shown stay (when they are of
   // the same kind) and the bars move to the new times, with no skeleton in between.
   const zones = useQuery({

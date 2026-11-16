@@ -33,6 +33,10 @@ const pwa = VitePWA({
   workbox: {
     globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
     globIgnores: ['push-sw.js'],
+    // A new version takes over as soon as it is installed: without these it waited until every tab
+    // of the site was closed, so a deploy did not reach a PWA left open (or installed).
+    skipWaiting: true,
+    clientsClaim: true,
     importScripts: ['/push-sw.js'], // push notifications (OS-401)
     maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // MapLibre and its worker
     navigateFallback: '/index.html',

@@ -3,7 +3,17 @@
  * from the first day of the range to the day picked (today unless another is touched), and that day's
  * activities.
  */
-import { calendarQuery, fitnessQuery, type CalendarDay } from '@zankup/core';
+import {
+  calendarQuery,
+  fitnessQuery,
+  type CalendarDay,
+  fitnessChange,
+  FITNESS_RANGES,
+  isoDay,
+  rangePeriod,
+  untilToday,
+  type FitnessRange,
+} from '@zankup/core';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -15,14 +25,6 @@ import { keys, readSync, storage } from '../src/storage';
 import { Icon, SportIcon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { asSport } from '../src/prefs';
-import {
-  fitnessChange,
-  FITNESS_RANGES,
-  isoDay,
-  rangePeriod,
-  untilToday,
-  type FitnessRange,
-} from '../src/progress/fitness';
 import { FitnessChart } from '../src/progress/FitnessChart';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';

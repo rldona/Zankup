@@ -22,14 +22,14 @@ import { useServerLanguage, useServerTheme } from '../theme';
 type Item = { to: string; icon: MaterialIconName; label: MessageKey };
 
 /**
- * The sections, as the app's tabs (OS-903): Home, Activities, Health, Goals and You, in the rail from
- * 600 px and the tab bar below it.
+ * The sections, as the app's tabs (OS-903, OS-1001): Home, Activities, Progress, Health and You, in the
+ * rail from 600 px and the tab bar below it. Goals live in Progress.
  */
 const SECTIONS: Item[] = [
   { to: '/', icon: 'home', label: 'nav.home' },
   { to: '/activities', icon: 'cards_stack', label: 'nav.feed' },
+  { to: '/progress', icon: 'show_chart', label: 'nav.progress' },
   { to: '/health', icon: 'favorite', label: 'nav.health' },
-  { to: '/goals', icon: 'flag', label: 'nav.goals' },
   { to: '/profile', icon: 'person', label: 'nav.you' },
 ];
 
@@ -55,7 +55,7 @@ const OWNS: Record<string, RegExp> = {
   '/': /^\/(notifications|coach)?$/,
   '/activities': /^\/(activities|search|sync)(\/|$)/,
   '/health': /^\/health(\/|$)/,
-  '/goals': /^\/goals(\/|$)/,
+  '/progress': /^\/(progress|goals)(\/|$)/,
   '/stats/calendar': /^\/stats\/calendar$/,
   '/profile': /^\/(profile|stats|estimates|gear|settings|review|routes|segments)(\/|$)/,
 };
@@ -105,6 +105,7 @@ const PARENTS: {
   show?: 'phone' | 'compact';
 }[] = [
   { match: /^\/(search|sync)$/, to: '/activities', label: 'nav.feed' },
+  { match: /^\/(progress\/.|goals$)/, to: '/progress', label: 'nav.progress' },
   { match: /^\/(coach|notifications)$/, to: '/', label: 'nav.home', show: 'phone' },
   { match: /^\/settings\/import$/, to: '/settings', label: 'nav.settings' },
   { match: /^\/settings\/./, to: '/settings', label: 'nav.settings', show: 'compact' },

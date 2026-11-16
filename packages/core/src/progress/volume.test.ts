@@ -7,7 +7,7 @@ import {
   comparableYears,
   hoursMinutes,
   percentChange,
-  rangeOf,
+  volumeRange,
   sportsIn,
   yearsBack,
   type Bucket,
@@ -15,23 +15,23 @@ import {
 
 const today = '2026-11-15'; // a Sunday
 
-describe('rangeOf', () => {
+describe('volumeRange', () => {
   it('counts days for 7D and 1M, with the same span before', () => {
-    expect(rangeOf('7d', today)).toEqual({
+    expect(volumeRange('7d', today)).toEqual({
       unit: 'day',
       current: { from: '2026-11-09', to: '2026-11-16' },
       previous: { from: '2026-11-02', to: '2026-11-09' },
     });
-    expect(rangeOf('1m', today).current.from).toBe('2026-10-16');
+    expect(volumeRange('1m', today).current.from).toBe('2026-10-16');
   });
   it('counts whole weeks for 3M, 6M and 1A, as Strava (24 ago, 1 jun, 17 nov)', () => {
-    expect(rangeOf('3m', today).current.from).toBe('2026-08-24');
-    expect(rangeOf('6m', today).current.from).toBe('2026-06-01');
-    expect(rangeOf('1y', today).current.from).toBe('2025-11-17');
-    expect(rangeOf('3m', today).previous).toEqual({ from: '2026-06-01', to: '2026-08-24' });
+    expect(volumeRange('3m', today).current.from).toBe('2026-08-24');
+    expect(volumeRange('6m', today).current.from).toBe('2026-06-01');
+    expect(volumeRange('1y', today).current.from).toBe('2025-11-17');
+    expect(volumeRange('3m', today).previous).toEqual({ from: '2026-06-01', to: '2026-08-24' });
   });
   it('compares the year so far with last year up to the same date', () => {
-    expect(rangeOf('ytd', today)).toMatchObject({
+    expect(volumeRange('ytd', today)).toMatchObject({
       current: { from: '2026-01-01', to: '2026-11-16' },
       previous: { from: '2025-01-01', to: '2025-11-16' },
     });
@@ -80,7 +80,7 @@ describe('numbers', () => {
 });
 
 describe('comparing with years before', () => {
-  const year = rangeOf('1y', today).current;
+  const year = volumeRange('1y', today).current;
   it('moves back whole weeks, as Strava (18 nov 2024 for last year)', () => {
     expect(yearsBack(year, 1).from).toBe('2024-11-18');
     expect(yearsBack(year, 3).from).toBe('2022-11-21');

@@ -2,7 +2,7 @@
  * Weight over time (Health → Weight): the weighings drawn as one value a day, joined in a straight
  * line between two weighings, and how much it moved over a span.
  */
-import { addDays } from './progress/weeks';
+import { addDays } from '@zankup/core';
 
 export type Weighing = { day: string; weight_kg: number };
 

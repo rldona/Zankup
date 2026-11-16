@@ -583,6 +583,14 @@ a.stepbtn:hover {
   }
 }
 
+/* Chips that wrap onto more lines instead of scrolling sideways: in a dialog every choice shows. */
+.chips.wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
 .zselect {
   position: relative;
   width: 100%;
@@ -2222,10 +2230,7 @@ a.button.block {
   fill: color-mix(in srgb, var(--muted) 45%, var(--bg));
 }
 
-.bodymap .muscle.on,
-.bodythumb .muscle.on {
-  fill: url(#muscle-glow);
-}
+/* A worked muscle's fill is its figure's own glow, set inline (BodyMap.tsx). */
 
 .glow-core {
   stop-color: color-mix(in srgb, var(--strength) 55%, #ffd27a);
@@ -6480,4 +6485,30 @@ h1.greeting {
 
 .report-next p {
   margin: 6px 0 0;
+}
+
+/* Progress (OS-1001): its cards in one column on a phone, a grid from the desktop; Volume across the
+   top and Series beside the Training log, as the app. */
+.progress .pgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.progress .ppair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.progress .pgrid > * > .panel,
+.progress .ppair > .panel {
+  height: 100%;
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .progress .pgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .progress .pwide {
+    grid-column: 1 / -1;
+  }
 }

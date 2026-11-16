@@ -3,7 +3,17 @@
  * (HR, every sport) beside a bar per zone; app/zones.tsx has the zones in full. The zone colours, the
  * card's change badge and the zone rows are shared by both.
  */
-import { zonesQuery, zoneScale } from '@zankup/core';
+import {
+  zonesQuery,
+  zoneScale,
+  isoDay,
+  changeText,
+  volumeRange,
+  shareChange,
+  topZone,
+  zoneRange,
+  type ZoneKind,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
@@ -18,10 +28,6 @@ import { useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import { changeText } from './raceTimes';
-import { rangeOf } from './volume';
-import { shareChange, topZone, zoneRange, type ZoneKind } from './zones';
 
 /** A kind's zone colours, as Strava's: reds for heart rate, blues for pace, purples for power. */
 export const zoneColours = (kind: ZoneKind, count: number): string[] => zoneScale(kind, count);
@@ -50,7 +56,7 @@ export function ShareBadge({ points }: { points: number }) {
 export function ZonesCard() {
   const api = useApi();
   const c = useTheme();
-  const { current } = rangeOf('1m', isoDay(new Date()));
+  const { current } = volumeRange('1m', isoDay(new Date()));
   const zones = useQuery(zonesQuery(api, 'hr', current));
   if (zones.isPending) return <CardSkeleton lines={3} />;
   const seconds = zones.data?.seconds ?? [];

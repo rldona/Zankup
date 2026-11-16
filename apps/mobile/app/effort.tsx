@@ -5,7 +5,7 @@
  * changes the week.
  */
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
-import { calendarQuery, SPORT_ICONS, type CalendarDay } from '@zankup/core';
+import { calendarQuery, SPORT_ICONS, type CalendarDay, activityBand, addDays, weekDays } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -18,7 +18,6 @@ import { useCanvasReady } from '../src/charts';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { asSport } from '../src/prefs';
-import { activityBand } from '../src/progress/effort';
 import {
   onStatus,
   statusColour,
@@ -28,7 +27,6 @@ import {
 } from '../src/progress/EffortCard';
 import { CLICK_STRENGTH } from '../src/progress/FitnessChart';
 import { monthLabels } from '../src/progress/VolumeCard';
-import { addDays, weekDays } from '../src/progress/weeks';
 import { PageSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { accent, InfoButton, Muted, Screen } from '../src/ui';

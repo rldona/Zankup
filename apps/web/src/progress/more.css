@@ -1,0 +1,340 @@
+/* Monthly activities, Data sources and Goals on Progress (OS-1005), as the app's. */
+
+/* A card that opens its page: the whole card is the link. */
+.panel.morecard {
+  display: block;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.panel.morecard:hover h2 {
+  color: var(--accent);
+}
+
+.panel.morecard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.morecard .ph h2,
+.sourcescard .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.morecard .ph h2 svg.i {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+
+.morecard .ph > svg.i,
+.morehint svg.i {
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+}
+
+.morehint {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Monthly activities: the figures beside the two lines. */
+.monthlybody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42%;
+  align-items: center;
+  gap: 12px;
+}
+
+.monthlyfigures {
+  display: grid;
+  gap: 2px;
+}
+
+.monthlyfigures small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.monthlyfigures b {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.page.monthly .monthpanel {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.page.monthly .monthpanel h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.monthfigures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.monthfigures dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.monthfigures dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* Each sport's month: two by two where there is room. */
+.monthsports {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .monthsports {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Data sources: the devices, then a way into the apps and devices. */
+.sourcescard .note {
+  margin-top: -4px;
+}
+
+.sourcerows {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.sourcerows li,
+.sourcerows a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sourcerows a {
+  flex: 1;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.sourcerows a:hover b {
+  color: var(--accent);
+}
+
+.sourcerows span {
+  display: grid;
+  min-width: 0;
+}
+
+.sourcerows b {
+  font-weight: 400;
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourcerows small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sourcerows svg.i {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+.sourcesmanage {
+  display: block;
+  width: fit-content;
+  margin: 12px 0 0 auto;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sourcegroups {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .sourcegroups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sourcegroups > .panel {
+  margin: 0;
+}
+
+.panel.menu.sourcegroup h2 {
+  margin: 0;
+  padding-top: 14px;
+  font-size: 14px;
+}
+
+.sourceon {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.panel.menu .sourceon svg.i {
+  width: 24px;
+  height: 24px;
+}
+
+/* Goals: up to three rings, each with what is done and its target. */
+.goalrings {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.goalrings li {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.goalrings b {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.goalrings small {
+  font-size: 13px;
+}
+
+.goalring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.goalring svg {
+  position: absolute;
+  inset: 0;
+}
+
+.goalring circle {
+  fill: none;
+}
+
+.goalring .track {
+  stroke: var(--muted);
+  opacity: 0.35;
+}
+
+.goalring .fill {
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+
+.goalring > svg.i {
+  position: static;
+  width: 40%;
+  height: 40%;
+  color: var(--fg);
+}
+
+/* The Goals page: what is left (or extra) and the pace, then the goal over its weeks or months. */
+.goalstats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 32px;
+}
+
+.goalstats > span {
+  display: grid;
+}
+
+.goalstats small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.goalstats b {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.goalhistory {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.goalhistory h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.goalhistorytotals {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.goalhistorykey {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.goalhistorykey > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goalhistorykey i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.goalhistorykey i.target {
+  background: var(--muted);
+}
+
+.goalhistorykey i.actual {
+  margin-left: 10px;
+  background: var(--accent);
+}
+
+.goalform .chip:disabled {
+  color: var(--muted);
+  background: var(--surface-2);
+  border-color: transparent;
+  cursor: not-allowed;
+}

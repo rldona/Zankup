@@ -2,26 +2,26 @@
  * Monthly activities (as Strava's): this month's and last month's totals, each as a line that adds up
  * day by day, for all sports or one. Pure, so it is unit-tested.
  */
-import { type CalendarDay } from '@zankup/core';
+import { type CalendarDay } from '../api/queries';
 
-import { isoDay } from './fitness';
+import { isoDay } from '../domain/home';
 
-export type MonthTotals = { count: number; time: number; distance: number; ascent: number };
+export type MonthFigures = { count: number; time: number; distance: number; ascent: number };
 
 export type Month = {
   /** First day of the month. */
   start: Date;
   /** Days in the month. */
   days: number;
-  totals: MonthTotals;
+  totals: MonthFigures;
   /** Moving time added up to the end of each day, up to today for the month in course. */
   cumulative: number[];
 };
 
-const empty = (): MonthTotals => ({ count: 0, time: 0, distance: 0, ascent: 0 });
+const empty = (): MonthFigures => ({ count: 0, time: 0, distance: 0, ascent: 0 });
 
 /** The calendar's range for this month and the one before: [from, to). */
-export function monthsRange(today: Date): { from: string; to: string } {
+export function monthPairRange(today: Date): { from: string; to: string } {
   return {
     from: isoDay(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
     to: isoDay(new Date(today.getFullYear(), today.getMonth() + 1, 1)),

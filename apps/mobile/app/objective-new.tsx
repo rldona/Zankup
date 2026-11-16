@@ -3,7 +3,7 @@
  * monthly or yearly, what to measure (kinds already set for that sport and period are greyed out), and
  * the target in its units: kilometres, hours and minutes, metres or activities.
  */
-import { goalsQuery, SPORTS } from '@zankup/core';
+import { goalsQuery, SPORTS, fromInput, toInput, type GoalMetric, type GoalPeriod } from '@zankup/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -13,7 +13,6 @@ import { useApi } from '../src/auth';
 import { Icon } from '../src/Icon';
 import { t } from '../src/i18n';
 import { useUnits } from '../src/prefs';
-import { fromInput, toInput, type GoalMetric, type GoalPeriod } from '../src/progress/goals';
 import { goalIcon, goalSport } from '../src/progress/GoalsCard';
 import { Panel } from '../src/progress/Panel';
 import { useTheme } from '../src/theme';

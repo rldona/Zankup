@@ -2,14 +2,13 @@
  * The goals an activity completed (the one that took its period's total over the target): a line on the
  * feed's card and a banner on the activity's page, each opening the goals.
  */
-import { type ReachedGoal as Reached } from '@zankup/core';
+import { type ReachedGoal as Reached, type GoalMetric } from '@zankup/core';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { Icon } from '../Icon';
 import { t } from '../i18n';
 import { goalWords } from '../progress/GoalsCard';
-import { type GoalMetric } from '../progress/goals';
 import { useVolumeFormat } from '../progress/VolumeCard';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
