@@ -3,7 +3,17 @@
  * every weighing below, newest first. "+" adds one (a day can have one: a second replaces it), a
  * weighing opens to be changed, and a long press deletes it. The latest is the profile's weight.
  */
-import { weightQuery, isoDay } from '@zankup/core';
+import {
+  dailyWeights,
+  isoDay,
+  parseWeight,
+  weightChange,
+  weightQuery,
+  weightRangeStart,
+  WEIGHT_RANGES,
+  type Weighing,
+  type WeightRange,
+} from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
@@ -17,15 +27,6 @@ import { Panel } from '../src/progress/Panel';
 import { fromDayMonthYear, toDayMonthYear, typeDayMonthYear } from '../src/profile/helpers';
 import { useTheme } from '../src/theme';
 import { accent, Button, Card, Field, Heading, Muted, onAccent, Screen } from '../src/ui';
-import {
-  change,
-  dailyWeights,
-  parseWeight,
-  rangeStart,
-  WEIGHT_RANGES,
-  type Weighing,
-  type WeightRange,
-} from '../src/weight';
 
 const kg = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1 });
 const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${kg(Math.abs(n))}`;
@@ -70,14 +71,14 @@ export default function WeightScreen() {
     onSuccess: changed,
   });
 
-  const from = rangeStart(range, today, weighings);
+  const from = weightRangeStart(range, today, weighings);
   const values = dailyWeights(weighings, from, today);
   const days: string[] = [];
   for (let d = new Date(`${from}T12:00:00`); isoDay(d) <= today; d.setDate(d.getDate() + 1))
     days.push(shortDay(isoDay(d)));
   const shown = values.filter((v): v is number => v != null);
   const latest = weighings.at(-1);
-  const moved = change(weighings, from);
+  const moved = weightChange(weighings, from);
 
   const day = editing ? fromDayMonthYear(editing.day) : null;
   const value = editing ? parseWeight(editing.weight) : null;

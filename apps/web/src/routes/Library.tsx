@@ -15,6 +15,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { api } from '../api';
 import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
+import { CompareWithStrava } from '../stats/Compare';
 import { CardTitle } from '../ui';
 
 const date = (iso: string) => new Date(iso).toLocaleDateString(locale, { dateStyle: 'medium' });
@@ -286,7 +287,10 @@ async function uploadFile(file: File, onProgress: (sent: number) => void): Promi
   return finished.data;
 }
 
-/** Upload FIT, TCX, GPX or ZIP files, a Garmin export or a Strava export, and follow the imports. */
+/**
+ * Upload FIT, TCX, GPX or ZIP files, a Garmin export or a Strava export, and follow the imports; after a
+ * Strava export, how Zankup's metrics compare with its.
+ */
 export function Import() {
   const queryClient = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
@@ -366,6 +370,8 @@ export function Import() {
           ))}
         </ul>
       </section>
+      {/* Once a Strava export is in: how close Zankup's metrics are to Strava's (from Stats, #318). */}
+      <CompareWithStrava />
     </section>
   );
 }

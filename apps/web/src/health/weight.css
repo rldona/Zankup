@@ -1,0 +1,143 @@
+/* Weight over time (OS-1009): Health's card and /health/weight. */
+
+/* --- the card on Health ---------------------------------------------------------------------- */
+
+.weightcard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.weightcard:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+}
+.weightcard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.weightcard .ph {
+  margin: 0;
+}
+.weightcard .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.weightcard .ph svg.i {
+  color: var(--accent);
+}
+.weightcard .ph > svg.i {
+  color: var(--muted);
+}
+.weightcard .note {
+  margin: 0;
+}
+.wfigure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+}
+.wfigure b {
+  font-size: 26px;
+  font-weight: 800;
+}
+.wspark {
+  pointer-events: none;
+}
+
+/* --- the page --------------------------------------------------------------------------------- */
+
+.weightpage .titlebar button.primary {
+  padding: 8px 14px;
+}
+.wtop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-bottom: 12px;
+}
+.wreadout {
+  display: flex;
+  flex-direction: column;
+}
+.wreadout b {
+  font-size: 32px;
+  font-weight: 800;
+}
+.wmoved {
+  margin: 0;
+}
+.wranges {
+  display: flex;
+  margin-bottom: 12px;
+}
+.wranges button {
+  flex: 1;
+}
+.wchart {
+  cursor: crosshair;
+}
+.weightpage .panel {
+  margin-bottom: 16px;
+}
+
+.whistory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.whistory li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+}
+.whistory li:last-child {
+  border-bottom: 0;
+}
+.whistory .wrow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  font-weight: 400;
+  text-align: left;
+}
+.whistory .wrow:hover {
+  background: var(--surface-2);
+}
+.whistory .wrow > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.whistory .wrow .note {
+  margin: 0;
+}
+.whistory .iconbtn {
+  color: var(--muted);
+}
+.whistory .iconbtn:hover {
+  color: var(--fg);
+}
+/* On a desktop the delete button shows on the row under the pointer (or focused); always on touch. */
+@media (hover: hover) {
+  .whistory li .iconbtn {
+    opacity: 0;
+  }
+  .whistory li:hover .iconbtn,
+  .whistory li .iconbtn:focus-visible {
+    opacity: 1;
+  }
+}

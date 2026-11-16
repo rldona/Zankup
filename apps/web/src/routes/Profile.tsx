@@ -8,6 +8,7 @@ import {
   providersQuery,
   queryKeys,
   SPORTS,
+  weightQuery,
   type Me,
   type MessageKey,
   type ProfileSummary,
@@ -387,6 +388,9 @@ function EditProfile({ me, onDone }: { me: Me; onDone: () => void }) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.me, data);
+      // A new weight is today's weighing on the server (OS-1009): the history shows it at once.
+      if (data.weight_kg !== me.weight_kg)
+        void queryClient.invalidateQueries({ queryKey: weightQuery(api).queryKey });
       onDone();
     },
   });

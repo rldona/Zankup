@@ -25,7 +25,8 @@ export function EChart({
   option: EChartsCoreOption;
   theme: ThemeName;
   summary: string;
-  height?: number;
+  /** Pixels, or a CSS length (`100%` fills a box that has a height). */
+  height?: number | string;
   onReady?: (chart: EChartsType) => (() => void) | undefined;
   className?: string;
 }) {

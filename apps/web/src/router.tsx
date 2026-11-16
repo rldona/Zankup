@@ -7,6 +7,7 @@ import { Estimates } from './routes/Estimates';
 import { Goals } from './routes/Goals';
 import { Notifications } from './routes/Notifications';
 import { Home } from './routes/Home';
+import { WeightPage } from './health/Weight';
 import { Health } from './routes/Health';
 import { NotFound } from './routes/NotFound';
 import { Profile } from './routes/Profile';
@@ -29,6 +30,7 @@ import { Gear, Import } from './routes/Library';
 import { Review } from './routes/Review';
 import { Shared } from './routes/Shared';
 import { Stats } from './routes/Stats';
+import { Years } from './routes/Years';
 import { Sync } from './routes/Sync';
 import {
   Heatmap,
@@ -66,7 +68,9 @@ const screens: RouteObject[] = [
   { path: 'stats', element: <Stats /> },
   { path: 'stats/calendar', element: <TrainingCalendar /> },
   { path: 'stats/heatmap', element: <Heatmap /> },
+  { path: 'stats/years', element: <Years /> },
   { path: 'health', element: <Health /> },
+  { path: 'health/weight', element: <WeightPage /> },
   { path: 'coach', element: <Coach /> },
   { path: 'routes', element: <RoutesList /> },
   { path: 'routes/:id', element: <RouteView /> },
