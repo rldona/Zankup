@@ -5,7 +5,7 @@ vi.mock('react-native', () => ({}));
 vi.mock('react-native-gesture-handler', () => ({}));
 vi.mock('./theme', () => ({}));
 
-const { dayTicks, domainOf, linePath, niceScale, shortNumber } = await import('./charts');
+const { dayTicks, domainOf, linePath, niceScale, shortNumber, tightScale } = await import('./charts');
 
 describe('charts', () => {
   it('pads a line and keeps bars on zero', () => {
@@ -50,5 +50,14 @@ describe('charts', () => {
     ]);
     expect(dayTicks(3)).toEqual([0, 1, 2]);
     expect(dayTicks(30)).toEqual([0, 7, 15, 22, 29]);
+  });
+});
+
+describe('the axis', () => {
+  it('ends at the tightest round value, in four to six steps', () => {
+    expect(tightScale([0, 5312]).ticks).toEqual([0, 1000, 2000, 3000, 4000, 5000, 6000]);
+    expect(niceScale([0, 5312]).ticks.at(-1)).toBe(8000);
+    // A tie keeps the fewer steps.
+    expect(tightScale([0, 100]).ticks).toEqual([0, 25, 50, 75, 100]);
   });
 });

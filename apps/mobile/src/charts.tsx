@@ -93,6 +93,16 @@ export function niceScale([lo, hi]: [number, number], intervals = INTERVALS) {
 
 const round = (v: number) => Math.round(v * 1e6) / 1e6;
 
+/**
+ * The tightest round scale over a domain in four to six steps: 0–5300 ends at 6000 (six steps of 1000),
+ * not at 8000 (four of 2000), so the lines fill the chart. On a tie, the fewer steps.
+ */
+export function tightScale(domain: [number, number]) {
+  return [4, 5, 6]
+    .map((n) => niceScale(domain, n))
+    .reduce((best, s) => (s.domain[1] - s.domain[0] < best.domain[1] - best.domain[0] ? s : best));
+}
+
 /** A tick or a value, short: 1,5 · 120 · 12k. */
 export function shortNumber(v: number) {
   const a = Math.abs(v);
@@ -161,7 +171,10 @@ export function Chart({
       if (!keys.includes(key)) keys.push(key);
       return keys.indexOf(key);
     });
-    const nice = keys.map((key) => niceScale(domainOf(layers[of.indexOf(keys.indexOf(key))])));
+    // One scale: the tightest round one. Two (a right axis too): four steps each, so both axes'
+    // labels sit on the same grid lines.
+    const fit = keys.length > 1 ? niceScale : tightScale;
+    const nice = keys.map((key) => fit(domainOf(layers[of.indexOf(keys.indexOf(key))])));
     return { of, nice };
   }, [layers]);
   const right = scales.nice.length > 1;
@@ -266,6 +279,7 @@ export function Chart({
           .slice(0, 8);
   const zeroLines = scales.nice.map((s) => s.domain[0] < 0 && s.domain[1] > 0);
   const leftTicks = scales.nice[0]?.ticks ?? [];
+  const steps = Math.max(1, leftTicks.length - 1);
   const rightTicks = right ? scales.nice[1].ticks : [];
   const ticks = dayTicks(count);
   const pickedX = picked == null ? 0 : left + picked * slot + slot / 2;
@@ -285,7 +299,7 @@ export function Chart({
                 {ready && (
                   <>
                     {leftTicks.map((_, i) => {
-                      const py = Math.round(TOP + inner - (i / INTERVALS) * inner) - 0.5;
+                      const py = Math.round(TOP + inner - (i / steps) * inner) - 0.5;
                       return (
                         <Line
                           key={i}
@@ -326,7 +340,7 @@ export function Chart({
                       left: 0,
                       width: left - 6,
                       textAlign: 'right',
-                      top: TOP + inner - (i / INTERVALS) * inner - 7,
+                      top: TOP + inner - (i / steps) * inner - 7,
                     },
                   ]}
                 >
@@ -343,7 +357,7 @@ export function Chart({
                       right: 0,
                       width: AXIS - 6,
                       textAlign: 'left',
-                      top: TOP + inner - (i / INTERVALS) * inner - 7,
+                      top: TOP + inner - (i / steps) * inner - 7,
                     },
                   ]}
                 >
