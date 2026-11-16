@@ -589,12 +589,16 @@ export function Records({ range }: { range: Range }) {
   );
 }
 
-/** Every year's distance, cumulative through it; a tap on a year (`onSelect`) makes it stand out. */
+/**
+ * Every year's distance, cumulative through it, filling the screen it is on: the chart as tall as the
+ * room the years' list leaves under it. A tap on a year (`onSelect`) makes it stand out.
+ */
 export function Progress({ selected, onSelect }: { selected: number; onSelect?: (year: number) => void }) {
   const api = useApi();
   const c = useTheme();
   const format = useFormat();
   const lines = useQuery(progressQuery(api));
+  const [room, setRoom] = useState(0);
   if (!lines.data?.length) return null;
   const scale = format.unit === 'km' ? 1000 : 1609.344;
   const top = Math.max(1, ...lines.data.map((l) => l.cumulative_m.at(-1) ?? 0)) / scale;
@@ -604,29 +608,35 @@ export function Progress({ selected, onSelect }: { selected: number; onSelect?: 
     selected,
     c,
   );
+  // The chart takes the room the years' list leaves; Chart adds 16 for the dates under it and the
+  // legend's gap (the legend itself is empty: the years are listed below).
+  const chartHeight = Math.max(160, room - 16 - 8);
   return (
-    <Card>
-      <CardTitle info={t('stats.progressNote')}>{t('stats.progress')}</CardTitle>
-      <Chart
-        legendGap={18}
-        days={Array.from({ length: 366 }, (_, i) =>
-          new Date(2024, 0, 1 + i).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
+    <Card style={{ flex: 1, marginBottom: 0 }}>
+      <View style={{ flex: 1 }} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
+        {room > 0 && (
+          <Chart
+            legendGap={8}
+            days={Array.from({ length: 366 }, (_, i) =>
+              new Date(2024, 0, 1 + i).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
+            )}
+            height={chartHeight}
+            label={lines.data
+              .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)
+              .join(', ')}
+            layers={sorted.map((l) => ({
+              kind: 'line',
+              label: String(l.year),
+              color: colours.get(l.year) ?? c.muted,
+              values: l.cumulative_m.map((m) => m / scale),
+              domain: [0, top * 1.05] as [number, number],
+              width: l.year === selected ? 3 : 1.6,
+              opacity: l.year === selected ? 1 : 0.5,
+              hideLegend: true, // the years and their totals are listed under the chart
+            }))}
+          />
         )}
-        height={170}
-        label={lines.data
-          .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)
-          .join(', ')}
-        layers={sorted.map((l) => ({
-          kind: 'line',
-          label: String(l.year),
-          color: colours.get(l.year) ?? c.muted,
-          values: l.cumulative_m.map((m) => m / scale),
-          domain: [0, top * 1.05] as [number, number],
-          width: l.year === selected ? 3 : 1.6,
-          opacity: l.year === selected ? 1 : 0.5,
-          hideLegend: true, // the years and their totals are listed under the chart
-        }))}
-      />
+      </View>
       {lines.data.map((l) => (
         <Pressable
           key={l.year}
