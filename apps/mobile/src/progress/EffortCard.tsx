@@ -7,8 +7,7 @@ import { Canvas, Circle, Line, Path, Rect, vec } from '@shopify/react-native-ski
 import {
   volumeQuery,
   cumulative,
-  effortStatus,
-  weeklyRange,
+  effortWeeks,
   type EffortRange,
   type EffortStatus,
   isoDay,
@@ -28,7 +27,7 @@ import { CardSkeleton } from '../Skeleton';
 import { useTheme, type Palette } from '../theme';
 import { accent, Card, Muted, onAccent, Tappable } from '../ui';
 
-export type EffortWeek = { monday: string; score: number; range: EffortRange | null; status: EffortStatus };
+export type { EffortWeek } from '@zankup/core';
 
 type Bucket = { start: string; totals: { load?: number } };
 
@@ -39,14 +38,7 @@ export function useEffortWeeks(count: number) {
   const volume = useQuery(
     volumeQuery(api, { from: weekAt(count + 2, today), to: addDays(today, 1) }, 'week'),
   );
-  const scores = ((volume.data ?? []) as Bucket[]).map((b) => ({
-    monday: b.start,
-    score: Math.round(b.totals.load ?? 0),
-  }));
-  const weeks: EffortWeek[] = scores.slice(3).map((w, i) => {
-    const range = weeklyRange(scores.slice(i, i + 3).map((s) => s.score));
-    return { ...w, range, status: effortStatus(w.score, range) };
-  });
+  const weeks = effortWeeks((volume.data ?? []) as Bucket[]);
   return { weeks, isPending: volume.isPending };
 }
 

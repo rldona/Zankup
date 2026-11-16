@@ -5,23 +5,14 @@
  * Another range slides into place.
  * `FitnessSparkline` is the same line, small, for the card on Progress.
  */
-import { loadRadius } from '@zankup/core';
+import { fitnessScale, loadRadius } from '@zankup/core';
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
 import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { hapticClick } from '../../modules/haptic-click/src';
-import {
-  dayTicks,
-  MorphPath,
-  niceScale,
-  polyline,
-  Rings,
-  shortNumber,
-  useCanvasReady,
-  useLineFrom,
-} from '../charts';
+import { dayTicks, MorphPath, polyline, Rings, shortNumber, useCanvasReady, useLineFrom } from '../charts';
 import { useTheme } from '../theme';
 
 const AXIS = 34;
@@ -74,13 +65,8 @@ export function FitnessChart({
   const inner = height - TOP - BOTTOM;
   const base = TOP + inner;
   // The tightest round top over the line (Strava: 106 → 120, not 125), with four to six steps.
-  const { domain, ticks } = useMemo(() => {
-    const top = Math.max(10, ...values) * 1.05;
-    return [4, 5, 6]
-      .map((n) => niceScale([0, top], n))
-      .reduce((best, s) => (s.domain[1] < best.domain[1] ? s : best));
-  }, [values]);
-  const y = (v: number) => base - ((v - domain[0]) / (domain[1] - domain[0] || 1)) * inner;
+  const { max, ticks } = useMemo(() => fitnessScale(values), [values]);
+  const y = (v: number) => base - (v / (max || 1)) * inner;
   const pts = width ? points(values, AXIS, plot, y) : [];
   const step = count > 1 ? plot / (count - 1) : 0;
   const maxLoad = Math.max(0, ...loads);

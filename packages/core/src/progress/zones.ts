@@ -27,8 +27,8 @@ export function defaultZoneKind(sport: string | null): ZoneKind {
 export function topZone(seconds: number[]): { index: number; share: number } | null {
   const total = seconds.reduce((a, b) => a + b, 0);
   if (total <= 0) return null;
-  const index = seconds.reduce((best, s, i) => (s > seconds[best]! ? i : best), 0);
-  return { index, share: Math.round((seconds[index]! / total) * 100) };
+  const index = seconds.reduce((best, s, i) => (s > (seconds[best] ?? 0) ? i : best), 0);
+  return { index, share: Math.round(((seconds[index] ?? 0) / total) * 100) };
 }
 
 /** How a zone's share moved against the span before, in points; null when there is nothing before. */

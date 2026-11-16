@@ -13,9 +13,11 @@ import {
   isoDay,
   bucketValue,
   comparableYears,
+  glanceText,
   metricsFor,
   percentChange,
   PROGRESS_RANGES,
+  rangeLabels,
   volumeRange,
   sportsIn,
   yearsBack,
@@ -37,7 +39,7 @@ import { locale, t } from '../src/i18n';
 import { asSport } from '../src/prefs';
 import { Panel } from '../src/progress/Panel';
 import { SportSheet } from '../src/progress/SportSheet';
-import { monthLabels, sportIcon, useVolumeFormat, weekTitle } from '../src/progress/VolumeCard';
+import { sportIcon, useVolumeFormat, weekTitle } from '../src/progress/VolumeCard';
 import { VolumeChart } from '../src/progress/VolumeChart';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
@@ -82,53 +84,22 @@ export default function ProgressDetailScreen() {
 
   const end = unit === 'day' || range === 'ytd' ? t('progress.today') : longDate(addDays(mondayOf(today), 6));
   const ticks = format.ticks(Math.max(0, ...values, ...(compare ? previousValues : [])), metric, 3);
-  const labels =
-    range === '7d'
-      ? buckets.map((b, index) => ({
-          index,
-          text: at(b.start).toLocaleDateString(locale, { weekday: 'narrow' }).toUpperCase(),
-        }))
-      : range === '1m'
-        ? buckets.flatMap((b, index) =>
-            at(b.start).getDay() === 1
-              ? [
-                  {
-                    index,
-                    text: at(b.start)
-                      .toLocaleDateString(locale, { day: 'numeric', month: 'short' })
-                      .replace('.', '')
-                      .toUpperCase(),
-                  },
-                ]
-              : [],
-          )
-        : monthLabels(buckets.map((b) => b.start));
+  const labels = rangeLabels(
+    range,
+    buckets.map((b) => b.start),
+    locale,
+  );
   const periodOf = (b: Bucket) => (unit === 'day' ? longDate(b.start) : weekTitle(b.start));
   const yearsLabel = (k: number) => (k === 1 ? t('progress.lastYear') : t('progress.yearsAgo', { count: k }));
 
-  const glance = (() => {
-    const v = format.value(metric, total, 1);
-    const p = format.value(metric, previousTotal, 1);
-    const period = t(`progress.period.${range}`);
-    if (compare) {
-      if (pct == null) return t('progress.glance.new', { value: v, period });
-      const label = t('progress.glance.compareLabel', { count: compare });
-      return t(pct >= 0 ? 'progress.glance.compareUp' : 'progress.glance.compareDown', {
-        pct: Math.abs(pct),
-        label,
-        previous: p,
-      });
-    }
-    if (!total) return t('progress.glance.none', { period });
-    if (pct == null) return t('progress.glance.new', { value: v, period });
-    if (pct === 0) return t('progress.glance.same', { value: v, period });
-    return t(pct > 0 ? 'progress.glance.up' : 'progress.glance.down', {
-      value: v,
-      period,
-      pct: Math.abs(pct),
-      previous: p,
-    });
-  })();
+  const glance = glanceText({
+    range,
+    compare,
+    total,
+    previousTotal,
+    format: (v) => format.value(metric, v, 1),
+    t,
+  });
 
   const pill = (
     on: boolean,

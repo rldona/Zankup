@@ -1,11 +1,13 @@
 import {
+  behind,
   calendarQuery,
-  formatHoursMinutes,
   formatters,
   goalInput,
   goalPoints,
   goalsQuery,
   goalTarget,
+  isoDay,
+  left,
   SPORTS,
   type GoalOut,
   type MessageKey,
@@ -19,17 +21,16 @@ import { locale, t } from '../i18n';
 import { MaterialIcon } from '../MaterialIcon';
 import { DESKTOP, useMedia } from '../media';
 import { usePrefs } from '../prefs';
+import { GoalHistory } from '../progress/more/GoalHistory';
+import { goalValue as valueOf, type Format } from '../progress/more/data';
 import { GoalSkeleton, Pulse } from '../Skeleton';
+import '../progress/more.css';
 
-type Format = ReturnType<typeof formatters>;
-type Metric = 'distance' | 'time' | 'count';
+type Metric = 'distance' | 'time' | 'ascent' | 'count';
 type Period = 'week' | 'month' | 'year';
 
-function goalValue(goal: { metric: string }, value: number, format: Format): string {
-  if (goal.metric === 'distance') return format.distance(value);
-  if (goal.metric === 'time') return formatHoursMinutes(value);
-  return value.toLocaleString(locale, { maximumFractionDigits: 1 });
-}
+const goalValue = (goal: { metric: string }, value: number, format: Format) =>
+  valueOf(goal.metric, value, format);
 
 const goalName = (goal: GoalOut) =>
   `${t(`goals.period.${goal.period}` as MessageKey)} · ${
@@ -120,6 +121,7 @@ export function Goals() {
       {form && (
         <GoalForm
           goal={form === 'new' ? undefined : form}
+          goals={goals.data ?? []}
           unit={format.unit}
           onClose={() => setForm(null)}
           onDone={() => {
@@ -187,6 +189,7 @@ function GoalCard({ goal, format, children }: { goal: GoalOut; format: Format; c
         <span className="num">
           <b>{goalValue(goal, goal.current, format)}</b> / {goalValue(goal, goal.target, format)}
         </span>
+        <GoalStats goal={goal} format={format} />
         {/* Nothing done yet: no projection to speak of. */}
         {(done || goal.current > 0) && (
           <small className="note">
@@ -204,9 +207,40 @@ function GoalCard({ goal, format, children }: { goal: GoalOut; format: Format; c
           </span>
         )}
       </Head>
-      {chart && <GoalChart goal={goal} format={format} />}
+      {chart && (
+        <>
+          <GoalChart goal={goal} format={format} />
+          <GoalHistory goal={goal} format={format} />
+        </>
+      )}
       {children}
     </article>
+  );
+}
+
+/**
+ * What is left or done over the target and, for months and years, how far behind or ahead of an even
+ * pace, as the app's goals list.
+ */
+function GoalStats({ goal, format }: { goal: GoalOut; format: Format }) {
+  const [today] = useState(() => isoDay(new Date()));
+  const rest = left(goal);
+  const late = behind(goal, today);
+  const stats: [string, number][] = [
+    rest >= 0 ? [t('progress.toGo'), rest] : [t('progress.extra'), -rest],
+    ...(goal.period !== 'week' && rest > 0
+      ? [late > 0 ? [t('progress.behind'), late] : [t('progress.ahead'), -late]]
+      : []),
+  ] as [string, number][];
+  return (
+    <span className="goalstats">
+      {stats.map(([label, value]) => (
+        <span key={label}>
+          <small>{label}</small>
+          <b className="num">{goalValue(goal, value, format)}</b>
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -257,9 +291,11 @@ function GoalChart({ goal, format }: { goal: GoalOut; format: Format }) {
   const tick = (v: number) =>
     goal.metric === 'distance'
       ? `${Math.round(v / (format.unit === 'km' ? 1000 : 1609.344))} ${format.unit}`
-      : goal.metric === 'time'
-        ? `${Math.round(v / 3600)} h`
-        : String(Math.round(v));
+      : goal.metric === 'ascent'
+        ? `${Math.round(format.unit === 'km' ? v : v / 0.3048)} ${format.unit === 'km' ? 'm' : 'ft'}`
+        : goal.metric === 'time'
+          ? `${Math.round(v / 3600)} h`
+          : String(Math.round(v));
   const pick = (clientX: number) => {
     const rect = box.current?.getBoundingClientRect();
     if (!rect || !slot || !past) return;
@@ -333,15 +369,18 @@ function niceTop(v: number): number {
 
 /**
  * Adding a goal, or changing one, in a dialog (OS-911): each label with its options under it, with room
- * between the blocks, as the app's form. Strength has no distance, so it measures time or sessions.
+ * between the blocks, as the app's form. Strength has no distance, so it measures time or sessions. A
+ * sport and period have one goal of each kind: the kinds already taken are greyed out, as the app's.
  */
 function GoalForm({
   goal,
+  goals,
   unit,
   onClose,
   onDone,
 }: {
   goal?: GoalOut;
+  goals: GoalOut[];
   unit: string;
   onClose: () => void;
   onDone: () => void;
@@ -353,7 +392,20 @@ function GoalForm({
     goal ? String(Math.round(goalInput(goal.metric as Metric, goal.target, unit) * 100) / 100) : '',
   );
   const value = Number(target.replace(',', '.'));
-  const metrics: Metric[] = sport === 'strength' ? ['time', 'count'] : ['distance', 'time', 'count'];
+  const metrics: Metric[] =
+    sport === 'strength' ? ['time', 'count'] : ['distance', 'time', 'ascent', 'count'];
+  const taken = new Set(
+    goals
+      .filter((g) => g.id !== goal?.id && g.period === period && (g.sport ?? '') === sport)
+      .map((g) => g.metric),
+  );
+  const free = !taken.has(metric);
+  const units: Record<Metric, string> = {
+    distance: unit,
+    time: 'h',
+    ascent: unit === 'km' ? 'm' : 'ft',
+    count: '#',
+  };
   const save = useMutation({
     mutationFn: async () => {
       const body = { period, metric, sport: sport || null, target: goalTarget(metric, value, unit) };
@@ -366,16 +418,18 @@ function GoalForm({
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (value > 0) save.mutate();
+    if (value > 0 && free) save.mutate();
   };
   const choices = <T extends string>(
     label: string,
     current: T,
-    options: { value: T; label: string }[],
+    options: { value: T; label: string; disabled?: boolean }[],
     onChange: (v: T) => void,
+    note?: string,
   ) => (
     <div className="field">
       <b>{label}</b>
+      {note && <small className="note">{note}</small>}
       <div className="chips" role="radiogroup" aria-label={label}>
         {options.map((o) => (
           <button
@@ -384,6 +438,7 @@ function GoalForm({
             className="chip"
             role="radio"
             aria-checked={o.value === current}
+            disabled={o.disabled}
             onClick={() => onChange(o.value)}
           >
             {o.label}
@@ -413,18 +468,19 @@ function GoalForm({
           ],
           (next) => {
             setSport(next);
-            if (next === 'strength' && metric === 'distance') setMetric('time');
+            if (next === 'strength' && (metric === 'distance' || metric === 'ascent')) setMetric('time');
           },
         )}
         {choices(
           t('goals.measure'),
           metric,
-          metrics.map((m) => ({ value: m, label: t(`goals.metric.${m}`) })),
+          metrics.map((m) => ({ value: m, label: t(`goals.metric.${m}`), disabled: taken.has(m) })),
           setMetric,
+          metrics.some((m) => taken.has(m)) ? t('progress.kindTaken') : undefined,
         )}
         <label className="field">
           <b>
-            {t('goals.target')} ({metric === 'distance' ? unit : metric === 'time' ? 'h' : '#'})
+            {t('goals.target')} ({units[metric]})
           </b>
           <input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} required />
         </label>
@@ -434,7 +490,7 @@ function GoalForm({
           </p>
         )}
         <div className="actions">
-          <button type="submit" className="primary" disabled={!(value > 0) || save.isPending}>
+          <button type="submit" className="primary" disabled={!(value > 0) || !free || save.isPending}>
             {goal ? t('settings.save') : t('goals.add')}
           </button>
           <button type="button" onClick={onClose}>

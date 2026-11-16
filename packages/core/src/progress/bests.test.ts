@@ -12,6 +12,7 @@ import {
   trend,
   yearMedal,
   yearsOf,
+  type Best,
 } from './bests';
 
 const b = (day: string, value: number, id = Math.round(value)) => ({ activity_id: id, day, value });
@@ -21,12 +22,12 @@ describe('best times', () => {
   it('ranks faster first for runs, more for power', () => {
     expect(ranked('400m', runs).map((x) => x.value)).toEqual([67, 114, 117, 118]);
     expect(ranked('power_30', [b('2026-01-01', 500), b('2026-02-01', 551)])[0]?.value).toBe(551);
-    expect(placeOf('400m', runs, runs[2]!)).toBe(2);
+    expect(placeOf('400m', runs, runs[2] as Best)).toBe(2);
   });
   it('gives the medal of the year', () => {
-    expect(yearMedal('400m', runs, runs[2]!)).toBe(1);
-    expect(yearMedal('400m', runs, runs[3]!)).toBe(2);
-    expect(yearMedal('400m', runs, runs[0]!)).toBe(1);
+    expect(yearMedal('400m', runs, runs[2] as Best)).toBe(1);
+    expect(yearMedal('400m', runs, runs[3] as Best)).toBe(2);
+    expect(yearMedal('400m', runs, runs[0] as Best)).toBe(1);
   });
   it('lists the years and a year or the last twelve months, newest first', () => {
     expect(yearsOf(runs)).toEqual(['2026', '2025', '2019']);

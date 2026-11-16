@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { goalInput, goalPoints as points, goalTarget } from './goals';
+import { dayAmount, goalInput, goalPoints as points, goalTarget } from './goals';
 
 const goalPoints = (...args: [Parameters<typeof points>[0], Parameters<typeof points>[1], string]) =>
   points(...args, 'en');
@@ -85,5 +85,31 @@ describe('goal targets', () => {
     expect(goalTarget('count', 3, 'km')).toBe(3);
     expect(goalInput('distance', 21_000, 'km')).toBe(21);
     expect(goalInput('time', 5400, 'km')).toBe(1.5);
+    // Elevation in metres, or in feet when distances are in miles.
+    expect(goalTarget('ascent', 1500, 'km')).toBe(1500);
+    expect(goalTarget('ascent', 1000, 'mi')).toBeCloseTo(304.8);
+    expect(goalInput('ascent', 304.8, 'mi')).toBeCloseTo(1000);
+  });
+});
+
+describe('an elevation goal', () => {
+  it("counts each day by its activities' elevation gain, of its sport only", () => {
+    const activity = (sport: string, ascent_m: number | null) => ({
+      id: 1,
+      sport,
+      name: null,
+      load: null,
+      distance_m: 1000,
+      moving_s: 600,
+      ascent_m,
+      start: '2026-11-09T08:00:00Z',
+    });
+    const calendarDay = {
+      day: '2026-11-09',
+      tsb: null,
+      activities: [activity('run', 300), activity('run', null), activity('ride', 900)],
+    };
+    expect(dayAmount({ metric: 'ascent', sport: 'run' }, calendarDay)).toBe(300);
+    expect(dayAmount({ metric: 'ascent', sport: null }, calendarDay)).toBe(1200);
   });
 });

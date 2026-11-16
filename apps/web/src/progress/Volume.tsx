@@ -1,23 +1,11 @@
-/** Volume, Series and the Training log (OS-1002). TO BUILD. */
-import { t } from '../i18n';
-import { ProgressCardStub, ProgressPageStub } from './stub';
+/**
+ * Volume, Series and the Training log on Progress (OS-1002), ported from the app: the Volume card and
+ * its page (/progress/volume), the streak in a flame with its month in a dialog, and the Training log
+ * card and page (/progress/log). The parts are in ./volume; the working-out is shared in packages/core.
+ */
+import './volume.css';
 
-export function VolumeCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function VolumePage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
-
-export function SeriesCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function LogCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function LogPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
+export { LogCard, LogPage } from './volume/Log';
+export { SeriesCard } from './volume/Series';
+export { VolumeCard } from './volume/VolumeCard';
+export { VolumePage } from './volume/VolumePage';

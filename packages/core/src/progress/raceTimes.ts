@@ -41,8 +41,9 @@ export function changeText(seconds: number): string {
 
 /** The prediction on a day: the last change on or before it (the first one if it is older). */
 export function valueOn(history: Point[], day: string): number | null {
-  if (!history.length) return null;
-  let value = history[0]!.value;
+  const first = history[0];
+  if (!first) return null;
+  let value = first.value;
   for (const p of history) {
     if (p.day > day) break;
     value = p.value;
@@ -58,9 +59,12 @@ export function series(history: Point[], from: string, today: string): Point[] {
   const start = valueOn(history, from);
   if (start == null) return [];
   const out = [{ day: from, value: start }];
+  let last = out[0] as Point;
   for (const p of history)
-    if (p.day > from && p.day <= today && Math.abs(p.value - out[out.length - 1]!.value) >= 0.5) out.push(p);
-  const last = out[out.length - 1]!;
+    if (p.day > from && p.day <= today && Math.abs(p.value - last.value) >= 0.5) {
+      out.push(p);
+      last = p;
+    }
   return last.day === today ? out : [...out, { day: today, value: last.value }];
 }
 
@@ -71,8 +75,8 @@ export function series(history: Point[], from: string, today: string): Point[] {
 export function smoothPath(points: { x: number; y: number }[]): string {
   return points
     .map((p, i) => {
-      if (!i) return `M${p.x} ${p.y}`;
-      const q = points[i - 1]!;
+      const q = points[i - 1];
+      if (!q) return `M${p.x} ${p.y}`;
       const mid = (q.x + p.x) / 2;
       return `C${mid} ${q.y} ${mid} ${p.y} ${p.x} ${p.y}`;
     })
@@ -89,8 +93,7 @@ export function timeTicks(lo: number, hi: number, count = 4): number[] {
     [lo, hi] = [mid - least / 2, mid + least / 2];
   }
   const steps = [10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600];
-  const step =
-    steps.find((st) => Math.ceil(hi / st) - Math.floor(lo / st) <= count) ?? 3600;
+  const step = steps.find((st) => Math.ceil(hi / st) - Math.floor(lo / st) <= count) ?? 3600;
   const out: number[] = [];
   for (let v = Math.floor(lo / step) * step; v < hi + step; v += step) {
     out.push(v);

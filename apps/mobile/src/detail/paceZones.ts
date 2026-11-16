@@ -24,15 +24,5 @@ export function paceZoneSeconds(
   return out;
 }
 
-/** A zone's range as paces, the way it reads: "> 7:00", "5:25 - 6:02", "< 4:46" (per km or mile). */
-export function paceRange(bounds: number[], index: number, unit: number): string {
-  const pace = (mps: number) => {
-    const s = Math.round(unit / mps);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  };
-  const lo = bounds[index];
-  const hi = bounds[index + 1];
-  if (!lo) return hi ? `> ${pace(hi)}` : '';
-  if (hi == null) return `< ${pace(lo)}`;
-  return `${pace(hi)} - ${pace(lo)}`;
-}
+/** A zone's range as paces, shared with the web. */
+export { paceRange } from '@zankup/core';

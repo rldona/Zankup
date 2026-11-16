@@ -1,0 +1,555 @@
+/* Fitness, Relative effort and race predictions (OS-1003): their cards on Progress and their pages. */
+
+/* --- the cards ---------------------------------------------------------------------------------- */
+
+.fxcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.fxcard:hover {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+}
+.fxcard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.fxcard .ph {
+  margin: 0;
+}
+.fxcard .ph h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fxcard .ph h2 svg.i {
+  color: var(--accent);
+  width: 24px;
+  height: 24px;
+}
+.fxwhen {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.fxbody {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fxfigure {
+  flex: 1;
+  min-width: 120px;
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+.fxrow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+.fxbig {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.fxspark {
+  width: 180px;
+  max-width: 100%;
+}
+.fxweekline {
+  width: 200px;
+  max-width: 100%;
+}
+.fxpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 14px;
+}
+.fxpill i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
+.fxpill i.good {
+  color: var(--form-positive);
+}
+
+/* An effort status: the accent in range, blue under it, orange and red over (white on those). */
+.fxstatus,
+.fxweek {
+  --status: var(--accent);
+  --on-status: var(--accent-fg);
+}
+.fxstatus[data-status='below'],
+.fxweek[data-status='below'] {
+  --status: var(--fitness);
+  --on-status: white;
+}
+.fxstatus[data-status='above'],
+.fxweek[data-status='above'] {
+  --status: var(--zone-4);
+  --on-status: white;
+}
+.fxstatus[data-status='far'],
+.fxweek[data-status='far'] {
+  --status: var(--zone-5);
+  --on-status: white;
+}
+.fxstatus {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--status);
+  color: var(--on-status);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* --- the pages ---------------------------------------------------------------------------------- */
+
+.fxpage .titlebar h1 {
+  font-size: 28px;
+}
+.fxintro {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 70ch;
+}
+.fxpage .muted {
+  color: var(--muted);
+}
+.fxpage .good {
+  color: var(--form-positive);
+}
+
+/* Fitness: the ranges as tabs, the change, the chart and the day's activities. */
+.fxtabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.fxtabs button {
+  flex: 1;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 12px 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.fxtabs button[aria-selected='true'] {
+  color: var(--fg);
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+.fxchange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+.fxchange b {
+  font-size: 30px;
+  font-weight: 800;
+}
+.fxchange span {
+  font-size: 14px;
+}
+.fxchange p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+}
+.fxchart {
+  position: relative;
+  margin: 4px 0 8px;
+  border-radius: 8px;
+  cursor: crosshair;
+}
+.fxchart:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.fxmark {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.fxmark i,
+.fxmark b {
+  position: absolute;
+  display: block;
+}
+.fxstem {
+  top: -24px;
+  left: -0.75px;
+  width: 1.5px;
+  background: var(--accent);
+}
+.fxhalo,
+.fxdot {
+  border-radius: 50%;
+  background: var(--accent);
+}
+.fxhalo {
+  width: 30px;
+  height: 30px;
+  left: -15px;
+  top: -15px;
+  opacity: 0.25;
+}
+.fxdot {
+  width: 14px;
+  height: 14px;
+  left: -7px;
+  top: -7px;
+}
+.fxscore {
+  bottom: 30px;
+  left: -24px;
+  width: 48px;
+  padding: 4px 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+.fxday {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--fg);
+  font-weight: 400;
+  text-align: left;
+  text-decoration: none;
+  min-height: 48px;
+}
+.fxday > span:not(.sp):not(.fxdayicon) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.fxday b {
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fxday small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.fxdayicon svg.i {
+  width: 32px;
+  height: 32px;
+}
+.fxdaylist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+a.fxday:hover,
+button.fxday:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+/* Relative effort: the week on its status's colour beside the weeks' chart and its activities. */
+.fxeffort {
+  display: grid;
+  gap: 16px;
+}
+.fxweek {
+  background: var(--status);
+  color: var(--on-status);
+  border-radius: var(--radius);
+  padding: 16px 20px 20px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.fxweek h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: inherit;
+}
+.fxweek p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.fxweek .iconbtn {
+  background: transparent;
+  color: inherit;
+}
+.fxweek .iconbtn:disabled {
+  opacity: 0.35;
+}
+.fxweeknav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 -10px;
+  font-size: 14px;
+}
+.fxweeknav span {
+  flex: 1;
+  text-align: center;
+}
+.fxhuge {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.fxbars {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+.fxbars li {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.fxbars i {
+  display: block;
+  width: 14px;
+  background: currentColor;
+}
+.fxweekside {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+.fxweeks {
+  cursor: crosshair;
+}
+.fxacts {
+  margin: 0;
+}
+.fxacts h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.fxacts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fxacts a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 6px;
+  border-radius: 10px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.fxacts a:hover {
+  background: var(--surface-2);
+}
+.fxacts a > svg.i {
+  width: 26px;
+  height: 26px;
+}
+.fxacts a > span {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.fxacts a > span b {
+  font-size: 16px;
+  font-weight: 500;
+}
+.fxacts small {
+  font-size: 13px;
+}
+.fxeffortval {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fitness);
+}
+.fxeffortval[data-band='moderate'] {
+  color: var(--accent);
+}
+.fxeffortval[data-band='hard'] {
+  color: var(--zone-5);
+}
+@media (min-width: 900px) {
+  .fxeffort {
+    grid-template-columns: minmax(280px, 2fr) minmax(0, 3fr);
+    align-items: start;
+  }
+}
+
+/* Race predictions: the races today, or one over time, the range kept at the bottom. */
+.fxpredictions {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 140px);
+}
+.fxpredbody {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.fxraces {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.fxraces button {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border: 1px solid var(--card-line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 400;
+}
+.fxraces button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.fxtime {
+  font-size: 24px;
+  font-weight: 800;
+}
+.fxbadge {
+  position: relative;
+  display: inline-grid;
+  place-content: center;
+  justify-items: center;
+  flex: none;
+  color: var(--accent);
+  line-height: 1;
+}
+.fxbadge svg {
+  position: absolute;
+  inset: 0;
+}
+.fxbadge path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.fxbadge b {
+  font-weight: 800;
+}
+.fxbadge small {
+  font-weight: 700;
+  margin-top: 1px;
+}
+.fxchips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.fxchips button {
+  flex: none;
+  border: 1px solid var(--line);
+  padding: 7px 14px;
+  font-weight: 500;
+}
+.fxchips button[aria-checked='true'] {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+.fxsub {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+.fxnow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.fxnow > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.fxnowchange {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+.fxranges {
+  position: sticky;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  margin-top: 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.fxranges button {
+  flex: 1;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 4px;
+  font-weight: 400;
+}
+.fxranges button[aria-checked='true'] {
+  background: var(--surface-2);
+  font-weight: 700;
+}
+.fxranges svg.i {
+  width: 18px;
+  height: 18px;
+}
+@media (min-width: 900px) {
+  .fxraces {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .fxranges {
+    align-self: center;
+    width: min(100%, 520px);
+  }
+}

@@ -1,27 +1,9 @@
-/** Fitness, Relative effort and race predictions (OS-1003). TO BUILD. */
-import { t } from '../i18n';
-import { ProgressCardStub, ProgressPageStub } from './stub';
+/**
+ * Fitness, Relative effort and race predictions on Progress (OS-1003), as the app's: each a card on
+ * Progress that opens its page (/progress/fitness, /progress/effort, /progress/predictions).
+ */
+import './fitness.css';
 
-export function FitnessCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function FitnessPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
-
-export function EffortCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function EffortPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
-
-export function PredictionsCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function PredictionsPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
+export { EffortCard, EffortPage } from './fitness/EffortViews';
+export { FitnessCard, FitnessPage } from './fitness/FitnessViews';
+export { PredictionsCard, PredictionsPage } from './fitness/PredictionViews';

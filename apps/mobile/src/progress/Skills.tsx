@@ -17,6 +17,8 @@ import {
   strongest,
   type Skill,
   addDays,
+  RADAR_COLOURS,
+  SKILL_COLOURS,
 } from '@zankup/core';
 import {
   Canvas,
@@ -44,13 +46,10 @@ import { accent, Card, Muted, Tappable } from '../ui';
 /** Without a weight in the profile, the scale is read for a rider of this much. */
 export const REFERENCE_KG = 75;
 
-/** The skills' colours, as Strava's (sampled from its app), the same on every theme. */
-const SKILL_COLOURS: Record<Skill, string> = { sprint: '#0160cf', attack: '#59a61c', climb: '#fb7432' };
-
 export const skillColour = (_c: Palette, skill: Skill) => SKILL_COLOURS[skill];
 
 /** The two radars' colours, as Strava's: all time in purple, the last eight weeks in pink over it. */
-export const radarColours = () => ({ all: '#823bae', recent: '#d97ed1' });
+export const radarColours = () => RADAR_COLOURS;
 
 /** The best power at each duration, for the last eight weeks and for all time, and the weight. */
 export function useSkills() {

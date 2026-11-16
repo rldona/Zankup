@@ -1,27 +1,9 @@
-/** Training zones, Skills and Best times (OS-1004). TO BUILD. */
-import { t } from '../i18n';
-import { ProgressCardStub, ProgressPageStub } from './stub';
+/**
+ * Training zones, Skills and Best times on Progress (OS-1004), each card with its page: the code is in
+ * zones/, ported from the app's (apps/mobile/src/progress and app/zones, skills and bests).
+ */
+import './zones.css';
 
-export function ZonesCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function ZonesPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
-
-export function SkillsCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function SkillsPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
-
-export function BestsCard() {
-  return <ProgressCardStub title={t('nav.progress')} />;
-}
-
-export function BestsPage() {
-  return <ProgressPageStub title={t('nav.progress')} />;
-}
+export { BestsCard, BestsPage } from './zones/Bests';
+export { SkillsCard, SkillsPage } from './zones/Skills';
+export { ZonesCard, ZonesPage } from './zones/TrainingZones';
