@@ -6481,3 +6481,29 @@ h1.greeting {
 .report-next p {
   margin: 6px 0 0;
 }
+
+/* Progress (OS-1001): its cards in one column on a phone, a grid from the desktop; Volume across the
+   top and Series beside the Training log, as the app. */
+.progress .pgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.progress .ppair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.progress .pgrid > * > .panel,
+.progress .ppair > .panel {
+  height: 100%;
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .progress .pgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .progress .pwide {
+    grid-column: 1 / -1;
+  }
+}
