@@ -208,13 +208,21 @@ export async function fakeApi(page: Page) {
       });
     }
     if (path === '/api/week') {
-      const monday = '2026-11-09';
+      // The week of the day the page asks about (today), so there are always days to come: a fixed
+      // week ran out when the calendar moved past it.
+      const base = new Date(`${today}T12:00:00Z`);
+      const dayOfWeek = (i: number) => {
+        const d = new Date(base);
+        d.setUTCDate(base.getUTCDate() - ((base.getUTCDay() + 6) % 7) + i);
+        return d.toISOString().slice(0, 10);
+      };
+      const monday = dayOfWeek(0);
       return json(route, {
         today,
         // A run and a ride on Monday, a ride on Tuesday: the circles, the second sport's dot and the
         // days without an activity all show.
         days: Array.from({ length: 7 }, (_, i) => ({
-          date: `2026-11-${String(9 + i).padStart(2, '0')}`,
+          date: dayOfWeek(i),
           activities:
             i === 0
               ? [
