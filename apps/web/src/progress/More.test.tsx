@@ -5,6 +5,8 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../App';
+import { server } from '../mocks/node';
+import { json, route } from '../mocks/route';
 import { routes } from '../router';
 
 const activity = (id: number, sport: string, moving_s: number, distance_m: number, ascent_m: number) => ({
@@ -50,54 +52,61 @@ const GOALS = [
   },
 ];
 
+/** The answers the screens are read from, and every request made (with its body). */
 function mockApi() {
   const calls: { method: string; path: string; body: unknown }[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      const body = request.method === 'GET' ? null : await request.json();
-      calls.push({ method: request.method, path: url.pathname, body });
-      if (request.method === 'POST' && url.pathname === '/api/goals') return Response.json(GOALS[0]);
-      const data: Record<string, unknown> = {
-        '/api/auth/me': { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true },
-        '/api/stats/calendar': CALENDAR,
-        '/api/stats/devices': [
-          { name: 'fēnix 6X Pro', source: 'garmin', kind: 'activity', last_used: '2026-11-14T08:00:00Z' },
-          { name: null, source: 'health_connect', kind: 'health', last_used: '2026-11-16T07:00:00Z' },
-        ],
-        '/api/goals': GOALS,
-        '/api/sources': [
+  server.events.on('request:start', ({ request }) => {
+    void (async () => {
+      const text = request.method === 'GET' ? '' : await request.clone().text();
+      calls.push({
+        method: request.method,
+        path: new URL(request.url).pathname,
+        body: text ? JSON.parse(text) : null,
+      });
+    })();
+  });
+  server.use(
+    route('get', '/api/stats/calendar', () => json('/api/stats/calendar', 'get', CALENDAR)),
+    route('get', '/api/stats/devices', () =>
+      json('/api/stats/devices', 'get', [
+        { name: 'fēnix 6X Pro', source: 'garmin', kind: 'activity', last_used: '2026-11-14T08:00:00Z' },
+        { name: null, source: 'health_connect', kind: 'health', last_used: '2026-11-16T07:00:00Z' },
+      ]),
+    ),
+    route('get', '/api/goals', () => json('/api/goals', 'get', GOALS)),
+    route('post', '/api/goals', () =>
+      json('/api/goals', 'post', GOALS[0] as (typeof GOALS)[number], { status: 201 }),
+    ),
+    route('get', '/api/sources', () =>
+      json('/api/sources', 'get', [
+        {
+          kind: 'garmin',
+          configured: true,
+          key_expires_on: null,
+          expiring_soon: false,
+          token_expires_at: null,
+          last_sync_at: '2026-11-15T10:00:00Z',
+          last_error: null,
+        },
+      ]),
+    ),
+    route('get', '/api/wellness/settings', () =>
+      json('/api/wellness/settings', 'get', {
+        sources: [
           {
-            kind: 'garmin',
-            configured: true,
-            key_expires_on: null,
-            expiring_soon: false,
-            token_expires_at: null,
-            last_sync_at: '2026-11-15T10:00:00Z',
-            last_error: null,
+            source: 'health_connect',
+            available: true,
+            connected: false,
+            needs_reconnect: false,
+            missing: [],
+            last_sync_at: null,
+            nights: 0,
+            days: 0,
           },
         ],
-        '/api/wellness/settings': {
-          sources: [
-            {
-              source: 'health_connect',
-              available: true,
-              connected: false,
-              needs_reconnect: false,
-              missing: [],
-            },
-          ],
-          priority: {},
-        },
-      };
-      const found = data[url.pathname];
-      return found === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(found);
-    }),
+        priority: {},
+      }),
+    ),
   );
   return calls;
 }
@@ -119,7 +128,7 @@ describe('Monthly activities, Data sources and Goals on Progress (OS-1005)', () 
   });
   afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
     localStorage.clear();
   });
 

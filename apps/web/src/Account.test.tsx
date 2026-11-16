@@ -5,42 +5,60 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import type { Me } from './mocks/db';
+import { server } from './mocks/node';
+import { json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = {
+const ME: Me = {
   id: 1,
   email: 'runner@example.com',
   display_name: 'Runner',
   totp_enabled: true,
+  google_linked: false,
   location: 'Madrid',
   birth_date: '1985-04-02',
   sex: 'male',
   weight_kg: 72.5,
   height_cm: 178,
 };
-const SETTINGS = {
+const SETTINGS: Res<'/api/settings', 'get'> = {
   theme: 'system',
   language: null,
   units: 'metric',
   hr_max: null,
   hr_rest: null,
   hr_max_estimate: 188,
+  zone_model: 'max',
+  lthr: null,
+  ftp: null,
+  privacy_zones: [],
+  notifications: {
+    activity: true,
+    record: true,
+    sync_error: true,
+    garmin_key: true,
+    estimate: true,
+    import: true,
+    health_reauth: true,
+    weekly: true,
+  },
+  ai: { enabled: false, summaries: false, weekly: false },
 };
+const settingsAre = (settings = SETTINGS) =>
+  route('get', '/api/settings', () => json('/api/settings', 'get', settings));
 
-type Handler = (url: URL, request: Request) => Response | Promise<Response>;
-
-function mockApi(handlers: Record<string, Handler>) {
+/** Records every request: method, path and JSON body (null for GET). */
+function record() {
   const calls: { method: string; path: string; body: unknown }[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const url = new URL(input.url);
-      const text = input.method === 'GET' ? '' : await input.clone().text();
-      calls.push({ method: input.method, path: url.pathname, body: text ? JSON.parse(text) : null });
-      const handler = handlers[`${input.method} ${url.pathname}`] ?? handlers[url.pathname];
-      return handler ? handler(url, input) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
-  );
+  server.events.on('request:start', async ({ request }) => {
+    const text = request.method === 'GET' ? '' : await request.clone().text();
+    calls.push({
+      method: request.method,
+      path: new URL(request.url).pathname,
+      body: text ? (JSON.parse(text) as unknown) : null,
+    });
+  });
   return calls;
 }
 
@@ -58,13 +76,14 @@ describe('settings and profile', () => {
 
   afterEach(() => {
     localStorage.clear();
+    server.events.removeAllListeners();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
   it('saves language, units and heart rate, and closes other sessions', async () => {
     let settings = { ...SETTINGS };
-    let devices = [
+    let devices: Res<'/api/auth/devices', 'get'> = [
       {
         id: 1,
         name: 'Chrome on Linux',
@@ -84,15 +103,15 @@ describe('settings and profile', () => {
         current: false,
       },
     ];
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      'GET /api/settings': () => Response.json(settings),
-      'PATCH /api/settings': async (_url, request) => {
+    server.use(
+      route('get', '/api/auth/me', () => json('/api/auth/me', 'get', ME)),
+      route('get', '/api/settings', () => json('/api/settings', 'get', settings)),
+      route('patch', '/api/settings', async ({ request }) => {
         settings = { ...settings, ...((await request.json()) as object) };
-        return Response.json(settings);
-      },
-      '/api/sources': () =>
-        Response.json([
+        return json('/api/settings', 'patch', settings);
+      }),
+      route('get', '/api/sources', () =>
+        json('/api/sources', 'get', [
           {
             kind: 'garmin',
             configured: true,
@@ -103,12 +122,14 @@ describe('settings and profile', () => {
             last_error: null,
           },
         ]),
-      'GET /api/auth/devices': () => Response.json(devices),
-      'DELETE /api/auth/devices/2': () => {
-        devices = devices.filter((d) => d.id !== 2);
+      ),
+      route('get', '/api/auth/devices', () => json('/api/auth/devices', 'get', devices)),
+      route('delete', '/api/auth/devices/{device_id}', ({ params }) => {
+        devices = devices.filter((d) => d.id !== Number(params.device_id));
         return new Response(null, { status: 204 });
-      },
-    });
+      }),
+    );
+    const calls = record();
     renderAt('/settings/general');
 
     await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Units' }), 'imperial');
@@ -147,14 +168,15 @@ describe('settings and profile', () => {
   });
 
   it('shows the profile summary and edits the profile', async () => {
-    const calls = mockApi({
-      'GET /api/auth/me': () => Response.json(ME),
-      'PATCH /api/auth/me': async (_url, request) =>
-        Response.json({ ...ME, ...((await request.json()) as object) }),
-      '/api/settings': () => Response.json(SETTINGS),
-      '/api/goals': () => Response.json([]),
-      '/api/profile/summary': () =>
-        Response.json({
+    server.use(
+      route('get', '/api/auth/me', () => json('/api/auth/me', 'get', ME)),
+      route('patch', '/api/auth/me', async ({ request }) =>
+        json('/api/auth/me', 'patch', { ...ME, ...((await request.json()) as object) }),
+      ),
+      settingsAre(),
+      route('get', '/api/goals', () => json('/api/goals', 'get', [])),
+      route('get', '/api/profile/summary', () =>
+        json('/api/profile/summary', 'get', {
           year: 2026,
           this_year: [
             { sport: 'run', count: 120, distance_m: 1_000_000, moving_s: 360_000, ascent_m: 8000 },
@@ -176,7 +198,9 @@ describe('settings and profile', () => {
           streak_weeks: 12,
           device: 'fēnix 6X Pro',
         }),
-    });
+      ),
+    );
+    const calls = record();
     renderAt('/profile');
     expect(await screen.findByRole('heading', { name: 'Runner' })).toBeInTheDocument();
     expect(await screen.findByText('Madrid')).toBeInTheDocument();
@@ -210,11 +234,11 @@ describe('settings and profile', () => {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }));
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/settings': () => Response.json(SETTINGS),
-      '/api/profile/summary': () =>
-        Response.json({
+    server.use(
+      route('get', '/api/auth/me', () => json('/api/auth/me', 'get', ME)),
+      settingsAre(),
+      route('get', '/api/profile/summary', () =>
+        json('/api/profile/summary', 'get', {
           year: 2026,
           this_year: [],
           all_time: [],
@@ -223,7 +247,8 @@ describe('settings and profile', () => {
           streak_weeks: 0,
           device: null,
         }),
-    });
+      ),
+    );
     renderAt('/profile');
     const panel = (await screen.findByRole('heading', { name: 'Physical data' })).closest('section');
     if (!panel) throw new Error('no physical data');
@@ -235,7 +260,7 @@ describe('settings and profile', () => {
   });
 
   it('lists and removes passkeys in the account tab', async () => {
-    let passkeys = [
+    let passkeys: Res<'/api/auth/passkeys', 'get'> = [
       {
         id: 3,
         name: 'Chrome on Android',
@@ -244,15 +269,16 @@ describe('settings and profile', () => {
         backed_up: true,
       },
     ];
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/settings': () => Response.json(SETTINGS),
-      'GET /api/auth/passkeys': () => Response.json(passkeys),
-      'DELETE /api/auth/passkeys/3': () => {
-        passkeys = [];
+    server.use(
+      route('get', '/api/auth/me', () => json('/api/auth/me', 'get', ME)),
+      settingsAre(),
+      route('get', '/api/auth/passkeys', () => json('/api/auth/passkeys', 'get', passkeys)),
+      route('delete', '/api/auth/passkeys/{passkey_id}', ({ params }) => {
+        passkeys = passkeys.filter((p) => p.id !== Number(params.passkey_id));
         return new Response(null, { status: 204 });
-      },
-    });
+      }),
+    );
+    const calls = record();
     renderAt('/profile?tab=account');
     const row = (await screen.findByText('Chrome on Android')).closest('li');
     if (!row) throw new Error('no passkey row');

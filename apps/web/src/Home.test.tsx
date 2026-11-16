@@ -1,13 +1,16 @@
 import { QueryClient } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { db } from './mocks/db';
+import { server } from './mocks/node';
+import { json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true, weight_kg: 70 };
+type Activity = Res<'/api/activities', 'get'>['items'][number];
 const DAY = 24 * 60 * 60 * 1000;
 const at = (daysAgo: number) => new Date(Date.now() - daysAgo * DAY).toISOString();
 const isoDay = (daysAgo: number) => {
@@ -20,7 +23,7 @@ const offset = (date: Date) => {
   const abs = Math.abs(minutes);
   return `${minutes < 0 ? '-' : '+'}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
 };
-const activity = (id: number, name: string, daysAgo: number) => ({
+const activity = (id: number, name: string, daysAgo: number): Activity => ({
   id,
   name,
   sport: 'run',
@@ -41,28 +44,37 @@ const activity = (id: number, name: string, daysAgo: number) => ({
   photos: 0,
 });
 
-function mockApi(items: unknown[], extra: Record<string, unknown> = {}) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string) => {
-      const url = new URL(typeof input === 'string' ? input : input.url, 'http://localhost');
-      const body: Record<string, unknown> = {
-        '/api/auth/me': ME,
-        '/api/settings': { theme: 'system', units: 'metric', notifications: {} },
-        '/api/activities': { items, next_cursor: null },
-        '/api/wellness/days': [{ day: isoDay(0), steps: { value: 4321, source: 'garmin' } }],
-        '/api/stats/estimates': [{ kind: 'ftp', value: 280 }],
-        '/api/stats/fitness': [{ day: isoDay(0), ctl: 49, atl: 36, tsb: 13 }],
-        ...extra,
-      };
+/** The feed, the day's steps, an FTP of 280 W at 70 kg and a fresh form; the rest is the demo athlete's. */
+function useFixtures(items: Activity[]) {
+  db.user.weight_kg = 70;
+  server.use(
+    route('get', '/api/activities', () => json('/api/activities', 'get', { items, next_cursor: null })),
+    route('get', '/api/wellness/days', ({ request }) =>
       // As the API: health days stop before `end` (exclusive), so asking up to today leaves today out.
-      if (url.pathname === '/api/wellness/days' && (url.searchParams.get('end') ?? '') <= isoDay(0))
-        return Response.json([]);
-      const data = body[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
-    }),
+      (new URL(request.url).searchParams.get('end') ?? '') <= isoDay(0)
+        ? json('/api/wellness/days', 'get', [])
+        : json('/api/wellness/days', 'get', [
+            {
+              day: isoDay(0),
+              sleep: null,
+              resting_hr: null,
+              hrv: null,
+              spo2: null,
+              respiration: null,
+              steps: { value: 4321, source: 'garmin', others: [] },
+              tsb: null,
+              readiness: null,
+            },
+          ]),
+    ),
+    route('get', '/api/stats/estimates', () =>
+      json('/api/stats/estimates', 'get', [
+        { kind: 'ftp', value: 280, method: 'curve', day: isoDay(0), sources: [], history: [] },
+      ]),
+    ),
+    route('get', '/api/stats/fitness', () =>
+      json('/api/stats/fitness', 'get', [{ day: isoDay(0), load: 0, ctl: 49, atl: 36, tsb: 13 }]),
+    ),
   );
 }
 
@@ -72,10 +84,8 @@ function renderHome() {
 }
 
 describe('Home (OS-904)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it("shows today's activities, the day's health, the last seven days and the metrics", async () => {
-    mockApi([activity(2, 'Evening run', 0), activity(1, 'Morning run', 0)]);
+    useFixtures([activity(2, 'Evening run', 0), activity(1, 'Morning run', 0)]);
     renderHome();
     expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Evening run/ })).toHaveAttribute('href', '/activities/2');
@@ -87,33 +97,36 @@ describe('Home (OS-904)', () => {
   });
 
   it("draws This week as the app's: the sport, a dot for a second one, the day's number, the usual week", async () => {
-    const week = (moving_s: number) => ({
+    const week = (moving_s: number): Res<'/api/week', 'get'>['this_week'] => ({
       week_start: isoDay(7),
       count: 3,
       distance_m: 30000,
       moving_s,
       ascent_m: 200,
     });
-    mockApi([], {
-      '/api/week': {
-        today: isoDay(0),
-        days: [
-          {
-            date: isoDay(1),
-            activities: [
-              { id: 7, sport: 'run', name: 'Morning run' },
-              { id: 8, sport: 'ride', name: 'Hill ride' },
-            ],
-          },
-          { date: isoDay(0), activities: [] },
-          { date: isoDay(-1), activities: [] },
-        ],
-        this_week: week(5400),
-        previous: [week(10800), week(10800)],
-        streak_weeks: 0,
-        records: [],
-      },
-    });
+    useFixtures([]);
+    server.use(
+      route('get', '/api/week', () =>
+        json('/api/week', 'get', {
+          today: isoDay(0),
+          days: [
+            {
+              date: isoDay(1),
+              activities: [
+                { id: 7, sport: 'run', name: 'Morning run' },
+                { id: 8, sport: 'ride', name: 'Hill ride' },
+              ],
+            },
+            { date: isoDay(0), activities: [] },
+            { date: isoDay(-1), activities: [] },
+          ],
+          this_week: week(5400),
+          previous: [week(10800), week(10800)],
+          streak_weeks: 0,
+          records: [],
+        }),
+      ),
+    );
     renderHome();
     const card = (await screen.findByRole('heading', { name: 'This week' })).closest('section');
     if (!card) throw new Error('no week card');
@@ -138,7 +151,7 @@ describe('Home (OS-904)', () => {
   });
 
   it("pages through the day's activities with dots below when there are several", async () => {
-    mockApi([activity(2, 'Evening run', 0), activity(1, 'Morning run', 0)]);
+    useFixtures([activity(2, 'Evening run', 0), activity(1, 'Morning run', 0)]);
     renderHome();
     const dots = await screen.findAllByRole('button', { name: /^Activity \d of 2$/ });
     expect(dots).toHaveLength(2);
@@ -150,9 +163,10 @@ describe('Home (OS-904)', () => {
   });
 
   it('leaves out a last day older than yesterday, but keeps the health card', async () => {
-    mockApi([activity(1, 'Old run', 3)]);
+    useFixtures([activity(1, 'Old run', 3)]);
     renderHome();
-    expect(await screen.findByText('4,321')).toBeInTheDocument();
+    // The health card's steps row (the metrics' steps tile shows the same number).
+    await waitFor(() => expect(screen.getAllByText('4,321').some((el) => el.closest('.hrow'))).toBe(true));
     expect(screen.queryByRole('heading', { name: 'Today' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Yesterday' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Old run/ })).not.toBeInTheDocument();

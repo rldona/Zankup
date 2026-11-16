@@ -5,15 +5,28 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { db, type Me } from './mocks/db';
+import { server } from './mocks/node';
+import { fail, json, route, type Res } from './mocks/route';
 import { safeNext } from './next';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'runner@example.com', display_name: null, totp_enabled: true };
-const RUN = {
+type Summary = Res<'/api/activities', 'get'>['items'][number];
+type Detail = Res<'/api/activities/{activity_id}', 'get'>;
+
+const ME: Me = {
+  id: 1,
+  email: 'runner@example.com',
+  display_name: null,
+  totp_enabled: true,
+  google_linked: false,
+};
+const RUN: Summary = {
   id: 7,
   name: 'Morning run',
   sport: 'run',
   sub_sport: null,
+  workout_type: null,
   source: 'garmin',
   start_utc: '2026-11-07T08:00:00Z',
   timezone: '+01:00',
@@ -25,22 +38,81 @@ const RUN = {
   avg_power: null,
   has_gps: true,
   route: null,
+  photo: null,
+  photos: 0,
+  exercises: null,
+  goals_reached: [],
+};
+const SETTINGS: Res<'/api/settings', 'get'> = {
+  theme: 'system',
+  language: null,
+  units: 'metric',
+  hr_max: null,
+  hr_rest: null,
+  hr_max_estimate: null,
+  zone_model: 'max',
+  lthr: null,
+  ftp: null,
+  privacy_zones: [],
+  notifications: {
+    activity: true,
+    record: true,
+    sync_error: true,
+    garmin_key: true,
+    estimate: true,
+    import: true,
+    health_reauth: true,
+    weekly: true,
+  },
+  ai: { enabled: false, summaries: false, weekly: false },
 };
 
-type Handler = (url: URL, request: Request) => Response;
+/** An activity's detail: the summary and nothing else known about it. */
+const detailOf = (summary: Summary, extra: Partial<Detail> = {}): Detail => ({
+  ...summary,
+  description: null,
+  gear: null,
+  photo_list: [],
+  weather: null,
+  edited_fields: [],
+  original_format: null,
+  strava_id: null,
+  descent_m: null,
+  max_hr: null,
+  normalized_power: null,
+  calories: null,
+  training_effect: null,
+  device: null,
+  bbox: null,
+  has_fit: false,
+  imported_at: summary.start_utc,
+  laps: [],
+  splits: [],
+  best_efforts: [],
+  sets: [],
+  metrics: null,
+  route_group: null,
+  segments: [],
+  streams: null,
+  ...extra,
+});
 
-/** Fake API: answers by path, 404 for anything else. Returns the paths it was asked for. */
-function mockApi(handlers: Record<string, Handler>) {
+const signedInAs = () => route('get', '/api/auth/me', () => json('/api/auth/me', 'get', ME));
+const feed = (items: Summary[], next_cursor: string | null = null) =>
+  route('get', '/api/activities', () => json('/api/activities', 'get', { items, next_cursor }));
+const details = (...activities: Detail[]) =>
+  route('get', '/api/activities/{activity_id}', ({ params }) => {
+    const found = activities.find((a) => a.id === Number(params.activity_id));
+    return found ? json('/api/activities/{activity_id}', 'get', found) : fail(404, 'Not Found');
+  });
+
+/** Records the requests: method, path and query. */
+function record() {
   const calls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const url = new URL(input.url);
-      calls.push(`${input.method} ${url.pathname}${url.search}`);
-      const handler = handlers[url.pathname];
-      return handler ? handler(url, input) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
-  );
+  server.events.on('request:start', ({ request }) => {
+    const url = new URL(request.url);
+    calls.push(`${request.method} ${url.pathname}${url.search}`);
+  });
   return calls;
 }
 
@@ -51,18 +123,17 @@ function renderAt(path: string) {
   return router;
 }
 
-const signedOut = () => Response.json({ detail: 'Not signed in' }, { status: 401 });
-
 describe('app skeleton', () => {
   afterEach(() => {
     localStorage.clear();
     delete document.documentElement.dataset.theme;
+    server.events.removeAllListeners();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
   it('sends visitors without a session to sign-in, keeping where they wanted to go', async () => {
-    mockApi({ '/api/auth/me': signedOut });
+    db.signedIn = false;
     const router = renderAt('/activities/7');
     expect(await screen.findByRole('heading', { name: 'Welcome back!' })).toBeInTheDocument();
     expect(screen.getByText('Your sports and health data together.')).toBeInTheDocument();
@@ -71,16 +142,18 @@ describe('app skeleton', () => {
   });
 
   it('shows the feed to a signed-in user and loads more pages with the cursor', async () => {
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': (url) =>
-        url.searchParams.get('cursor')
-          ? Response.json({
+    server.use(
+      signedInAs(),
+      route('get', '/api/activities', ({ request }) =>
+        new URL(request.url).searchParams.get('cursor')
+          ? json('/api/activities', 'get', {
               items: [{ ...RUN, id: 6, name: 'Older ride', sport: 'ride' }],
               next_cursor: null,
             })
-          : Response.json({ items: [RUN], next_cursor: 'abc' }),
-    });
+          : json('/api/activities', 'get', { items: [RUN], next_cursor: 'abc' }),
+      ),
+    );
+    const calls = record();
     renderAt('/activities');
     expect(await screen.findByText('Morning run')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
@@ -90,21 +163,24 @@ describe('app skeleton', () => {
   });
 
   it('groups the feed by month with whole-month totals and filters by sport', async () => {
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities/months': (url) =>
-        Response.json(
-          url.searchParams.get('sport') === 'ride'
+    server.use(
+      signedInAs(),
+      route('get', '/api/activities/months', ({ request }) =>
+        json(
+          '/api/activities/months',
+          'get',
+          new URL(request.url).searchParams.get('sport') === 'ride'
             ? [{ month: '2026-10', count: 1, distance_m: 40000, moving_s: 5400, ascent_m: 300 }]
             : [
                 { month: '2026-11', count: 3, distance_m: 21400, moving_s: 7380, ascent_m: 120 },
                 { month: '2026-10', count: 9, distance_m: 98000, moving_s: 30000, ascent_m: 900 },
               ],
         ),
-      '/api/activities': (url) =>
-        Response.json({
+      ),
+      route('get', '/api/activities', ({ request }) =>
+        json('/api/activities', 'get', {
           items:
-            url.searchParams.get('sport') === 'ride'
+            new URL(request.url).searchParams.get('sport') === 'ride'
               ? [{ ...RUN, id: 5, name: 'Long ride', sport: 'ride', start_utc: '2026-10-12T07:00:00Z' }]
               : [
                   RUN,
@@ -114,7 +190,9 @@ describe('app skeleton', () => {
                 ],
           next_cursor: null,
         }),
-    });
+      ),
+    );
+    const calls = record();
     const router = renderAt('/activities');
     await screen.findByRole('link', { name: /Morning run/ });
     // The year's totals are under You, not repeated over the list.
@@ -144,11 +222,7 @@ describe('app skeleton', () => {
   });
 
   it('opens an activity from the feed', async () => {
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [RUN], next_cursor: null }),
-      '/api/activities/7': () => Response.json({ ...RUN, laps: [], splits: [], best_efforts: [] }),
-    });
+    server.use(signedInAs(), feed([RUN]), details(detailOf(RUN)));
     const router = renderAt('/activities');
     await userEvent.click(await screen.findByRole('link', { name: /Morning run/ }));
     expect(await screen.findByRole('heading', { name: 'Morning run' })).toBeInTheDocument();
@@ -162,13 +236,14 @@ describe('app skeleton', () => {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }));
-    const ride = { ...RUN, id: 5, name: 'Long ride', sport: 'ride', start_utc: '2026-10-12T07:00:00Z' };
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [RUN, ride], next_cursor: null }),
-      '/api/activities/7': () => Response.json({ ...RUN, laps: [], splits: [], best_efforts: [] }),
-      '/api/activities/5': () => Response.json({ ...ride, laps: [], splits: [], best_efforts: [] }),
-    });
+    const ride: Summary = {
+      ...RUN,
+      id: 5,
+      name: 'Long ride',
+      sport: 'ride',
+      start_utc: '2026-10-12T07:00:00Z',
+    };
+    server.use(signedInAs(), feed([RUN, ride]), details(detailOf(RUN), detailOf(ride)));
     const router = renderAt('/activities');
     // Nothing opens by itself: the list is the screen.
     await userEvent.click(await screen.findByRole('link', { name: /Long ride/ }));
@@ -201,19 +276,14 @@ describe('app skeleton', () => {
         removeEventListener: () => undefined,
       }));
     const api = () =>
-      mockApi({
-        '/api/auth/me': () => Response.json(ME),
-        '/api/activities': () => Response.json({ items: [RUN], next_cursor: null }),
-        '/api/activities/7': () =>
-          Response.json({
-            ...RUN,
-            streams: { series: ['t', 'dist', 'hr'], sample_count: n },
-            laps: [],
-            splits: [],
-            best_efforts: [],
-          }),
-        '/api/activities/7/streams': () => Response.json(streams),
-      });
+      server.use(
+        signedInAs(),
+        feed([RUN]),
+        details(detailOf(RUN, { streams: { series: ['t', 'dist', 'hr'], sample_count: n } })),
+        route('get', '/api/activities/{activity_id}/streams', () =>
+          json('/api/activities/{activity_id}/streams', 'get', streams),
+        ),
+      );
 
     // A phone: back, edit, share and photos float as icons; no labelled buttons beside the title.
     media(390);
@@ -251,21 +321,14 @@ describe('app skeleton', () => {
       lat: Array.from({ length: n }, (_, i) => 40 + i * 0.0001),
       lon: Array.from({ length: n }, () => -3.7),
     };
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/settings': () =>
-        Response.json({
-          theme: 'system',
-          language: 'en',
-          units: 'metric',
-          hr_max: 190,
-          hr_rest: null,
-          hr_max_estimate: 188,
-        }),
-      '/api/activities': () => Response.json({ items: [RUN], next_cursor: null }),
-      '/api/activities/7': () =>
-        Response.json({
-          ...RUN,
+    server.use(
+      signedInAs(),
+      route('get', '/api/settings', () =>
+        json('/api/settings', 'get', { ...SETTINGS, language: 'en', hr_max: 190, hr_max_estimate: 188 }),
+      ),
+      feed([RUN]),
+      details(
+        detailOf(RUN, {
           max_hr: 171,
           device: 'fēnix 6X Pro',
           has_fit: true,
@@ -299,8 +362,11 @@ describe('app skeleton', () => {
             { distance_key: '5k', distance_m: 5000, time_s: 1450, start_s: 0, start_distance_m: 0 },
           ],
         }),
-      '/api/activities/7/streams': () => Response.json(streams),
-    });
+      ),
+      route('get', '/api/activities/{activity_id}/streams', () =>
+        json('/api/activities/{activity_id}/streams', 'get', streams),
+      ),
+    );
     renderAt('/activities/7');
     const detail = await screen.findByRole('article');
     const kpis = within(detail);
@@ -338,27 +404,25 @@ describe('app skeleton', () => {
   });
 
   it("says when an activity does not exist or is someone else's", async () => {
-    mockApi({ '/api/auth/me': () => Response.json(ME) });
+    server.use(signedInAs(), details());
     renderAt('/activities/999');
     expect(await screen.findByText('This activity does not exist or is not yours.')).toBeInTheDocument();
   });
 
   it('has a not-found page inside the app', async () => {
-    mockApi({ '/api/auth/me': () => Response.json(ME) });
+    server.use(signedInAs());
     renderAt('/nowhere');
     expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
   });
 
   it('signs out and goes back to sign-in', async () => {
-    let session = true;
-    const calls = mockApi({
-      '/api/auth/me': () => (session ? Response.json(ME) : signedOut()),
-      '/api/auth/logout': () => {
-        session = false;
-        return new Response(null, { status: 204 });
-      },
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
+    // The demo's logout signs out; until then, the session is this user's.
+    server.use(
+      route('get', '/api/auth/me', () =>
+        db.signedIn ? json('/api/auth/me', 'get', ME) : fail(401, 'Not signed in'),
+      ),
+    );
+    const calls = record();
     const router = renderAt('/profile?tab=account');
     expect(await screen.findByText('runner@example.com', { selector: 'b' })).toBeInTheDocument();
     await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
@@ -368,10 +432,7 @@ describe('app skeleton', () => {
   });
 
   it('has every section in the rail and the tab bar', async () => {
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
+    server.use(signedInAs(), feed([]));
     const router = renderAt('/');
     const [sidebar, tabbar] = await screen.findAllByRole('navigation', { name: 'Main' });
     if (!sidebar || !tabbar) throw new Error('missing navigation');
@@ -415,7 +476,7 @@ describe('app skeleton', () => {
   });
 
   it("says notifications arrive in this browser, and puts Stats' calendar and heatmap in its header", async () => {
-    mockApi({ '/api/auth/me': () => Response.json(ME) });
+    server.use(signedInAs());
     renderAt('/settings');
     expect(await screen.findByText('In this browser, and which kinds')).toBeInTheDocument();
     cleanup();
@@ -427,7 +488,7 @@ describe('app skeleton', () => {
   });
 
   it('shows the way back to You above the screens under it', async () => {
-    mockApi({ '/api/auth/me': () => Response.json(ME) });
+    server.use(signedInAs());
     const router = renderAt('/stats');
     const back = await screen.findByRole('link', { name: 'You', current: false });
     expect(back).toHaveClass('crumb');
@@ -437,7 +498,7 @@ describe('app skeleton', () => {
   });
 
   it('leads back to the screen each one was opened from, once', async () => {
-    mockApi({ '/api/auth/me': () => Response.json(ME) });
+    server.use(signedInAs());
     const cases: [string, string, string, string][] = [
       ['/review/month/2026-11', 'Stats', '/stats', 'always'],
       ['/stats/heatmap', 'Stats', '/stats', 'always'],
@@ -465,10 +526,10 @@ describe('app skeleton', () => {
   });
 
   it("picks the heatmap's sport from chips over the map", async () => {
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/stats/heatmap': () => Response.json({ routes: [] }),
-    });
+    server.use(
+      signedInAs(),
+      route('get', '/api/stats/heatmap', () => json('/api/stats/heatmap', 'get', { routes: [] })),
+    );
     const router = renderAt('/stats/heatmap');
     const sports = await screen.findByRole('group', { name: 'Sports' });
     await userEvent.click(within(sports).getByRole('button', { name: 'Ride' }));
@@ -477,11 +538,7 @@ describe('app skeleton', () => {
   });
 
   it('marks the open activity in the feed and stays in Activities', async () => {
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [RUN], next_cursor: null }),
-      '/api/activities/7': () => Response.json({ ...RUN, laps: [], splits: [], best_efforts: [] }),
-    });
+    server.use(signedInAs(), feed([RUN]), details(detailOf(RUN)));
     renderAt('/activities/7');
     expect(await screen.findByRole('heading', { name: 'Morning run' })).toBeInTheDocument();
     const item = screen.getByRole('link', { name: /Morning run/ });
@@ -493,14 +550,16 @@ describe('app skeleton', () => {
   });
 
   it('picks a theme, applies it at once and saves it in the account', async () => {
-    let saved = 'system';
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/settings': (_url, request) => {
-        if (request.method === 'PATCH') saved = 'ocean';
-        return Response.json({ theme: saved });
-      },
-    });
+    let saved: typeof SETTINGS.theme = 'system';
+    server.use(
+      signedInAs(),
+      route('get', '/api/settings', () => json('/api/settings', 'get', { ...SETTINGS, theme: saved })),
+      route('patch', '/api/settings', () => {
+        saved = 'ocean';
+        return json('/api/settings', 'patch', { ...SETTINGS, theme: saved });
+      }),
+    );
+    const calls = record();
     renderAt('/settings/general');
     const ocean = await screen.findByRole('button', { name: 'Ocean' });
     expect(screen.getByRole('button', { name: /System/ })).toHaveAttribute('aria-pressed', 'true');
@@ -517,11 +576,11 @@ describe('app skeleton', () => {
 
   it('follows the theme saved in the account from another device', async () => {
     localStorage.setItem('zankup-theme', 'light');
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/settings': () => Response.json({ theme: 'oled' }),
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
+    server.use(
+      signedInAs(),
+      route('get', '/api/settings', () => json('/api/settings', 'get', { ...SETTINGS, theme: 'oled' })),
+      feed([]),
+    );
     renderAt('/');
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('oled'));
     expect(localStorage.getItem('zankup-theme')).toBe('oled');

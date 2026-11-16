@@ -2,9 +2,12 @@ import { QueryClient } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { Profiler } from 'react';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { activityContext, activityDetail, activitySummary } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
 /**
@@ -42,8 +45,6 @@ vi.mock('./detail/ChartCard', () => ({
   },
 }));
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true };
-const SETTINGS = { theme: 'system', language: 'en', units: 'metric', hr_max: 190, hr_rest: null };
 const n = 61;
 const STREAMS = {
   t: Array.from({ length: n }, (_, i) => i * 10),
@@ -53,54 +54,30 @@ const STREAMS = {
   lat: Array.from({ length: n }, (_, i) => 40.4 + i * 0.0004),
   lon: Array.from({ length: n }, (_, i) => -3.7 + i * 0.0003),
 };
-const RUN = {
+const RUN = activityDetail({
   id: 7,
-  name: 'Morning run',
-  sport: 'run',
-  sub_sport: null,
-  source: 'garmin',
-  start_utc: '2026-11-12T08:00:00Z',
-  timezone: '+01:00',
-  duration_s: 600,
-  moving_s: 590,
-  distance_m: 3000,
-  ascent_m: 40,
-  avg_hr: 140,
-  avg_power: null,
   has_gps: true,
-  route: null,
-  photo: null,
-  photos: 0,
-  laps: [],
-  best_efforts: [],
-  photo_list: [],
-  splits: [],
   streams: { series: ['t', 'dist', 'alt', 'hr', 'lat', 'lon'], sample_count: n },
-};
+});
 
 function mockApi() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const data = {
-        '/api/auth/me': ME,
-        '/api/settings': SETTINGS,
-        '/api/activities': { items: [RUN], next_cursor: null },
-        '/api/activities/7': RUN,
-        '/api/activities/7/streams': STREAMS,
-      }[new URL(request.url).pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
-    }),
+  server.use(
+    route('get', '/api/activities', () =>
+      json('/api/activities', 'get', { items: [activitySummary(RUN)], next_cursor: null }),
+    ),
+    route('get', '/api/activities/{activity_id}', ({ params }) =>
+      params.activity_id === '7' ? json('/api/activities/{activity_id}', 'get', RUN) : undefined,
+    ),
+    route('get', '/api/activities/{activity_id}/streams', () =>
+      json('/api/activities/{activity_id}/streams', 'get', STREAMS),
+    ),
+    route('get', '/api/activities/{activity_id}/context', () =>
+      json('/api/activities/{activity_id}/context', 'get', activityContext()),
+    ),
   );
 }
 
 describe('scrubbing an activity chart (OS-1013)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('moves the replay position without redrawing the page or the other charts', async () => {
     mockApi();
     let commits = 0;

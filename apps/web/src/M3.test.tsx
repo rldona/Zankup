@@ -2,13 +2,14 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { server } from './mocks/node';
+import { json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true };
-const SETTINGS = {
+const SETTINGS: Res<'/api/settings', 'get'> = {
   theme: 'system',
   language: null,
   units: 'metric',
@@ -18,6 +19,18 @@ const SETTINGS = {
   zone_model: 'max',
   lthr: null,
   ftp: null,
+  privacy_zones: [],
+  notifications: {
+    activity: true,
+    record: true,
+    sync_error: true,
+    garmin_key: true,
+    estimate: true,
+    import: true,
+    health_reauth: true,
+    weekly: false,
+  },
+  ai: { enabled: false, summaries: false, weekly: false },
 };
 const totals = (count: number, km: number) => ({
   count,
@@ -26,7 +39,7 @@ const totals = (count: number, km: number) => ({
   ascent_m: 100 * count,
   load: 80 * count,
 });
-const ESTIMATES = [
+const ESTIMATES: Res<'/api/stats/estimates', 'get'> = [
   {
     kind: 'ftp',
     value: 192.3,
@@ -49,7 +62,7 @@ const ESTIMATES = [
   { kind: 'race_10k', value: 3211, method: 'riegel:10', day: '2026-11-08', sources: [], history: [] },
 ];
 
-const COMPARISON = {
+const COMPARISON: Res<'/api/stats/strava-comparison', 'get'> = {
   metrics: [
     {
       metric: 'effort',
@@ -68,16 +81,28 @@ const COMPARISON = {
 };
 const COMPARE_TITLE = 'How these metrics compare';
 
-type Handler = (url: URL, request: Request) => Response | Promise<Response>;
+type Call = { method: string; path: string; body: unknown };
 
-function mockApi(extra: Record<string, Handler> = {}) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
-  const handlers: Record<string, Handler> = {
-    '/api/auth/me': () => Response.json(ME),
-    '/api/settings': () => Response.json(SETTINGS),
-    '/api/stats/years': () => Response.json([2026, 2025]),
-    '/api/stats/fitness': () =>
-      Response.json(
+/** The answers these screens are read from (`extra` first), and every request made with its body. */
+function mockApi(...extra: Parameters<typeof server.use>) {
+  const calls: Call[] = [];
+  server.events.on('request:start', ({ request }) => {
+    void (async () => {
+      const text = request.method === 'GET' ? '' : await request.clone().text();
+      calls.push({
+        method: request.method,
+        path: new URL(request.url).pathname,
+        body: text ? JSON.parse(text) : null,
+      });
+    })();
+  });
+  server.use(
+    route('get', '/api/settings', () => json('/api/settings', 'get', SETTINGS)),
+    route('get', '/api/stats/years', () => json('/api/stats/years', 'get', [2026, 2025])),
+    route('get', '/api/stats/fitness', () =>
+      json(
+        '/api/stats/fitness',
+        'get',
         Array.from({ length: 30 }, (_, i) => ({
           day: `2026-10-${String(i + 1).padStart(2, '0')}`,
           load: 50,
@@ -86,21 +111,27 @@ function mockApi(extra: Record<string, Handler> = {}) {
           tsb: 8,
         })),
       ),
-    '/api/stats/summary': () =>
-      Response.json({
+    ),
+    route('get', '/api/stats/summary', () =>
+      json('/api/stats/summary', 'get', {
         current: totals(10, 100),
         previous: totals(5, 40),
         by_sport: { run: totals(10, 100) },
       }),
-    '/api/stats/volume': () =>
-      Response.json([{ start: '2026-10-01', totals: totals(3, 30), by_sport: { run: totals(3, 30) } }]),
-    '/api/stats/curves': () =>
-      Response.json([
+    ),
+    route('get', '/api/stats/volume', () =>
+      json('/api/stats/volume', 'get', [
+        { start: '2026-10-01', totals: totals(3, 30), by_sport: { run: totals(3, 30) } },
+      ]),
+    ),
+    route('get', '/api/stats/curves', () =>
+      json('/api/stats/curves', 'get', [
         { duration_s: 60, value: 4.2, activity_id: 7, day: '2026-10-05' },
         { duration_s: 1200, value: 3.3, activity_id: 7, day: '2026-10-05' },
       ]),
-    '/api/stats/records': () =>
-      Response.json({
+    ),
+    route('get', '/api/stats/records', () =>
+      json('/api/stats/records', 'get', {
         all_time: [{ distance_key: '5k', distance_m: 5000, time_s: 1500, activity_id: 7, day: '2026-10-05' }],
         period: [{ distance_key: '5k', distance_m: 5000, time_s: 1500, activity_id: 7, day: '2026-10-05' }],
         progression: {
@@ -110,15 +141,17 @@ function mockApi(extra: Record<string, Handler> = {}) {
           ],
         },
       }),
-    '/api/stats/estimates': () => Response.json(ESTIMATES),
-    '/api/stats/progress': () =>
-      Response.json([
+    ),
+    route('get', '/api/stats/estimates', () => json('/api/stats/estimates', 'get', ESTIMATES)),
+    route('get', '/api/stats/progress', () =>
+      json('/api/stats/progress', 'get', [
         { year: 2025, cumulative_m: [0, 5000, 9000] },
         { year: 2026, cumulative_m: [0, 6000] },
       ]),
-    '/api/stats/efficiency': () => Response.json([]),
-    '/api/week': () =>
-      Response.json({
+    ),
+    route('get', '/api/stats/efficiency', () => json('/api/stats/efficiency', 'get', [])),
+    route('get', '/api/week', () =>
+      json('/api/week', 'get', {
         today: '2026-11-09',
         days: [],
         this_week: { week_start: '2026-11-09', count: 0, distance_m: 0, moving_s: 0, ascent_m: 0 },
@@ -126,9 +159,10 @@ function mockApi(extra: Record<string, Handler> = {}) {
         streak_weeks: 3,
         records: [],
       }),
-    '/api/goals': () => Response.json([]),
-    '/api/events': () =>
-      Response.json([
+    ),
+    route('get', '/api/goals', () => json('/api/goals', 'get', [])),
+    route('get', '/api/events', () =>
+      json('/api/events', 'get', [
         {
           id: 1,
           kind: 'record',
@@ -136,8 +170,9 @@ function mockApi(extra: Record<string, Handler> = {}) {
           created_at: '2026-10-05T10:00:00Z',
         },
       ]),
-    '/api/engine': () =>
-      Response.json({
+    ),
+    route('get', '/api/engine', () =>
+      json('/api/engine', 'get', {
         running: true,
         reason: 'x',
         done: 12,
@@ -146,18 +181,9 @@ function mockApi(extra: Record<string, Handler> = {}) {
         activities: 207,
         metrics_version: 2,
       }),
-    ...extra,
-  };
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const url = new URL(input.url);
-      const text = input.method === 'GET' ? '' : await input.clone().text();
-      calls.push({ method: input.method, path: url.pathname, body: text ? JSON.parse(text) : null });
-      const handler = handlers[`${input.method} ${url.pathname}`] ?? handlers[url.pathname];
-      return handler ? handler(url, input) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
+    ),
   );
+  if (extra.length) server.use(...extra);
   return calls;
 }
 
@@ -169,7 +195,7 @@ function renderAt(path: string) {
 }
 
 describe('phase 3 screens', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => server.events.removeAllListeners());
 
   it('stats: now, summary against last year, records and a period in the URL', async () => {
     mockApi();
@@ -192,7 +218,11 @@ describe('phase 3 screens', () => {
   });
 
   it("stats by its period: the period's bests open their best times, the rest lives elsewhere (OS-1010)", async () => {
-    mockApi({ '/api/stats/strava-comparison': () => Response.json(COMPARISON) });
+    mockApi(
+      route('get', '/api/stats/strava-comparison', () =>
+        json('/api/stats/strava-comparison', 'get', COMPARISON),
+      ),
+    );
     const router = renderAt('/stats');
     // Without a period in the URL, months from last month to this one (#285).
     const months = await screen.findByRole('radio', { name: 'Months' });
@@ -228,16 +258,17 @@ describe('phase 3 screens', () => {
   });
 
   it('stats: no bests in the period says so, and still leads to all of them', async () => {
-    mockApi({
-      '/api/stats/records': () =>
-        Response.json({
+    mockApi(
+      route('get', '/api/stats/records', () =>
+        json('/api/stats/records', 'get', {
           all_time: [
             { distance_key: '5k', distance_m: 5000, time_s: 1500, activity_id: 7, day: '2025-10-05' },
           ],
           period: [],
           progression: {},
         }),
-    });
+      ),
+    );
     renderAt('/stats');
     expect(await screen.findByText('No bests in this period.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See all your best times' })).toHaveAttribute(
@@ -247,10 +278,12 @@ describe('phase 3 screens', () => {
   });
 
   it('import: how the metrics compare with Strava, under the imports (OS-1010)', async () => {
-    mockApi({
-      '/api/imports': () => Response.json([]),
-      '/api/stats/strava-comparison': () => Response.json(COMPARISON),
-    });
+    mockApi(
+      route('get', '/api/imports', () => json('/api/imports', 'get', [])),
+      route('get', '/api/stats/strava-comparison', () =>
+        json('/api/stats/strava-comparison', 'get', COMPARISON),
+      ),
+    );
     renderAt('/settings/import');
     expect(await screen.findByRole('heading', { name: COMPARE_TITLE })).toBeInTheDocument();
     expect(screen.getByText('0.912')).toBeInTheDocument(); // R²
@@ -269,11 +302,11 @@ describe('phase 3 screens', () => {
     HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
       this.setAttribute('open', '');
     };
-    let goals: object[] = [];
-    const calls = mockApi({
-      'GET /api/goals': () => Response.json(goals),
-      'POST /api/goals': async (_url, request) => {
-        const body = (await request.json()) as { target: number };
+    let goals: Res<'/api/goals', 'get'> = [];
+    const calls = mockApi(
+      route('get', '/api/goals', () => json('/api/goals', 'get', goals)),
+      route('post', '/api/goals', async ({ request }) => {
+        const body = await request.json();
         goals = [
           {
             id: 1,
@@ -287,10 +320,10 @@ describe('phase 3 screens', () => {
             projection: 70000,
           },
         ];
-        return Response.json(goals[0], { status: 201 });
-      },
-      '/api/profile/summary': () =>
-        Response.json({
+        return json('/api/goals', 'post', goals[0] as (typeof goals)[number], { status: 201 });
+      }),
+      route('get', '/api/profile/summary', () =>
+        json('/api/profile/summary', 'get', {
           year: 2026,
           this_year: [],
           all_time: [],
@@ -299,7 +332,8 @@ describe('phase 3 screens', () => {
           streak_weeks: 0,
           device: null,
         }),
-    });
+      ),
+    );
     const router = renderAt('/profile?tab=goals');
     await waitFor(() => expect(router.state.location.pathname).toBe('/goals'));
     await userEvent.click(await screen.findByRole('button', { name: 'Add goal' }));
@@ -316,9 +350,11 @@ describe('phase 3 screens', () => {
   });
 
   it('calendar: bubbles per activity, form per day and the week totals', async () => {
-    mockApi({
-      '/api/stats/calendar': () =>
-        Response.json(
+    mockApi(
+      route('get', '/api/stats/calendar', () =>
+        json(
+          '/api/stats/calendar',
+          'get',
           Array.from({ length: 35 }, (_, i) => {
             const d = new Date(2026, 9, 26 + i);
             const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -327,12 +363,23 @@ describe('phase 3 screens', () => {
               tsb: i === 10 ? -5 : null,
               activities:
                 i === 10
-                  ? [{ id: 9, sport: 'run', name: 'Tempo', load: 90, distance_m: 10000, moving_s: 3000 }]
+                  ? [
+                      {
+                        id: 9,
+                        sport: 'run',
+                        name: 'Tempo',
+                        load: 90,
+                        distance_m: 10000,
+                        moving_s: 3000,
+                        start: `${day}T08:00:00Z`,
+                      },
+                    ]
                   : [],
             };
           }),
         ),
-    });
+      ),
+    );
     renderAt('/stats/calendar?month=2026-11');
     expect(await screen.findByRole('link', { name: 'Tempo · 50:00' })).toHaveAttribute(
       'href',
@@ -344,9 +391,9 @@ describe('phase 3 screens', () => {
   });
 
   it('routes and segments lists', async () => {
-    mockApi({
-      '/api/routes': () =>
-        Response.json([
+    mockApi(
+      route('get', '/api/routes', () =>
+        json('/api/routes', 'get', [
           {
             id: 4,
             sport: 'run',
@@ -371,28 +418,35 @@ describe('phase 3 screens', () => {
             },
           },
         ]),
-      '/api/segments': () =>
-        Response.json([
+      ),
+      route('get', '/api/segments', () =>
+        json('/api/segments', 'get', [
           { id: 2, name: 'The hill', track: '', distance_m: 800, ascent_m: 40, efforts: 4, best_s: 230 },
         ]),
-    });
+      ),
+    );
     renderAt('/routes');
     expect(await screen.findByText(/3 times/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /River loop/ })).toHaveAttribute('href', '/routes/4');
   });
 
   it('settings: the zone model recomputes, with the estimates as hints', async () => {
-    const calls = mockApi({
-      'PATCH /api/settings': async (_url, request) =>
-        Response.json({ ...SETTINGS, ...((await request.json()) as object) }),
-      '/api/sources': () => Response.json([]),
-      '/api/auth/devices': () => Response.json([]),
-      '/api/stats/estimates': () =>
-        Response.json([
+    const calls = mockApi(
+      route('patch', '/api/settings', async ({ request }) =>
+        json('/api/settings', 'patch', {
+          ...SETTINGS,
+          ...((await request.json()) as Partial<typeof SETTINGS>),
+        }),
+      ),
+      route('get', '/api/sources', () => json('/api/sources', 'get', [])),
+      route('get', '/api/auth/devices', () => json('/api/auth/devices', 'get', [])),
+      route('get', '/api/stats/estimates', () =>
+        json('/api/stats/estimates', 'get', [
           ...ESTIMATES,
           { kind: 'lthr', value: 161, method: 'lthr_60min', day: '2026-11-08', sources: [], history: [] },
         ]),
-    });
+      ),
+    );
     renderAt('/settings/heart');
     const model = await screen.findByRole('combobox', { name: 'Heart rate zones' });
     expect(screen.getByText('Estimated: 161 bpm')).toBeInTheDocument();

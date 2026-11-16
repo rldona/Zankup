@@ -2,57 +2,57 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { activityDetail, activitySummary, gearItem, type Detail } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true };
-const ride = (id: number, hoursAgo: number) => ({
-  id,
-  name: `Ride ${id}`,
-  sport: 'ride',
-  sub_sport: null,
-  source: 'garmin',
-  start_utc: new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString(),
-  timezone: null,
-  duration_s: 3600,
-  moving_s: 3500,
-  distance_m: 30000,
-  ascent_m: 300,
-  avg_hr: 140,
-  avg_power: null,
-  has_gps: false,
-  route: null,
-  photo: null,
-  photos: 0,
-});
+const ride = (id: number, hoursAgo: number) =>
+  activityDetail({
+    id,
+    name: `Ride ${id}`,
+    sport: 'ride',
+    start_utc: new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString(),
+    timezone: null,
+    duration_s: 3600,
+    moving_s: 3500,
+    distance_m: 30000,
+    ascent_m: 300,
+    avg_hr: 140,
+  });
 
-function mockApi(items: unknown[]) {
+/** The mock API's feed is these rides, with this gear; the edits sent are kept. */
+function mockApi(items: Detail[]) {
   const patches: unknown[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      if (request.method === 'PATCH') {
-        patches.push(await request.json());
-        return Response.json({});
-      }
-      const body: Record<string, unknown> = {
-        '/api/auth/me': ME,
-        '/api/activities': { items, next_cursor: null },
-        '/api/activities/2': { ...ride(2, 2), photo_list: [], gear: null, description: null },
-        '/api/gear': [
-          { id: 5, name: 'Road bike', kind: 'bike', retired: false },
-          { id: 6, name: 'Old shoes', kind: 'shoe', retired: true },
-        ],
-      };
-      const data = body[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
+  server.use(
+    route('get', '/api/activities', () =>
+      json('/api/activities', 'get', { items: items.map(activitySummary), next_cursor: null }),
+    ),
+    route('get', '/api/activities/{activity_id}', ({ params }) => {
+      const found = items.find((a) => String(a.id) === params.activity_id);
+      return found ? json('/api/activities/{activity_id}', 'get', found) : undefined;
+    }),
+    route('get', '/api/gear', () =>
+      json('/api/gear', 'get', [
+        gearItem({ id: 5, name: 'Road bike', kind: 'bike', sports: ['ride'] }),
+        gearItem({ id: 6, name: 'Old shoes', retired: true }),
+      ]),
+    ),
+    route('patch', '/api/activities/{activity_id}', async ({ params, request }) => {
+      const body = await request.json();
+      patches.push(body);
+      return json('/api/activities/{activity_id}', 'patch', {
+        id: Number(params.activity_id),
+        name: body.name ?? null,
+        description: null,
+        sport: 'ride',
+        gear_id: body.gear_id ?? null,
+        workout_type: null,
+        edited_fields: Object.keys(body),
+      });
     }),
   );
   return patches;
@@ -71,7 +71,6 @@ describe('the latest activity on arrival (OS-906)', () => {
       this.setAttribute('open', '');
     };
   });
-  afterEach(() => vi.unstubAllGlobals());
 
   it('only remembers the newest on the first visit', async () => {
     mockApi([ride(2, 2)]);

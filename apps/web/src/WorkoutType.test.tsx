@@ -2,62 +2,51 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { activityDetail, activitySummary, type Detail } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
-const GYM = {
+const GYM = activityDetail({
   id: 9,
   name: 'Strength',
   sport: 'strength',
   sub_sport: 'strength_training',
   workout_type: null,
-  source: 'garmin',
   start_utc: '2026-11-16T17:25:00Z',
-  timezone: '+01:00',
   duration_s: 2800,
   moving_s: 2723,
   distance_m: null,
   ascent_m: null,
   avg_hr: 120,
-  avg_power: null,
-  has_gps: false,
-  route: null,
-  photo: null,
-  photos: 0,
-};
+  sets: [{ start_s: 0, duration_s: 60, kind: 'active', reps: 18, weight_kg: null, category: null }],
+});
 
-function mockApi(activity: Record<string, unknown>) {
+/** The mock API answers with this workout; the edits sent are kept. */
+function mockApi(activity: Detail) {
   const patches: unknown[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      if (request.method === 'PATCH') {
-        patches.push(await request.json());
-        return Response.json({ ...activity, edited_fields: ['name', 'workout_type'] });
-      }
-      const body: Record<string, unknown> = {
-        '/api/auth/me': { id: 1, email: 'me@example.com', display_name: 'Lifter', totp_enabled: true },
-        '/api/activities': { items: [activity], next_cursor: null },
-        '/api/activities/9': {
-          ...activity,
-          laps: [],
-          splits: [],
-          best_efforts: [],
-          photo_list: [],
-          edited_fields: [],
-          sets: [{ start_s: 0, duration_s: 60, kind: 'active', reps: 18, weight_kg: null, category: null }],
-        },
-        '/api/gear': [],
-      };
-      const data = body[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
+  server.use(
+    route('get', '/api/activities', () =>
+      json('/api/activities', 'get', { items: [activitySummary(activity)], next_cursor: null }),
+    ),
+    route('get', '/api/activities/{activity_id}', ({ params }) =>
+      params.activity_id === '9' ? json('/api/activities/{activity_id}', 'get', activity) : undefined,
+    ),
+    route('patch', '/api/activities/{activity_id}', async ({ request }) => {
+      const body = await request.json();
+      patches.push(body);
+      return json('/api/activities/{activity_id}', 'patch', {
+        id: activity.id,
+        name: body.name ?? activity.name,
+        description: activity.description,
+        sport: activity.sport,
+        gear_id: null,
+        workout_type: body.workout_type ?? null,
+        edited_fields: ['name', 'workout_type'],
+      });
     }),
   );
   return patches;
@@ -69,7 +58,6 @@ describe("a strength workout's type (OS-1015)", () => {
       this.setAttribute('open', '');
     };
   });
-  afterEach(() => vi.unstubAllGlobals());
 
   it('is chosen in Edit, names the activity after it and is saved', async () => {
     const patches = mockApi(GYM);
@@ -88,7 +76,7 @@ describe("a strength workout's type (OS-1015)", () => {
   });
 
   it('shows after the date when the activity has another name', async () => {
-    mockApi({ ...GYM, name: 'Tuesday class', workout_type: 'grit' });
+    mockApi(activityDetail({ ...GYM, name: 'Tuesday class', workout_type: 'grit' }));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const router = createMemoryRouter(routes, { initialEntries: ['/activities'] });
     render(<App queryClient={queryClient} router={router} />);

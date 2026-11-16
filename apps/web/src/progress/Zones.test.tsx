@@ -2,12 +2,13 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from '../App';
+import { db } from '../mocks/db';
+import { server } from '../mocks/node';
+import { json, route } from '../mocks/route';
 import { routes } from '../router';
-
-const ME = { id: 1, email: 'me@example.com', display_name: 'Rider', totp_enabled: true, weight_kg: 70 };
 
 /** A rider's best power: 15 s to 1 h (watts), the last eight weeks a little under all time. */
 const CURVE = [
@@ -31,49 +32,60 @@ const BESTS_10K = [
   { activity_id: 13, name: 'Long', day: '2025-04-20', value: 2610 },
 ];
 
+/** The answers the figures are read from, and every request made (path and query). */
 function mockApi() {
   const calls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      calls.push(`${url.pathname}${url.search}`);
-      const kind = url.searchParams.get('kind');
-      const body: Record<string, unknown> = {
-        '/api/auth/me': ME,
-        '/api/settings': { units: 'metric', theme: 'light' },
-        '/api/stats/zones':
-          kind === 'pace'
-            ? {
-                kind,
-                bounds: [0, 2.574, 2.904, 3.135, 3.3],
-                seconds: [600, 1200, 3000, 900, 300],
-                previous: [],
-              }
-            : {
-                kind: kind ?? 'hr',
-                bounds: [0, 120, 140, 155, 170],
-                seconds: [1800, 7200, 3600, 1800, 600],
-                previous: [1800, 3600, 3600, 1800, 600],
-              },
-        '/api/stats/curves':
-          url.searchParams.get('from') === '2000-01-01'
-            ? CURVE
-            : CURVE.map((p) => ({ ...p, value: p.value - 20 })),
-        '/api/stats/bests/recent': [
-          { key: '10k', activity_id: 11, day: '2026-10-12', value: 2405, rank: 1, scope: 'all' },
-          { key: '10k', activity_id: 12, day: '2026-06-03', value: 2520, rank: 2, scope: 'all' },
-          { key: 'power_60', activity_id: 3, day: '2026-10-01', value: 520, rank: 2, scope: 'year' },
-        ],
-        '/api/stats/bests': url.searchParams.get('key') === '10k' ? BESTS_10K : [],
-      };
-      const data = body[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
+  server.events.on('request:start', ({ request }) => {
+    const url = new URL(request.url);
+    calls.push(`${url.pathname}${url.search}`);
+  });
+  server.use(
+    route('get', '/api/auth/me', () =>
+      json('/api/auth/me', 'get', { ...db.user, display_name: 'Rider', weight_kg: 70 }),
+    ),
+    route('get', '/api/stats/zones', ({ request }) => {
+      const kind = new URL(request.url).searchParams.get('kind');
+      return json(
+        '/api/stats/zones',
+        'get',
+        kind === 'pace'
+          ? {
+              kind,
+              bounds: [0, 2.574, 2.904, 3.135, 3.3],
+              seconds: [600, 1200, 3000, 900, 300],
+              previous: [],
+            }
+          : {
+              kind: kind ?? 'hr',
+              bounds: [0, 120, 140, 155, 170],
+              seconds: [1800, 7200, 3600, 1800, 600],
+              previous: [1800, 3600, 3600, 1800, 600],
+            },
+      );
     }),
+    route('get', '/api/stats/curves', ({ request }) =>
+      json(
+        '/api/stats/curves',
+        'get',
+        new URL(request.url).searchParams.get('from') === '2000-01-01'
+          ? CURVE
+          : CURVE.map((p) => ({ ...p, value: p.value - 20 })),
+      ),
+    ),
+    route('get', '/api/stats/bests/recent', () =>
+      json('/api/stats/bests/recent', 'get', [
+        { key: '10k', activity_id: 11, day: '2026-10-12', value: 2405, rank: 1, scope: 'all' },
+        { key: '10k', activity_id: 12, day: '2026-06-03', value: 2520, rank: 2, scope: 'all' },
+        { key: 'power_60', activity_id: 3, day: '2026-10-01', value: 520, rank: 2, scope: 'year' },
+      ]),
+    ),
+    route('get', '/api/stats/bests', ({ request }) =>
+      json(
+        '/api/stats/bests',
+        'get',
+        new URL(request.url).searchParams.get('key') === '10k' ? BESTS_10K : [],
+      ),
+    ),
   );
   return calls;
 }
@@ -91,7 +103,7 @@ describe('Progress: training zones, skills and best times (OS-1004)', () => {
       this.setAttribute('open', '');
     };
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => server.events.removeAllListeners());
 
   it('shows the three cards with their figures', async () => {
     mockApi();

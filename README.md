@@ -18,6 +18,8 @@ Each person runs their own instance with their own keys. There is no central ser
 
 ## Getting started (local development)
 
+> **Only the web, quickly?** `pnpm install && pnpm --filter @zankup/web dev:mock` runs it on demo data with a mock API, no backend or Docker needed. See [apps/web/README.md](apps/web/README.md#the-mock-api-msw).
+
 You need **Git**, **Docker** (with Compose), **[uv](https://docs.astral.sh/uv/getting-started/installation/)**, **Node.js 22+** (it brings corepack, which provides the pinned pnpm) and **make**.
 
 ```bash

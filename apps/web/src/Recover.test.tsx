@@ -2,22 +2,21 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { db } from './mocks/db';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
-function mockApi(handlers: Record<string, (request: Request) => Response | Promise<Response>>) {
+/** Records the JSON body last sent to each path (by anything but GET), and signs out. */
+function signedOut() {
+  db.signedIn = false;
   const bodies: Record<string, unknown> = {};
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const url = new URL(input.url);
-      if (input.method !== 'GET') bodies[url.pathname] = await input.clone().json();
-      const handler = handlers[url.pathname];
-      return handler ? handler(input) : Response.json({ detail: 'Not signed in' }, { status: 401 });
-    }),
-  );
+  server.events.on('request:start', async ({ request }) => {
+    if (request.method !== 'GET') bodies[new URL(request.url).pathname] = await request.clone().json();
+  });
   return bodies;
 }
 
@@ -29,13 +28,10 @@ function renderAt(path: string) {
 }
 
 describe('password recovery and Google', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => server.events.removeAllListeners());
 
   it('asks for a link without saying whether the account exists', async () => {
-    const bodies = mockApi({
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/password/forgot': () => new Response(null, { status: 202 }),
-    });
+    const bodies = signedOut();
     const router = renderAt('/sign-in');
     await userEvent.click(await screen.findByRole('link', { name: 'Forgot it?' }));
     expect(router.state.location.pathname).toBe('/forgot');
@@ -46,14 +42,7 @@ describe('password recovery and Google', () => {
   });
 
   it('sets a new password with the link and a code', async () => {
-    const bodies = mockApi({
-      '/api/auth/password/reset': async (request) => {
-        const body = (await request.clone().json()) as { code: string };
-        return body.code === '123456'
-          ? new Response(null, { status: 204 })
-          : Response.json({ detail: 'That code does not match' }, { status: 401 });
-      },
-    });
+    const bodies = signedOut(); // the demo's code is 123456: any other does not match
     renderAt('/reset-password?token=abc');
     await userEvent.type(screen.getByLabelText(/^Password/), 'a brand new long passphrase');
     await userEvent.type(screen.getByLabelText('Code from the app or a recovery code'), '000000');
@@ -71,10 +60,12 @@ describe('password recovery and Google', () => {
   });
 
   it('offers Google when the instance has it, and explains a rejected account', async () => {
-    mockApi({
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/google/providers': () => Response.json({ google: true }),
-    });
+    signedOut();
+    server.use(
+      route('get', '/api/auth/google/providers', () =>
+        json('/api/auth/google/providers', 'get', { google: true, dev_login: false }),
+      ),
+    );
     renderAt('/sign-in?error=google&next=%2Factivities%2F7');
     const google = await screen.findByRole('link', { name: 'Continue with Google' });
     expect(google).toHaveAttribute('href', '/api/auth/google/start?mode=login&next=%2Factivities%2F7');

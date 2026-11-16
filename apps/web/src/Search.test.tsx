@@ -2,49 +2,37 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { activitySummary } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
-const RUN = {
+const RUN = activitySummary({
   id: 7,
   name: 'Rodaje por la sierra',
-  sport: 'run',
-  sub_sport: null,
-  source: 'garmin',
   start_utc: '2026-11-07T08:00:00Z',
-  timezone: '+01:00',
   duration_s: 1800,
   moving_s: 1750,
   distance_m: 6000,
   ascent_m: 40,
   avg_hr: 150,
-  avg_power: null,
   has_gps: true,
-  route: null,
-};
+});
 
 describe('advanced search', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('keeps the search in the URL, shows a summary and removes filters with one tap', async () => {
     const asked: URLSearchParams[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: Request) => {
-        const url = new URL(input.url);
-        if (url.pathname === '/api/auth/me')
-          return Response.json({ id: 1, email: 'me@example.com', display_name: null, totp_enabled: true });
-        if (url.pathname === '/api/activities/search') {
-          asked.push(url.searchParams);
-          return Response.json({
-            items: [RUN],
-            totals: { count: 1, distance_m: 6000, moving_s: 1750, ascent_m: 40 },
-            next_offset: null,
-          });
-        }
-        return Response.json({ detail: 'Not Found' }, { status: 404 });
+    server.use(
+      route('get', '/api/activities/search', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return json('/api/activities/search', 'get', {
+          items: [RUN],
+          totals: { count: 1, distance_m: 6000, moving_s: 1750, ascent_m: 40 },
+          next_offset: null,
+        });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

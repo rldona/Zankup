@@ -5,10 +5,20 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { db, type Me } from './mocks/db';
+import { openSignUp } from './mocks/handlers/account';
+import { server } from './mocks/node';
+import { fail, json, route } from './mocks/route';
 import { routes } from './router';
 import { passwordStrength } from '@zankup/core';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Raúl', totp_enabled: true };
+const ME: Me = {
+  id: 1,
+  email: 'me@example.com',
+  display_name: 'Raúl',
+  totp_enabled: true,
+  google_linked: false,
+};
 const CODES = [
   'abcde-fghjk',
   'mnpqr-stuvw',
@@ -19,24 +29,23 @@ const CODES = [
   '89abc-defgh',
   'jkmnp-qrstu',
 ];
-const signedOut = () => Response.json({ detail: 'Not signed in' }, { status: 401 });
 
-type Handler = (body: Record<string, unknown>) => Response;
-
-function mockApi(handlers: Record<string, Handler>) {
+/** Records each request's JSON body, by path. */
+function record() {
   const bodies: Record<string, Record<string, unknown>[]> = {};
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const path = new URL(input.url).pathname;
-      const text = await input.clone().text();
-      const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-      (bodies[path] ??= []).push(body);
-      const handler = handlers[path];
-      return handler ? handler(body) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
-  );
+  server.events.on('request:start', async ({ request }) => {
+    const text = await request.clone().text();
+    (bodies[new URL(request.url).pathname] ??= []).push(
+      text ? (JSON.parse(text) as Record<string, unknown>) : {},
+    );
+  });
   return bodies;
+}
+
+/** A brand-new instance: nobody signed in, sign-up open. */
+function brandNew() {
+  db.signedIn = false;
+  openSignUp();
 }
 
 function renderAt(path: string) {
@@ -57,37 +66,39 @@ async function fillAccount(code = 'ABCD-EFGH-JKMN') {
 
 describe('sign-up', () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
     vi.restoreAllMocks();
   });
 
   it('creates the account: code and password, QR and code, recovery codes, all set', async () => {
-    let session = false;
-    const bodies = mockApi({
-      '/api/setup': () => Response.json({ open: !session }),
-      '/api/auth/me': () => (session ? Response.json(ME) : signedOut()),
-      '/api/setup/account': () =>
-        Response.json({
+    brandNew();
+    server.use(
+      route('get', '/api/setup', () => json('/api/setup', 'get', { open: !db.signedIn })),
+      route('post', '/api/setup/account', () =>
+        json('/api/setup/account', 'post', {
           setup_token: 'tok',
           secret: 'JBSWY3DPEHPK3PXP',
           uri: 'otpauth://totp/x',
           qr_svg: '<svg data-qr="1"></svg>',
         }),
-      '/api/setup/totp': () => {
-        session = true;
-        return Response.json({ me: ME, recovery_codes: CODES });
-      },
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
+      ),
+      route('post', '/api/setup/totp', () => {
+        db.signedIn = true;
+        return json('/api/setup/totp', 'post', { me: ME, recovery_codes: CODES });
+      }),
+    );
+    const bodies = record();
     const router = renderAt('/setup');
     await fillAccount();
-    expect(bodies['/api/setup/account']?.[0]).toEqual({
-      code: 'ABCD-EFGH-JKMN',
-      display_name: 'Raúl',
-      email: 'me@example.com',
-      password: 'a long and unique passphrase',
-      accept: true,
-    });
+    await waitFor(() =>
+      expect(bodies['/api/setup/account']?.[0]).toEqual({
+        code: 'ABCD-EFGH-JKMN',
+        display_name: 'Raúl',
+        email: 'me@example.com',
+        password: 'a long and unique passphrase',
+        accept: true,
+      }),
+    );
 
     expect(await screen.findByRole('heading', { name: 'Two-step verification' })).toBeInTheDocument();
     expect(document.querySelector('.qr svg[data-qr]')).not.toBeNull();
@@ -109,10 +120,7 @@ describe('sign-up', () => {
   });
 
   it('explains a wrong setup code and where to find it', async () => {
-    mockApi({
-      '/api/setup': () => Response.json({ open: true }),
-      '/api/setup/account': () => Response.json({ detail: 'That setup code is not right' }, { status: 401 }),
-    });
+    brandNew(); // the demo's setup code is ABCD-EFGH-JKMN: any other is wrong
     renderAt('/setup');
     expect(await screen.findByText(/server logs/)).toBeInTheDocument();
     await fillAccount('WRONG');
@@ -120,28 +128,26 @@ describe('sign-up', () => {
   });
 
   it("shows the server's reason, such as a breached password", async () => {
-    mockApi({
-      '/api/setup': () => Response.json({ open: true }),
-      '/api/setup/account': () =>
-        Response.json(
-          { detail: 'This password appears in known data breaches: choose another one' },
-          { status: 422 },
-        ),
-    });
+    brandNew();
+    server.use(
+      route('post', '/api/setup/account', () =>
+        fail(422, 'This password appears in known data breaches: choose another one'),
+      ),
+    );
     renderAt('/setup');
     await fillAccount();
     expect(await screen.findByRole('alert')).toHaveTextContent('known data breaches');
   });
 
   it('says sign-up is closed once the instance has its account', async () => {
-    mockApi({ '/api/setup': () => Response.json({ open: false }) });
+    db.signedIn = false; // the demo instance has its account
     renderAt('/setup');
     expect(await screen.findByRole('heading', { name: 'Sign-up is closed' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Go to sign-in' })).toHaveAttribute('href', '/sign-in');
   });
 
   it('sends visitors of a brand-new instance from sign-in to sign-up', async () => {
-    mockApi({ '/api/setup': () => Response.json({ open: true }), '/api/auth/me': signedOut });
+    brandNew();
     const router = renderAt('/');
     await waitFor(() => expect(router.state.location.pathname).toBe('/setup'));
     expect(await screen.findByRole('heading', { name: 'Create your account' })).toBeInTheDocument();

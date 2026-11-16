@@ -5,31 +5,42 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { db, type Me } from './mocks/db';
+import { server } from './mocks/node';
+import { fail, json, route } from './mocks/route';
 import { routes } from './router';
 import { deviceName } from './signin/device';
 import { toBase64url, toBytes } from './signin/webauthn';
 
-const ME = { id: 1, email: 'runner@example.com', display_name: null, totp_enabled: true };
-const signedOut = () => Response.json({ detail: 'Not signed in' }, { status: 401 });
-const wrong = () => Response.json({ detail: 'Incorrect e-mail, password or code' }, { status: 401 });
+const ME: Me = {
+  id: 1,
+  email: 'runner@example.com',
+  display_name: null,
+  totp_enabled: true,
+  google_linked: false,
+};
+const wrong = () => fail(401, 'Incorrect e-mail, password or code');
 
-type Handler = (body: Record<string, unknown>) => Response;
-
-/** Fake API by path; records each request body. */
-function mockApi(handlers: Record<string, Handler>) {
+/** Records each request's JSON body, by path. */
+function record() {
   const bodies: Record<string, Record<string, unknown>[]> = {};
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const path = new URL(input.url).pathname;
-      const text = await input.clone().text();
-      const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-      (bodies[path] ??= []).push(body);
-      const handler = handlers[path];
-      return handler ? handler(body) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
-  );
+  server.events.on('request:start', async ({ request }) => {
+    const text = await request.clone().text();
+    (bodies[new URL(request.url).pathname] ??= []).push(
+      text ? (JSON.parse(text) as Record<string, unknown>) : {},
+    );
+  });
   return bodies;
+}
+
+/** Signed out, and the login's first step answers with the challenge `a.b.c`. */
+function challenge() {
+  db.signedIn = false;
+  server.use(
+    route('post', '/api/auth/login', () =>
+      json('/api/auth/login', 'post', { mfa_required: true, challenge: 'a.b.c' }),
+    ),
+  );
 }
 
 function renderSignIn(path = '/sign-in') {
@@ -47,29 +58,31 @@ async function enterPassword(email = 'runner@example.com', password = 'secret pa
 
 describe('sign-in', () => {
   afterEach(() => {
+    server.events.removeAllListeners();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
   it('signs in with password and code, then goes where the visitor was heading', async () => {
-    let session = false;
-    const bodies = mockApi({
-      '/api/auth/me': () => (session ? Response.json(ME) : signedOut()),
-      '/api/auth/login': () => Response.json({ mfa_required: true, challenge: 'a.b.c' }),
-      '/api/auth/login/totp': () => {
-        session = true;
-        return Response.json(ME);
-      },
-      '/api/activities/7': () => Response.json({ detail: 'Not Found' }, { status: 404 }),
-    });
+    challenge();
+    server.use(
+      route('post', '/api/auth/login/totp', () => {
+        db.signedIn = true;
+        return json('/api/auth/login/totp', 'post', ME);
+      }),
+      route('get', '/api/activities/{activity_id}', () => fail(404, 'Not Found')),
+    );
+    const bodies = record();
     const router = renderSignIn('/sign-in?next=%2Factivities%2F7');
     await enterPassword();
-    expect(bodies['/api/auth/login']?.[0]).toMatchObject({
-      email: 'runner@example.com',
-      password: 'secret password',
-      remember: true,
-      client: 'web',
-    });
+    await waitFor(() =>
+      expect(bodies['/api/auth/login']?.[0]).toMatchObject({
+        email: 'runner@example.com',
+        password: 'secret password',
+        remember: true,
+        client: 'web',
+      }),
+    );
 
     expect(await screen.findByRole('heading', { name: 'Two-step verification' })).toBeInTheDocument();
     const first = screen.getByLabelText('Digit 1');
@@ -81,11 +94,9 @@ describe('sign-in', () => {
   });
 
   it('spreads a code autofilled into the first box', async () => {
-    const bodies = mockApi({
-      '/api/auth/me': signedOut,
-      '/api/auth/login': () => Response.json({ mfa_required: true, challenge: 'a.b.c' }),
-      '/api/auth/login/totp': wrong,
-    });
+    challenge();
+    server.use(route('post', '/api/auth/login/totp', wrong));
+    const bodies = record();
     renderSignIn();
     await enterPassword();
     fireEvent.change(await screen.findByLabelText('Digit 1'), { target: { value: '147132' } });
@@ -95,11 +106,9 @@ describe('sign-in', () => {
   });
 
   it('accepts the whole code pasted at once', async () => {
-    const bodies = mockApi({
-      '/api/auth/me': signedOut,
-      '/api/auth/login': () => Response.json({ mfa_required: true, challenge: 'a.b.c' }),
-      '/api/auth/login/totp': wrong,
-    });
+    challenge();
+    server.use(route('post', '/api/auth/login/totp', wrong));
+    const bodies = record();
     renderSignIn();
     await enterPassword();
     const first = await screen.findByLabelText('Digit 1');
@@ -112,17 +121,15 @@ describe('sign-in', () => {
   });
 
   it('never says which field was wrong, and explains rate limits', async () => {
+    db.signedIn = false;
     let calls = 0;
-    mockApi({
-      '/api/auth/me': signedOut,
-      '/api/auth/login': () =>
+    server.use(
+      route('post', '/api/auth/login', () =>
         ++calls === 1
           ? wrong()
-          : new Response(JSON.stringify({ detail: 'Too many' }), {
-              status: 429,
-              headers: { 'Retry-After': '30' },
-            }),
-    });
+          : Response.json({ detail: 'Too many' }, { status: 429, headers: { 'Retry-After': '30' } }),
+      ),
+    );
     renderSignIn();
     await enterPassword();
     expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect e-mail, password or code.');
@@ -131,7 +138,8 @@ describe('sign-in', () => {
   });
 
   it('checks the form before calling the API', async () => {
-    const bodies = mockApi({ '/api/auth/me': signedOut });
+    db.signedIn = false;
+    const bodies = record();
     renderSignIn();
     await enterPassword('not-an-email', 'x');
     expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid e-mail.');
@@ -139,7 +147,7 @@ describe('sign-in', () => {
   });
 
   it('shows and hides the password', async () => {
-    mockApi({ '/api/auth/me': signedOut });
+    db.signedIn = false;
     renderSignIn();
     const input = await screen.findByLabelText('Password', { selector: 'input' });
     expect(input).toHaveAttribute('type', 'password');
@@ -149,17 +157,15 @@ describe('sign-in', () => {
   });
 
   it('signs in with a passkey', async () => {
-    let session = false;
-    const bodies = mockApi({
-      '/api/auth/me': () => (session ? Response.json(ME) : signedOut()),
-      '/api/auth/passkeys/login/options': () =>
-        Response.json({ options: { challenge: 'AQID', rpId: 'zankup.com', userVerification: 'required' } }),
-      '/api/auth/passkeys/login': () => {
-        session = true;
-        return Response.json(ME);
-      },
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
+    db.signedIn = false;
+    server.use(
+      route('post', '/api/auth/passkeys/login/options', () =>
+        json('/api/auth/passkeys/login/options', 'post', {
+          options: { challenge: 'AQID', rpId: 'zankup.com', userVerification: 'required' },
+        }),
+      ),
+    );
+    const bodies = record();
     const get = vi.fn(async (options: CredentialRequestOptions) => {
       expect(Array.from(new Uint8Array(options.publicKey?.challenge as ArrayBuffer))).toEqual([1, 2, 3]);
       return {
@@ -191,11 +197,12 @@ describe('sign-in', () => {
   });
 
   it("offers Google and the passkey first, then 'or' and the e-mail, as the app (OS-918)", async () => {
-    mockApi({
-      '/api/auth/me': signedOut,
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/google/providers': () => Response.json({ google: true }),
-    });
+    db.signedIn = false;
+    server.use(
+      route('get', '/api/auth/google/providers', () =>
+        json('/api/auth/google/providers', 'get', { google: true, dev_login: false }),
+      ),
+    );
     vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {});
     renderSignIn();
     const google = await screen.findByRole('link', { name: 'Continue with Google' });
@@ -210,11 +217,13 @@ describe('sign-in', () => {
   });
 
   it('offers no development sign-in unless the API says so', async () => {
-    const bodies = mockApi({
-      '/api/auth/me': signedOut,
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/google/providers': () => Response.json({ google: false }),
-    });
+    db.signedIn = false;
+    server.use(
+      route('get', '/api/auth/google/providers', () =>
+        json('/api/auth/google/providers', 'get', { google: false, dev_login: false }),
+      ),
+    );
+    const bodies = record();
     renderSignIn();
     await screen.findByRole('heading', { name: 'Welcome back!' });
     await waitFor(() => expect(bodies['/api/auth/google/providers']).toHaveLength(1));
@@ -224,17 +233,9 @@ describe('sign-in', () => {
   });
 
   it('signs in with one click in development, then goes where the visitor was heading', async () => {
-    let session = false;
-    const bodies = mockApi({
-      '/api/auth/me': () => (session ? Response.json(ME) : signedOut()),
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/google/providers': () => Response.json({ google: false, dev_login: true }),
-      '/api/auth/dev-login': () => {
-        session = true;
-        return Response.json(ME);
-      },
-      '/api/activities/7': () => Response.json({ detail: 'Not Found' }, { status: 404 }),
-    });
+    db.signedIn = false; // the demo's providers offer the development sign-in
+    server.use(route('get', '/api/activities/{activity_id}', () => fail(404, 'Not Found')));
+    const bodies = record();
     const router = renderSignIn('/sign-in?next=%2Factivities%2F7');
     await userEvent.click(await screen.findByRole('button', { name: 'Sign in as owner (dev)' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/activities/7'));
@@ -243,30 +244,22 @@ describe('sign-in', () => {
   });
 
   it('explains when the development sign-in is not available', async () => {
-    mockApi({
-      '/api/auth/me': signedOut,
-      '/api/setup': () => Response.json({ open: false }),
-      '/api/auth/google/providers': () => Response.json({ google: false, dev_login: true }),
-      '/api/auth/dev-login': () => Response.json({ detail: 'Not Found' }, { status: 404 }),
-    });
+    db.signedIn = false;
+    server.use(route('post', '/api/auth/dev-login', () => fail(404, 'Not Found')));
     renderSignIn();
     await userEvent.click(await screen.findByRole('button', { name: 'Sign in as owner (dev)' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('The development sign-in is not available.');
   });
 
   it('hides the passkey option where the browser has no WebAuthn', async () => {
-    mockApi({ '/api/auth/me': signedOut });
+    db.signedIn = false;
     renderSignIn();
     await screen.findByRole('heading', { name: 'Welcome back!' });
     expect(screen.queryByRole('button', { name: 'Sign in with a passkey' })).not.toBeInTheDocument();
   });
 
   it('sends a signed-in visitor straight on', async () => {
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-    });
-    const router = renderSignIn('/sign-in?next=https%3A%2F%2Fevil.test');
+    const router = renderSignIn('/sign-in?next=https%3A%2F%2Fevil.test'); // signed in, as the demo starts
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
   });
 });

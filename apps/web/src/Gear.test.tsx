@@ -2,58 +2,33 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { gearItem } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { fail, json, route } from './mocks/route';
 import { routes } from './router';
 
-const gear = (id: number, name: string, extra: object = {}) => ({
-  id,
-  name,
-  kind: 'shoe',
-  brand: null,
-  model: null,
-  sports: ['run'],
-  initial_m: 0,
-  limit_m: null,
-  distance_m: 100000,
-  activities: 10,
-  last_used: null,
-  retired: false,
-  over_limit: false,
-  habitual: false,
-  ...extra,
-});
+const gear = (id: number, name: string, extra: Partial<Parameters<typeof gearItem>[0]> = {}) =>
+  gearItem({ id, name, distance_m: 100000, activities: 10, ...extra });
 
 describe('gear: the habitual one (OS-910)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('lists it first with its badge, and the form marks another as habitual', async () => {
     const patches: unknown[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: Request | string, init?: RequestInit) => {
-        const request =
-          typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-        const url = new URL(request.url);
-        if (request.method === 'PATCH') {
-          patches.push(await request.json());
-          return Response.json({});
-        }
-        if (url.pathname === '/api/auth/me')
-          return Response.json({
-            id: 1,
-            email: 'me@example.com',
-            display_name: 'Runner',
-            totp_enabled: true,
-          });
-        if (url.pathname === '/api/gear')
-          return Response.json([
-            gear(1, 'Old pair', { retired: true }),
-            gear(2, 'Daily trainers'),
-            gear(3, 'Race shoes', { habitual: true }),
-          ]);
-        return Response.json({ detail: 'Not Found' }, { status: 404 });
+    const list = [
+      gear(1, 'Old pair', { retired: true }),
+      gear(2, 'Daily trainers'),
+      gear(3, 'Race shoes', { habitual: true }),
+    ];
+    server.use(
+      route('get', '/api/gear', () => json('/api/gear', 'get', list)),
+      route('patch', '/api/gear/{gear_id}', async ({ params, request }) => {
+        const body = await request.json();
+        patches.push(body);
+        const item = list.find((g) => String(g.id) === params.gear_id);
+        if (!item) return fail(404, 'Gear not found');
+        return json('/api/gear/{gear_id}', 'patch', { ...item, habitual: body.habitual ?? item.habitual });
       }),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
