@@ -1,6 +1,5 @@
 /// <reference types="vitest/config" />
-import babel from '@rolldown/plugin-babel';
-import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -66,9 +65,9 @@ const pwa = VitePWA({
 });
 
 export default defineConfig({
-  // React Compiler (OS-1013, as the app's #321): components and values memoised at build time, so a
-  // screen redraws only what changed. Components with a react-hooks lint suppression are skipped.
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), themes(), pwa],
+  // No React Compiler here (unlike the app, #321): it made the main chunk 29 % larger (322 → 417 kB
+  // gzip) for re-renders that the cursor store already avoids (OS-1013).
+  plugins: [react(), themes(), pwa],
   define: { __APP_VERSION__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev') },
   // @zankup/core is workspace source, not a package to pre-bundle: edits there (catalogues, tokens,
   // queries) must reach the dev server at once.
