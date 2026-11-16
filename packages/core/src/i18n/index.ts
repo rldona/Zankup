@@ -3,6 +3,7 @@
  * Messages use a subset of ICU MessageFormat: `{variable}` and plurals,
  * `{count, plural, =0 {none} one {# activity} other {# activities}}`, chosen with `Intl.PluralRules`.
  */
+import { formatNumber } from '../format/intl';
 import en from './en.json';
 import es from './es.json';
 
@@ -27,9 +28,13 @@ export function resolveLocale(preferred: readonly string[]): Locale {
  * The plural category of a number. Hermes (the Android app's engine) has no `Intl.PluralRules`: there,
  * the rule of both supported languages is enough (1 is "one", everything else "other").
  */
+const pluralRules = new Map<string, Intl.PluralRules>();
+
 export function pluralCategory(locale: Locale, count: number): string {
   if (typeof Intl !== 'undefined' && typeof Intl.PluralRules === 'function') {
-    return new Intl.PluralRules(locale).select(count);
+    let rules = pluralRules.get(locale);
+    if (!rules) pluralRules.set(locale, (rules = new Intl.PluralRules(locale)));
+    return rules.select(count);
   }
   return count === 1 ? 'one' : 'other';
 }
@@ -66,7 +71,7 @@ function plurals(locale: Locale, template: string, values: Record<string, string
     }
     const branch =
       options.get(`=${count}`) ?? options.get(pluralCategory(locale, count)) ?? options.get('other') ?? '';
-    out += template.slice(from, m.index) + branch.replace(/#/g, count.toLocaleString(locale));
+    out += template.slice(from, m.index) + branch.replace(/#/g, formatNumber(count, locale));
     from = end + 1;
     head.lastIndex = end + 1;
   }

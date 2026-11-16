@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { glance, shareChange, topZone, zoneRange } from './zones';
+import { defaultZoneKind, glance, shareChange, topZone, zoneRange } from './zones';
 
 describe('training zones', () => {
   const now = [50, 274, 1564, 4380, 333]; // Strava's: 1h 13min of 1h 50min in Z4
@@ -29,5 +29,14 @@ describe('training zones', () => {
     });
     expect(glance([500, 100], [1000, 100])?.band).toBe('easy');
     expect(glance(now, [0, 0, 0, 0, 0])).toBeNull();
+  });
+});
+
+describe('the zones a sport opens on', () => {
+  it('is pace for a run, power for a ride, heart rate otherwise', () => {
+    expect(defaultZoneKind('run')).toBe('pace');
+    expect(defaultZoneKind('ride')).toBe('power');
+    expect(defaultZoneKind('walk')).toBe('hr');
+    expect(defaultZoneKind(null)).toBe('hr');
   });
 });

@@ -6,6 +6,7 @@
  * The series come from the phone when kept (OS-505).
  */
 import {
+  activityContextQuery,
   activityQuery,
   availableMetrics,
   formatActivityDate,
@@ -63,6 +64,7 @@ import { MapControls } from '../../src/detail/MapControls';
 import { ActivitySkeleton } from '../../src/Skeleton';
 import { ActionMenu } from '../../src/Menu';
 import { drawCard, shareCard } from '../../src/share/card';
+import { cursorStore } from '../../src/detail/cursorStore';
 import { EditActivity, metaLine, Photos, SaveSegment, useReplay } from '../../src/detail/Tools';
 import { Icon, SportIcon } from '../../src/Icon';
 import { buildTrack, sectionStats, type SectionStats } from '../../src/detail/track';
@@ -78,6 +80,8 @@ export default function ActivityScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const api = useApi();
   const activity = useQuery({ ...activityQuery(api, id), enabled: Number.isInteger(id) });
+  // How it compares loads beside the activity, not after it (Detail reads it from the cache).
+  useQuery({ ...activityContextQuery(api, id), enabled: Number.isInteger(id) });
   if (activity.data) return <Detail activity={activity.data} />;
   if (activity.isError && !activity.data) return <Empty>{t('activity.notFound')}</Empty>;
   return <ActivitySkeleton />;
@@ -94,7 +98,8 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   const pace = usesPace(sport);
   const streams = useQuery({ ...streamsQuery(api, a.id), enabled: a.streams != null });
   const track = useMemo(() => (streams.data ? buildTrack(streams.data) : null), [streams.data]);
-  const [cursorIndex, setCursorIndex] = useState(-1);
+  // Where the finger is, for the map's dot: kept out of this screen's state (see cursorStore).
+  const [cursorAt] = useState(cursorStore);
   const [section, setSection] = useState<[number, number] | null>(null);
   const [stats, setStats] = useState<SectionStats | null>(null);
   const [selecting, setSelecting] = useState(false);
@@ -152,9 +157,9 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   const replayTo = useCallback(
     (i: number) => {
       cursor.set(i);
-      setCursorIndex(i);
+      cursorAt.set(i);
     },
-    [cursor],
+    [cursor, cursorAt],
   );
 
   const chartColors = useMemo(
@@ -173,17 +178,21 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   const replay = useReplay(track?.t ?? NO_TIMES, replayTo);
   const inverted = pace && metric === 'speed';
 
-  // The map cursor follows the finger through JS: one update per frame at most.
+  // The map cursor follows the finger through JS: one update per frame at most, and only the map's dot
+  // redraws.
   const pending = useRef<number | null>(null);
-  const onCursor = useCallback((i: number) => {
-    if (pending.current == null) {
-      requestAnimationFrame(() => {
-        if (pending.current != null) setCursorIndex(pending.current);
-        pending.current = null;
-      });
-    }
-    pending.current = i;
-  }, []);
+  const onCursor = useCallback(
+    (i: number) => {
+      if (pending.current == null) {
+        requestAnimationFrame(() => {
+          if (pending.current != null) cursorAt.set(pending.current);
+          pending.current = null;
+        });
+      }
+      pending.current = i;
+    },
+    [cursorAt],
+  );
   const onSelection = useCallback(
     (range: [number, number] | null, final: boolean) => {
       if (!track || !final) return;
@@ -370,7 +379,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
             <RouteMap
               track={track}
               bbox={a.bbox ?? null}
-              cursor={cursorIndex}
+              cursor={cursorAt}
               section={section}
               dark={c.scheme === 'dark'}
               colors={{ route: c[sport], section: String(c.accent), cursor: c[sport] }}

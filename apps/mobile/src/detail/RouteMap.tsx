@@ -10,6 +10,7 @@ import { memo, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useMapCover } from '../MapCover';
+import { useCursor, type CursorStore } from './cursorStore';
 import { gradientExpression, lineFeature, positionAt, type Track } from './track';
 
 const STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/positron';
@@ -18,7 +19,8 @@ const STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
 type Props = {
   track: Track;
   bbox: number[] | null;
-  cursor: number;
+  /** Where the finger is: only the dot listens to it. */
+  cursor: CursorStore;
   section: [number, number] | null;
   dark: boolean;
   colors: { route: string; section: string; cursor: string };
@@ -117,10 +119,11 @@ const CursorPoint = memo(function CursorPoint({
   color,
 }: {
   track: Track;
-  cursor: number;
+  cursor: CursorStore;
   color: string;
 }) {
-  const position = cursor >= 0 ? positionAt(track, cursor) : null;
+  const index = useCursor(cursor);
+  const position = index >= 0 ? positionAt(track, index) : null;
   const data = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: 'FeatureCollection',

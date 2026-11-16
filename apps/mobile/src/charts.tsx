@@ -2,12 +2,23 @@
  * Trend charts drawn with Skia (OS-512), as complete as the PWA's: lines and bars (stacked, or around
  * zero when values go negative) over a grid with round values on the left axis, a right axis when a
  * second scale is drawn, a few days along the bottom and a legend. Touching or sliding sideways picks a
- * day and shows its values; a vertical swipe still scrolls the screen.
+ * day and shows its values; a vertical swipe still scrolls the screen. New values (another period, sport
+ * or metric) slide into place as the zones' bars do (`MorphPath`).
  */
-import { Canvas, DashPathEffect, Group, Line, Path, Rect, vec } from '@shopify/react-native-skia';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Canvas,
+  DashPathEffect,
+  Group,
+  Line,
+  Path,
+  Skia,
+  vec,
+  type SkPath,
+} from '@shopify/react-native-skia';
+import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Easing, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useTheme } from './theme';
 
@@ -138,6 +149,164 @@ export function useCanvasReady(width: number): boolean {
   return ready;
 }
 
+/** How a chart moves to new values: as the zones' bars on Progress (a third of a second, easing out). */
+export const MORPH = { duration: 320, easing: Easing.out(Easing.cubic) };
+
+const skPath = (d: string): SkPath => Skia.Path.MakeFromSVGString(d) ?? Skia.Path.Make();
+
+/**
+ * A path that slides to each new `d` from what is on screen, when both have the same shape (as many
+ * points, the same gaps). When they do not (a longer period has more days), or the chart has just been
+ * drawn, it grows from `flat`: the same shape lying on the chart's floor. Waits for the canvas (`ready`).
+ */
+export function useMorphPath(d: string, flat: string, ready: boolean) {
+  const empty = useMemo(() => Skia.Path.Make(), []);
+  const from = useSharedValue(empty);
+  const to = useSharedValue(empty);
+  const progress = useSharedValue(1);
+  useEffect(() => {
+    if (!ready) return;
+    const next = skPath(d);
+    const before = to.get();
+    const t = progress.get();
+    const shown = t >= 1 ? before : (before.interpolate(from.get(), t) ?? before);
+    const start = shown.isInterpolatable(next) ? shown : skPath(flat);
+    if (!start.isInterpolatable(next)) {
+      from.set(next);
+      to.set(next);
+      progress.set(1);
+      return;
+    }
+    from.set(start);
+    to.set(next);
+    progress.set(0);
+    progress.set(withTiming(1, MORPH));
+  }, [d, flat, ready, from, to, progress]);
+  return useDerivedValue(() => {
+    const t = progress.get();
+    const end = to.get();
+    return t >= 1 ? end : (end.interpolate(from.get(), t) ?? end);
+  });
+}
+
+/** A Skia `Path` drawn from `d` that slides to new values (`useMorphPath`). */
+export function MorphPath({
+  d,
+  flat,
+  ready,
+  ...paint
+}: Omit<ComponentProps<typeof Path>, 'path'> & { d: string; flat: string; ready: boolean }) {
+  const path = useMorphPath(d, flat, ready);
+  return <Path path={path} {...paint} />;
+}
+
+const n = (v: number) => Math.round(v * 100) / 100;
+
+/**
+ * Circles as one path, each four curves, so a set of points can slide too: a radius of 0 keeps the
+ * same curves (a circle Skia adds on its own is left out when it has no size).
+ */
+export function circlesPath(
+  points: readonly (readonly [number, number])[],
+  r: number | ((i: number) => number),
+) {
+  return points
+    .map(([x, y], i) => {
+      const rr = typeof r === 'number' ? r : r(i);
+      const k = rr * 0.5523;
+      return (
+        `M${n(x + rr)} ${n(y)}C${n(x + rr)} ${n(y + k)} ${n(x + k)} ${n(y + rr)} ${n(x)} ${n(y + rr)}` +
+        `C${n(x - k)} ${n(y + rr)} ${n(x - rr)} ${n(y + k)} ${n(x - rr)} ${n(y)}` +
+        `C${n(x - rr)} ${n(y - k)} ${n(x - k)} ${n(y - rr)} ${n(x)} ${n(y - rr)}` +
+        `C${n(x + k)} ${n(y - rr)} ${n(x + rr)} ${n(y - k)} ${n(x + rr)} ${n(y)}Z`
+      );
+    })
+    .join('');
+}
+
+/** Rectangles as one path, each four lines: a bar with no height keeps its place in the shape. */
+export function rectsPath(rects: readonly { x: number; y: number; w: number; h: number }[]) {
+  return rects
+    .map(
+      ({ x, y, w, h }) => `M${n(x)} ${n(y)}L${n(x + w)} ${n(y)}L${n(x + w)} ${n(y + h)}L${n(x)} ${n(y + h)}Z`,
+    )
+    .join('');
+}
+
+/**
+ * A line through points and, for its fill, down to `base` and back. Flattened (`flat`), the points lie
+ * just over `base`: a fill with no height at all left Android's canvas blank.
+ */
+export function polyline(points: readonly (readonly [number, number])[], base: number, flat = false) {
+  const pts = flat ? points.map(([x]) => [x, base - 1] as const) : points;
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${n(x)} ${n(y)}`).join('');
+  const last = pts[pts.length - 1];
+  const area = last ? `${line}L${n(last[0])} ${n(base)}L${n(pts[0][0])} ${n(base)}Z` : '';
+  return { line, area };
+}
+
+/**
+ * A line resampled at other x's (each between the two points around it), so a line of another length can
+ * turn into it instead of growing from the floor: a longer range starts as the shorter one, stretched.
+ */
+export function resample(points: readonly (readonly [number, number])[], xs: readonly number[]) {
+  return xs.map((x) => {
+    if (!points.length) return [x, 0] as const;
+    let i = 0;
+    while (i < points.length - 2 && points[i + 1][0] < x) i++;
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[Math.min(i + 1, points.length - 1)];
+    const t = x1 === x0 ? 0 : Math.max(0, Math.min(1, (x - x0) / (x1 - x0)));
+    return [x, y0 + (y1 - y0) * t] as const;
+  });
+}
+
+/**
+ * Where a line far above zero (a score, a race time) starts when it changes: the one on screen,
+ * stretched over the new points, so it turns into the new line instead of growing from the floor.
+ * The first drawing starts where it is (no animation).
+ */
+export function useLineFrom(points: readonly (readonly [number, number])[]) {
+  const key = points.map(([x, y]) => `${n(x)},${n(y)}`).join(' ');
+  const [drawn, setDrawn] = useState({ key, points, from: points });
+  if (drawn.key !== key) {
+    const xs = points.map(([x]) => x);
+    setDrawn({ key, points, from: drawn.points.length ? resample(drawn.points, xs) : points });
+  }
+  return drawn.key === key ? drawn.from : points;
+}
+
+/** A hollow ring on each point, sliding with the line: drawn as two paths (the fill, then the ring). */
+export function Rings({
+  points,
+  base,
+  r,
+  fill,
+  colour,
+  strokeWidth = 2.5,
+  ready,
+  from,
+}: {
+  points: readonly (readonly [number, number])[];
+  /** Where they grow from: the floor, or points of their own (as many). */
+  base: number;
+  from?: readonly (readonly [number, number])[];
+  r: number | ((i: number) => number);
+  fill: string;
+  colour: string;
+  strokeWidth?: number;
+  ready: boolean;
+}) {
+  const d = circlesPath(points, r);
+  const flat = circlesPath(from ?? points.map(([px]) => [px, base - 1] as const), 0.5);
+  return (
+    <>
+      <MorphPath d={d} flat={flat} ready={ready} color={fill} />
+      <MorphPath d={d} flat={flat} ready={ready} style="stroke" strokeWidth={strokeWidth} color={colour} />
+    </>
+  );
+}
+
 const AXIS = 34;
 const TOP = 8;
 
@@ -188,23 +357,31 @@ export function Chart({
     return (v: number) => TOP + inner - ((v - lo) / (hi - lo || 1)) * inner;
   };
 
+  const floor = TOP + inner;
   const drawn = layers.map((layer, index) => {
     const scale = scales.of[index];
     const domain = scales.nice[scale].domain;
     const y = yOf(scale);
     if (layer.kind === 'line') {
-      // Lines run from the centre of the first slot to the centre of the last, over the bars.
-      const path = linePath(layer.values, plot - slot, inner, domain)
-        .map((segment) =>
-          segment.length === 1
-            ? segment.map(([x, py]) => `M${x + slot / 2 - 1} ${py + TOP}h2`).join('')
-            : segment.map(([x, py], n) => `${n ? 'L' : 'M'}${x + slot / 2} ${py + TOP}`).join(''),
-        )
-        .join('');
-      return path ? (
-        <Path
+      // Lines run from the centre of the first slot to the centre of the last, over the bars; they grow
+      // up from the floor.
+      const segments = linePath(layer.values, plot - slot, inner, domain);
+      const draw = (flat: boolean) =>
+        segments
+          .map((segment) =>
+            segment.length === 1
+              ? segment.map(([x, py]) => `M${n(x + slot / 2 - 1)} ${n(flat ? floor : py + TOP)}h2`).join('')
+              : segment
+                  .map(([x, py], i) => `${i ? 'L' : 'M'}${n(x + slot / 2)} ${n(flat ? floor : py + TOP)}`)
+                  .join(''),
+          )
+          .join('');
+      return (
+        <MorphPath
           key={index}
-          path={path}
+          d={draw(false)}
+          flat={draw(true)}
+          ready={ready}
           style="stroke"
           strokeWidth={layer.width ?? 3}
           strokeCap="round"
@@ -212,30 +389,34 @@ export function Chart({
           color={layer.color}
           opacity={layer.opacity ?? 1}
         />
-      ) : null;
+      );
     }
-    const rects: { x: number; y: number; h: number; color: string }[] = [];
-    for (let i = 0; i < count; i++) {
-      let base = 0;
-      for (const s of layer.series) {
-        const v = s.values[i];
-        if (v == null || v === 0) continue;
-        const top = y(base + v);
-        const bottom = y(base);
-        rects.push({
-          x: i * slot + (slot - bar) / 2,
-          y: Math.min(top, bottom),
-          h: Math.abs(bottom - top),
-          color: s.color,
-        });
-        base += v;
-      }
-    }
+    // A series' bars as one path, a bar on every day (with no height on a day without), so another
+    // period of as many days slides into place; they grow from the zero line.
+    const zero = y(0);
+    const base = Array.from({ length: count }, () => 0);
     return (
       <Group key={index} opacity={picked == null ? 1 : 0.9}>
-        {rects.map((r, n) => (
-          <Rect key={n} x={r.x} y={r.y} width={bar} height={Math.max(1, r.h)} color={r.color} />
-        ))}
+        {layer.series.map((s, k) => {
+          const bars = base.map((under, i) => {
+            const v = s.values[i] ?? 0;
+            const top = y(under + v);
+            const bottom = y(under);
+            base[i] = under + v;
+            const h = v ? Math.max(1, Math.abs(bottom - top)) : 0;
+            return { x: i * slot + (slot - bar) / 2, y: Math.min(top, bottom), w: bar, h };
+          });
+          if (!bars.some((b) => b.h)) return null;
+          return (
+            <MorphPath
+              key={k}
+              d={rectsPath(bars)}
+              flat={rectsPath(bars.map((b) => ({ ...b, y: zero - (b.h ? 0.5 : 0), h: b.h ? 1 : 0 })))}
+              ready={ready}
+              color={s.color}
+            />
+          );
+        })}
       </Group>
     );
   });

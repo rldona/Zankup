@@ -2,6 +2,7 @@
  * Stats' summary against the same period a year before (as paired bars, app and web): the change in
  * percent and how long each bar is, the larger of the two filling the row.
  */
+import { formatDate } from '../format/intl';
 import type { MessageKey } from '../i18n';
 
 export type Comparison = {
@@ -28,7 +29,7 @@ const day = (iso: string) => {
   return new Date(Date.UTC(y, m - 1, d));
 };
 const month = (date: Date, locale: string, year = true) =>
-  date.toLocaleDateString(locale, { month: 'short', ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' });
+  formatDate(date, locale, { month: 'short', ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' });
 
 /**
  * What the summary's key calls the two periods it compares, last year's first, from the range Stats
