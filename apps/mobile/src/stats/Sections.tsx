@@ -548,82 +548,44 @@ export function Curves({ range }: { range: Range }) {
   );
 }
 
+/**
+ * The period's bests (running): each distance's fastest time in it, opening Best times on that
+ * distance. The records of all time, their progression and the top 10 live there.
+ */
 export function Records({ range }: { range: Range }) {
   const api = useApi();
   const c = useTheme();
   const records = useQuery(recordsQuery(api, range));
   const format = useFormat();
-  const [chosen, setChosen] = useState('5k');
   if (!records.data?.all_time.length) return null;
-  const period = new Map(records.data.period.map((r) => [r.distance_key, r]));
-  const progression = records.data.progression[chosen] ?? [];
+  const bests = records.data.period.filter((r) => effortShown(r.distance_key, format.unit));
   return (
     <Card>
-      <CardTitle>{t('stats.records')}</CardTitle>
-      <View style={{ flexDirection: 'row' }}>
-        {[t('feed.stat.distance'), t('stats.allTime'), t('stats.recordsPeriod')].map((h, i) => (
+      <CardTitle>{t('stats.periodBests')}</CardTitle>
+      {!bests.length && <Muted>{t('stats.noPeriodBests')}</Muted>}
+      {bests.map((r) => (
+        <View key={r.distance_key} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4 }}>
           <Text
-            key={h}
-            style={{ flex: i === 1 ? 1.4 : 1, color: c.muted, fontSize: 12, textAlign: i ? 'right' : 'left' }}
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/bests', params: { key: r.distance_key } })}
+            style={{ flex: 1, color: c.fg }}
           >
-            {h}
+            {effortName(r.distance_key)}
           </Text>
-        ))}
-      </View>
-      {records.data.all_time
-        .filter((r) => effortShown(r.distance_key, format.unit))
-        .map((r) => {
-          const p = period.get(r.distance_key);
-          const on = chosen === r.distance_key;
-          return (
-            <View
-              key={r.distance_key}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4 }}
-            >
-              <Text
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                onPress={() => setChosen(r.distance_key)}
-                style={{ flex: 1, color: on ? c.accent : c.fg, fontWeight: on ? '700' : '400' }}
-              >
-                {effortName(r.distance_key)}
-              </Text>
-              <Text style={{ flex: 1.4, textAlign: 'right', fontVariant: ['tabular-nums'] }}>
-                <ActivityLink id={r.activity_id}>{formatDuration(r.time_s)}</ActivityLink>
-                <Text style={{ color: c.muted, fontSize: 11 }}> {shortDay(r.day)}</Text>
-              </Text>
-              <Text style={{ flex: 1, textAlign: 'right', color: c.fg, fontVariant: ['tabular-nums'] }}>
-                {p ? <ActivityLink id={p.activity_id}>{formatDuration(p.time_s)}</ActivityLink> : '—'}
-              </Text>
-            </View>
-          );
-        })}
-      {progression.length > 1 && (
-        <>
-          <Text style={{ color: c.fg, fontWeight: '700', marginTop: 8 }}>
-            {t('stats.progression', { distance: effortName(chosen) })}
+          <Text style={{ textAlign: 'right', fontVariant: ['tabular-nums'] }}>
+            <ActivityLink id={r.activity_id}>{formatDuration(r.time_s)}</ActivityLink>
+            <Text style={{ color: c.muted, fontSize: 11 }}> {shortDay(r.day)}</Text>
           </Text>
-          <Chart
-            legendGap={18}
-            days={progression.map((p) => shortDay(p.day))}
-            height={120}
-            label={progression.map((p) => `${shortDay(p.day)} ${formatDuration(p.time_s)}`).join(', ')}
-            layers={[
-              {
-                kind: 'line',
-                label: effortName(chosen),
-                color: c.run,
-                // Faster is better: drawn upside down, so the line climbs as the record comes down.
-                values: progression.map((p) => -p.time_s),
-                hideLegend: true,
-              },
-            ]}
-          />
-          <Muted>
-            {formatDuration(progression[0]?.time_s ?? 0)} → {formatDuration(progression.at(-1)?.time_s ?? 0)}
-          </Muted>
-        </>
-      )}
+        </View>
+      ))}
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => router.push('/bests')}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}
+      >
+        <Text style={{ color: c.accent, fontWeight: '700' }}>{t('stats.allBests')}</Text>
+        <Icon name="chevron_right" color={c.accent} size={20} />
+      </Pressable>
     </Card>
   );
 }
@@ -635,11 +597,16 @@ const YEAR_DAYS = () =>
     formatDate(new Date(2024, 0, 1 + i), locale, { day: 'numeric', month: 'short' }),
   ));
 
-export function Progress({ selected }: { selected: number }) {
+/**
+ * Every year's distance, cumulative through it, filling the screen it is on: the chart as tall as the
+ * room the years' list leaves under it. A tap on a year (`onSelect`) makes it stand out.
+ */
+export function Progress({ selected, onSelect }: { selected: number; onSelect?: (year: number) => void }) {
   const api = useApi();
   const c = useTheme();
   const format = useFormat();
   const lines = useQuery(progressQuery(api));
+  const [room, setRoom] = useState(0);
   if (!lines.data?.length) return null;
   const scale = format.unit === 'km' ? 1000 : 1609.344;
   const top = Math.max(1, ...lines.data.map((l) => l.cumulative_m.at(-1) ?? 0)) / scale;
@@ -649,29 +616,42 @@ export function Progress({ selected }: { selected: number }) {
     selected,
     c,
   );
+  // The chart takes the room the years' list leaves; Chart adds 16 for the dates under it and the
+  // legend's gap (the legend itself is empty: the years are listed below).
+  const chartHeight = Math.max(160, room - 16 - 8);
   return (
-    <Card>
-      <CardTitle info={t('stats.progressNote')}>{t('stats.progress')}</CardTitle>
-      <Chart
-        legendGap={18}
-        days={YEAR_DAYS()}
-        height={170}
-        label={lines.data
-          .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)
-          .join(', ')}
-        layers={sorted.map((l) => ({
-          kind: 'line',
-          label: String(l.year),
-          color: colours.get(l.year) ?? c.muted,
-          values: l.cumulative_m.map((m) => m / scale),
-          domain: [0, top * 1.05] as [number, number],
-          width: l.year === selected ? 3 : 1.6,
-          opacity: l.year === selected ? 1 : 0.5,
-          hideLegend: true, // the years and their totals are listed under the chart
-        }))}
-      />
+    <Card style={{ flex: 1, marginBottom: 0 }}>
+      <View style={{ flex: 1 }} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
+        {room > 0 && (
+          <Chart
+            legendGap={8}
+            days={YEAR_DAYS()}
+            height={chartHeight}
+            label={lines.data
+              .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)
+              .join(', ')}
+            layers={sorted.map((l) => ({
+              kind: 'line',
+              label: String(l.year),
+              color: colours.get(l.year) ?? c.muted,
+              values: l.cumulative_m.map((m) => m / scale),
+              domain: [0, top * 1.05] as [number, number],
+              width: l.year === selected ? 3 : 1.6,
+              opacity: l.year === selected ? 1 : 0.5,
+              hideLegend: true, // the years and their totals are listed under the chart
+            }))}
+          />
+        )}
+      </View>
       {lines.data.map((l) => (
-        <View key={l.year} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Pressable
+          key={l.year}
+          accessibilityRole={onSelect ? 'button' : undefined}
+          accessibilityState={onSelect ? { selected: l.year === selected } : undefined}
+          disabled={!onSelect}
+          onPress={() => onSelect?.(l.year)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: onSelect ? 6 : 0 }}
+        >
           <View
             style={{
               width: 10,
@@ -693,7 +673,7 @@ export function Progress({ selected }: { selected: number }) {
           <Text style={{ color: c.fg, fontVariant: ['tabular-nums'] }}>
             {Math.round((l.cumulative_m.at(-1) ?? 0) / scale).toLocaleString(locale)} {format.unit}
           </Text>
-        </View>
+        </Pressable>
       ))}
     </Card>
   );
