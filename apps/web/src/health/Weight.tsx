@@ -69,9 +69,10 @@ function WeightLine({
   const option = useMemo(() => {
     const c = palette(theme);
     const shown = values.filter((v): v is number => v != null);
-    // From the tightest round value under the lowest weighing to the one over the highest (a little
-    // room on each side, so the line does not run along an edge), in round steps.
-    const axis = tightScale([Math.min(...shown) - 0.5, Math.max(...shown) + 0.5]);
+    // From the tightest round value under the lowest weighing to the one over the highest, with a
+    // kilo of room on each side: the line does not run along an edge, and the steps stay at half a
+    // kilo or more (a quarter would be written rounded, 94,3 and 93,8).
+    const axis = tightScale([Math.min(...shown) - 1, Math.max(...shown) + 1]);
     const [min, max] = axis.domain;
     const interval = (max - min) / Math.max(1, axis.ticks.length - 1);
     return {
@@ -91,7 +92,14 @@ function WeightLine({
         data: days,
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { formatter: shortDay, hideOverlap: true, color: c.muted, fontSize: 11 },
+        // About six dates across the range, not one per day.
+        axisLabel: {
+          formatter: shortDay,
+          hideOverlap: true,
+          interval: Math.max(0, Math.ceil(days.length / 6) - 1),
+          color: c.muted,
+          fontSize: 11,
+        },
       },
       yAxis: {
         type: 'value',

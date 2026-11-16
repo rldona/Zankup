@@ -36,6 +36,14 @@
   fill: currentColor;
 }
 
+/* Chosen: the accent, as every other chip (this file's background above would otherwise win). */
+.vchips .chip[aria-pressed='true'],
+.vchips .chip[aria-pressed='true']:hover {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: transparent;
+}
+
 .vchart {
   border-radius: 8px;
 }
@@ -711,9 +719,6 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .vlogcard .ph h2 svg.i {

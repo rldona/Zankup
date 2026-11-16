@@ -632,7 +632,7 @@ buffers it the answer arrives whole, which is acceptable at this length.
 
 **Goal:** what the Android app gained after M9 reaches the web. From 13 to 16 Nov 2026 (#257 to #328) the app got a Progress tab as Strava's, the activity page laid out as Strava's for rides, runs and strength, weight over time, Stats limited to what follows its period, and a round of fixes and performance work; almost all of it landed only in `apps/mobile`. The rule of phase 9 still holds: the same features and visual language, **adapted to a large screen rather than copied** (hover where the phone has a tap, dialogs or side panels where it has bottom sheets, grids where it stacks cards).
 
-**Status (16 Nov 2026): started** with OS-1015. Built from the merged PRs #257 to #328 and a search of `apps/web` for each feature's endpoints and components.
+**Status (16 Nov 2026): done** in five PRs: OS-1015 (#331 on the app, #332 on the web), Progress (#333), weight, Stats and Health (#334), the activity page (#335) and charts and speed (#336); the parity check (OS-1014) was made on zankup.com with real data and its fixes are in #337. The React Compiler was tried on the web and left out: it made the main chunk 29 % larger. Built from the merged PRs #257 to #328 and a search of `apps/web` for each feature's endpoints and components.
 
 **Already on the web:** the strength workout's body map as its cover and the richer Sets panel (#257, #260), the Coach's "Tell me more" report and its shorter, bolded version (#266, #268), the Strava and Strava dark themes with the `page` token (#276, #277, #279), each health figure's source mark (#325, the Google part), and the shared formatting fixes in `packages/core` (cached `Intl` formatters, #321).
 
