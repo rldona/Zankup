@@ -187,6 +187,113 @@ export function musclesFromExercises(
 }
 
 /**
+ * A strength workout's kind, chosen by the person when the watch recorded no exercises (a class, a
+ * rowing session, Hyrox…), so the body map always has muscles. Stored as the activity's `workout_type`.
+ */
+export const WORKOUT_TYPES = [
+  'rowing',
+  'hyrox',
+  'grit',
+  'bodypump',
+  'functional',
+  'upper_body',
+  'lower_body',
+  'core',
+] as const;
+export type WorkoutType = (typeof WORKOUT_TYPES)[number];
+
+export const isWorkoutType = (value: unknown): value is WorkoutType =>
+  WORKOUT_TYPES.includes(value as WorkoutType);
+
+/** Each kind's muscles, weighted as sets would be (3 the main ones, 1 the ones it touches). */
+export const WORKOUT_MUSCLES: Record<WorkoutType, Partial<Record<Muscle, number>>> = {
+  // The drive is legs first, then the back pulls and the arms finish.
+  rowing: {
+    quads: 3,
+    glutes: 3,
+    lats: 3,
+    hamstrings: 2,
+    traps: 2,
+    biceps: 2,
+    lower_back: 2,
+    abs: 1,
+    forearms: 1,
+    shoulders: 1,
+    calves: 1,
+  },
+  // Running between stations: ski, sled push and pull, burpees, rowing, carries, lunges, wall balls.
+  hyrox: {
+    quads: 3,
+    glutes: 3,
+    hamstrings: 2,
+    calves: 2,
+    shoulders: 2,
+    lats: 2,
+    abs: 2,
+    forearms: 2,
+    chest: 1,
+    triceps: 1,
+    traps: 1,
+    lower_back: 1,
+  },
+  // High-intensity intervals: jumps, burpees, core and push-ups.
+  grit: {
+    quads: 3,
+    abs: 3,
+    glutes: 2,
+    hamstrings: 2,
+    obliques: 2,
+    chest: 2,
+    shoulders: 2,
+    calves: 2,
+    triceps: 1,
+    lats: 1,
+  },
+  // A barbell class, every block: squats, chest, back, triceps, biceps, lunges, shoulders, core.
+  bodypump: {
+    quads: 3,
+    glutes: 3,
+    chest: 3,
+    shoulders: 3,
+    hamstrings: 2,
+    triceps: 2,
+    biceps: 2,
+    lats: 2,
+    abs: 2,
+    traps: 1,
+    lower_back: 1,
+  },
+  functional: {
+    quads: 2,
+    glutes: 2,
+    hamstrings: 2,
+    abs: 2,
+    obliques: 2,
+    shoulders: 2,
+    lats: 2,
+    chest: 1,
+    forearms: 1,
+    lower_back: 1,
+    calves: 1,
+  },
+  upper_body: { chest: 3, lats: 3, shoulders: 3, biceps: 2, triceps: 2, traps: 2, forearms: 1 },
+  lower_body: { quads: 3, glutes: 3, hamstrings: 3, calves: 2, lower_back: 1 },
+  core: { abs: 3, obliques: 3, lower_back: 2, glutes: 1 },
+};
+
+/**
+ * The muscles to draw: the ones the watch's exercises worked (`recorded`, from the sets), else the
+ * chosen kind's, else none.
+ */
+export function musclesFor(
+  recorded: Map<Muscle, number>,
+  workoutType: string | null | undefined,
+): Map<Muscle, number> {
+  if (recorded.size || !isWorkoutType(workoutType)) return recorded;
+  return new Map(Object.entries(WORKOUT_MUSCLES[workoutType]) as [Muscle, number][]);
+}
+
+/**
  * The body figure, front and back, on a 100×200 box (web and app): each muscle group's shape, drawn as
  * rounded muscles inside the outline, with the left half mirrored so it is symmetric. Made for Zankup
  * (scripts: a left half and its mirror), in the manner of Strava's body map.

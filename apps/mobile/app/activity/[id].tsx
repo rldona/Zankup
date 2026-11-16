@@ -13,6 +13,7 @@ import {
   formatDuration,
   localStart,
   metricValues,
+  musclesFor,
   musclesWorked,
   quantile,
   RAMP,
@@ -66,6 +67,7 @@ import { ActionMenu } from '../../src/Menu';
 import { drawCard, shareCard } from '../../src/share/card';
 import { cursorStore } from '../../src/detail/cursorStore';
 import { EditActivity, metaLine, Photos, SaveSegment, useReplay } from '../../src/detail/Tools';
+import { workoutTypeSuffix } from '../../src/detail/WorkoutType';
 import { Icon, SportIcon } from '../../src/Icon';
 import { buildTrack, sectionStats, type SectionStats } from '../../src/detail/track';
 import { locale, t } from '../../src/i18n';
@@ -239,7 +241,8 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
   // (with the title); without a map the header is solid from the start.
   const header = insets.top + HEADER;
   // A strength workout without a route has its body map for a cover, as a route has its map.
-  const muscles = musclesWorked(a.sets ?? []);
+  // The watch's exercises, else the kind of workout chosen for it.
+  const muscles = musclesFor(musclesWorked(a.sets ?? []), a.workout_type);
   const muscleCover = !a.has_gps && !track?.hasGps && muscles.size > 0;
   const map = track?.hasGps || muscleCover ? MAP + header : 0;
   const solid = map
@@ -414,6 +417,7 @@ function Detail({ activity: a }: { activity: ActivityDetail }) {
               </Text>
               <Muted>
                 {formatActivityDate(localStart(a.start_utc, a.timezone), locale)}
+                {workoutTypeSuffix(a)}
                 {a.device ? ` · ${a.device}` : ''}
                 {a.gear ? ` · ${a.gear.name}` : ''}
               </Muted>

@@ -3,7 +3,14 @@
  * editing the activity, adding and removing photos, replaying it, and saving the selected section as
  * a segment.
  */
-import { gearQuery, SPORTS, type ActivityDetail, type Sport } from '@zankup/core';
+import {
+  gearQuery,
+  isWorkoutType,
+  SPORTS,
+  type ActivityDetail,
+  type Sport,
+  type WorkoutType,
+} from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { fetch } from 'expo/fetch';
@@ -30,6 +37,7 @@ import {
   useFieldAboveKeyboard,
 } from '../ui';
 import { indexAt } from './track';
+import { nameWithType, rememberWorkoutType, WorkoutTypePicker } from './WorkoutType';
 
 function useRefreshActivity(id: number) {
   const queryClient = useQueryClient();
@@ -120,13 +128,28 @@ export function EditActivity({ activity, onClose }: { activity: ActivityDetail; 
   const [description, setDescription] = useState(activity.description ?? '');
   const [sport, setSport] = useState(activity.sport as Sport);
   const [gearId, setGearId] = useState(String(activity.gear?.id ?? 0));
+  const [workoutType, setWorkoutType] = useState<WorkoutType | null>(
+    isWorkoutType(activity.workout_type) ? activity.workout_type : null,
+  );
+  const pickType = (type: WorkoutType | null) => {
+    setWorkoutType(type);
+    setName((n) => nameWithType(type, n, activity.name ?? '', activity.edited_fields));
+  };
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH('/api/activities/{activity_id}', {
         params: { path: { activity_id: activity.id } },
-        body: { name, description, sport, gear_id: Number(gearId) },
+        body: {
+          name,
+          description,
+          sport,
+          gear_id: Number(gearId),
+          // A kind belongs to strength: changing the sport clears it.
+          workout_type: sport === 'strength' ? workoutType : null,
+        },
       });
       if (error) throw new Error('save');
+      if (sport === 'strength') rememberWorkoutType(workoutType);
     },
     onSuccess: () => {
       refresh();
@@ -192,6 +215,7 @@ export function EditActivity({ activity, onClose }: { activity: ActivityDetail; 
         onChange={setSport}
         options={SPORTS.map((s) => ({ value: s, label: t(`sport.${s}`) }))}
       />
+      {sport === 'strength' && <WorkoutTypePicker value={workoutType} onChange={pickType} />}
       <Text style={{ color: c.fg, fontWeight: '600' }}>{t('gear.title')}</Text>
       <Choice
         label={t('gear.title')}

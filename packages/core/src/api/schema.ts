@@ -525,7 +525,7 @@ export interface paths {
     head?: never;
     /**
      * Edit Activity
-     * @description Change the name, description, sport or gear. Only the fields sent change.
+     * @description Change the name, description, sport, gear or strength workout type. Only the fields sent change.
      */
     patch: operations['editActivity'];
     trace?: never;
@@ -2281,6 +2281,11 @@ export interface components {
       sport: string;
       /** Sub Sport */
       sub_sport: string | null;
+      /**
+       * Workout Type
+       * @description A strength workout's kind, chosen by the user (rowing, hyrox, grit, bodypump, functional, upper_body, lower_body, core): the body map's muscles when the watch recorded no exercises
+       */
+      workout_type?: string | null;
       /** Source */
       source: string;
       /**
@@ -2411,6 +2416,13 @@ export interface components {
        * @description 0 removes the gear
        */
       gear_id?: number | null;
+      /**
+       * Workout Type
+       * @description A strength workout's kind; null clears it
+       */
+      workout_type?:
+        | ('rowing' | 'hyrox' | 'grit' | 'bodypump' | 'functional' | 'upper_body' | 'lower_body' | 'core')
+        | null;
     };
     /**
      * ActivityMetricsOut
@@ -2536,6 +2548,11 @@ export interface components {
       sport: string;
       /** Sub Sport */
       sub_sport: string | null;
+      /**
+       * Workout Type
+       * @description A strength workout's kind, chosen by the user (rowing, hyrox, grit, bodypump, functional, upper_body, lower_body, core): the body map's muscles when the watch recorded no exercises
+       */
+      workout_type?: string | null;
       /** Source */
       source: string;
       /**
@@ -2995,6 +3012,8 @@ export interface components {
       sport: string;
       /** Gear Id */
       gear_id: number | null;
+      /** Workout Type */
+      workout_type: string | null;
       /** Edited Fields */
       edited_fields: string[];
     };

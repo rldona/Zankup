@@ -909,7 +909,7 @@
           "library"
         ],
         "summary": "Edit Activity",
-        "description": "Change the name, description, sport or gear. Only the fields sent change.",
+        "description": "Change the name, description, sport, gear or strength workout type. Only the fields sent change.",
         "operationId": "editActivity",
         "parameters": [
           {
@@ -6084,6 +6084,18 @@
             ],
             "title": "Sub Sport"
           },
+          "workout_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Type",
+            "description": "A strength workout's kind, chosen by the user (rowing, hyrox, grit, bodypump, functional, upper_body, lower_body, core): the body map's muscles when the watch recorded no exercises"
+          },
           "source": {
             "type": "string",
             "title": "Source"
@@ -6550,6 +6562,28 @@
             ],
             "title": "Gear Id",
             "description": "0 removes the gear"
+          },
+          "workout_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "rowing",
+                  "hyrox",
+                  "grit",
+                  "bodypump",
+                  "functional",
+                  "upper_body",
+                  "lower_body",
+                  "core"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Type",
+            "description": "A strength workout's kind; null clears it"
           }
         },
         "type": "object",
@@ -6986,6 +7020,18 @@
               }
             ],
             "title": "Sub Sport"
+          },
+          "workout_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Type",
+            "description": "A strength workout's kind, chosen by the user (rowing, hyrox, grit, bodypump, functional, upper_body, lower_body, core): the body map's muscles when the watch recorded no exercises"
           },
           "source": {
             "type": "string",
@@ -8125,6 +8171,17 @@
             ],
             "title": "Gear Id"
           },
+          "workout_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Type"
+          },
           "edited_fields": {
             "items": {
               "type": "string"
@@ -8140,6 +8197,7 @@
           "description",
           "sport",
           "gear_id",
+          "workout_type",
           "edited_fields"
         ],
         "title": "EditedActivity"

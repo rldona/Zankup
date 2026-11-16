@@ -400,6 +400,18 @@ def test_editing_keeps_the_original_and_survives_a_reprocess(ctx: Ctx) -> None: 
     assert ctx.http.get(f"/api/activities/{run_id}").json()["gear"] is None
 
 
+def test_a_strength_workout_gets_its_kind(ctx: Ctx) -> None:  # noqa: F811
+    run_id = ctx.ids["run"]
+    edited = ctx.http.patch(f"/api/activities/{run_id}", json={"workout_type": "hyrox"}).json()
+    assert edited["workout_type"] == "hyrox" and edited["edited_fields"] == ["workout_type"]
+    assert ctx.http.get(f"/api/activities/{run_id}").json()["workout_type"] == "hyrox"
+    feed = ctx.http.get("/api/activities").json()["items"]
+    assert next(a for a in feed if a["id"] == run_id)["workout_type"] == "hyrox"
+    assert ctx.http.patch(f"/api/activities/{run_id}", json={"workout_type": "yoga"}).status_code == 422
+    cleared = ctx.http.patch(f"/api/activities/{run_id}", json={"workout_type": None}).json()
+    assert cleared["workout_type"] is None
+
+
 def test_new_activities_get_the_default_gear(ctx: Ctx) -> None:  # noqa: F811
     gear = ctx.http.post("/api/gear", json={"name": "Bike", "kind": "bike", "sports": ["ride"]}).json()
     assert gear["limit_m"] is None

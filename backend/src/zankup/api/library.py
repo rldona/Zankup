@@ -39,11 +39,17 @@ MAX_PHOTOS = 30
 # --- editing ---------------------------------------------------------------------------------------
 
 
+WorkoutType = Literal["rowing", "hyrox", "grit", "bodypump", "functional", "upper_body", "lower_body", "core"]
+
+
 class ActivityEdit(BaseModel):
     name: str | None = Field(default=None, max_length=255)
     description: str | None = Field(default=None, max_length=10_000)
     sport: Literal["run", "ride", "strength", "walk", "row", "swim", "other"] | None = None
     gear_id: int | None = Field(default=None, description="0 removes the gear")
+    workout_type: WorkoutType | None = Field(
+        default=None, description="A strength workout's kind; null clears it"
+    )
 
 
 class EditedActivity(BaseModel):
@@ -52,12 +58,13 @@ class EditedActivity(BaseModel):
     description: str | None
     sport: str
     gear_id: int | None
+    workout_type: str | None
     edited_fields: list[str]
 
 
 @router.patch("/api/activities/{activity_id}", operation_id="editActivity")
 def edit_activity(activity_id: int, body: ActivityEdit, db: DbSession, user: CurrentUser) -> EditedActivity:
-    """Change the name, description, sport or gear. Only the fields sent change."""
+    """Change the name, description, sport, gear or strength workout type. Only the fields sent change."""
     activity = db.scalar(select(Activity).where(Activity.id == activity_id, Activity.user_id == user.id))
     if activity is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Activity not found")
@@ -78,6 +85,9 @@ def edit_activity(activity_id: int, body: ActivityEdit, db: DbSession, user: Cur
             _own_gear(db, user.id, body.gear_id)
         activity.gear_id = body.gear_id or None
         edited.add("gear")
+    if "workout_type" in sent:
+        activity.workout_type = body.workout_type
+        edited.add("workout_type")
     activity.edited_fields = sorted(edited) or None
     db.commit()
     return EditedActivity(
@@ -86,6 +96,7 @@ def edit_activity(activity_id: int, body: ActivityEdit, db: DbSession, user: Cur
         description=activity.description,
         sport=activity.sport,
         gear_id=activity.gear_id,
+        workout_type=activity.workout_type,
         edited_fields=activity.edited_fields or [],
     )
 

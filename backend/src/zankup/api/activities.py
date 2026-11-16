@@ -52,6 +52,12 @@ class ActivitySummary(BaseModel):
     name: str | None
     sport: str = Field(description="run, ride, strength, walk, row, swim or other")
     sub_sport: str | None
+    workout_type: str | None = Field(
+        default=None,
+        description="A strength workout's kind, chosen by the user (rowing, hyrox, grit, bodypump, "
+        "functional, upper_body, lower_body, core): the body map's muscles when the watch "
+        "recorded no exercises",
+    )
     source: str
     start_utc: datetime
     timezone: str | None = Field(description='UTC offset when recorded, e.g. "+01:00"')
@@ -278,6 +284,7 @@ def _summary_fields(activity: Activity) -> dict[str, Any]:
         "name": activity.name,
         "sport": activity.sport,
         "sub_sport": activity.sub_sport,
+        "workout_type": activity.workout_type,
         "source": activity.source,
         "start_utc": activity.start_utc,
         "timezone": activity.timezone,
