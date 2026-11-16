@@ -16,6 +16,13 @@ export function zoneKinds(sport: string | null): ZoneKind[] {
   return ['hr'];
 }
 
+/** The zones a sport opens on: a run's pace, a ride's power, heart rate for the rest. */
+export function defaultZoneKind(sport: string | null): ZoneKind {
+  if (sport === 'run') return 'pace';
+  if (sport === 'ride') return 'power';
+  return 'hr';
+}
+
 /** The zone with the most time: its index (0 is Z1) and share (0 to 100); null without any time. */
 export function topZone(seconds: number[]): { index: number; share: number } | null {
   const total = seconds.reduce((a, b) => a + b, 0);
