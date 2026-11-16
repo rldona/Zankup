@@ -6,6 +6,7 @@
  * The series come from the phone when kept (OS-505).
  */
 import {
+  activityContextQuery,
   activityQuery,
   availableMetrics,
   formatActivityDate,
@@ -78,6 +79,8 @@ export default function ActivityScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const api = useApi();
   const activity = useQuery({ ...activityQuery(api, id), enabled: Number.isInteger(id) });
+  // How it compares loads beside the activity, not after it (Detail reads it from the cache).
+  useQuery({ ...activityContextQuery(api, id), enabled: Number.isInteger(id) });
   if (activity.data) return <Detail activity={activity.data} />;
   if (activity.isError && !activity.data) return <Empty>{t('activity.notFound')}</Empty>;
   return <ActivitySkeleton />;

@@ -35,6 +35,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { useApi } from '../auth';
+import { usePrefetchActivity } from '../detail/prefetch';
 import { Thumbnail } from '../Feed';
 import { Icon, type IconName } from '../Icon';
 import { locale, t } from '../i18n';
@@ -163,6 +164,7 @@ export function LastDay() {
 
 function DayActivity({ activity: a, format }: { activity: ActivitySummary; format: Format }) {
   const c = useTheme();
+  const prefetch = usePrefetchActivity();
   const sport = asSport(a.sport);
   const main = a.distance_m ? format.distance(a.distance_m) : formatDuration(a.moving_s ?? a.duration_s);
   const details = [
@@ -174,7 +176,11 @@ function DayActivity({ activity: a, format }: { activity: ActivitySummary; forma
         : null,
   ].filter(Boolean);
   return (
-    <Tappable accessibilityRole="button" onPress={() => router.push(`/activity/${a.id}`)}>
+    <Tappable
+      accessibilityRole="button"
+      onPressIn={() => prefetch(a.id)}
+      onPress={() => router.push(`/activity/${a.id}`)}
+    >
       <Card>
         <Text numberOfLines={1} style={{ color: c.fg, fontSize: 16, fontWeight: '600' }}>
           {a.name ?? t(`sport.${sport}`)}
