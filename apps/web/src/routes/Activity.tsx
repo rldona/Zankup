@@ -10,6 +10,7 @@ import {
   formatters,
   localStart,
   metricValues,
+  musclesFor,
   musclesWorked,
   quantile,
   RAMP,
@@ -44,6 +45,7 @@ import { RouteMap } from '../detail/RouteMap';
 import { MuscleCover } from '../detail/BodyMap';
 import { Strength } from '../detail/Strength';
 import { Summary } from '../detail/Summary';
+import { workoutTypeSuffix } from '../detail/workoutTypes';
 import { CurveChart } from '../stats/charts';
 import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
@@ -130,7 +132,11 @@ function Detail({ activity }: { activity: ActivityDetail }) {
     />
   );
   // A strength workout without a route has its body map for a cover, as a route has its map.
-  const muscles = useMemo(() => musclesWorked(activity.sets ?? []), [activity.sets]);
+  // The watch's exercises, else the workout type chosen for it (OS-1015).
+  const muscles = useMemo(
+    () => musclesFor(musclesWorked(activity.sets ?? []), activity.workout_type),
+    [activity.sets, activity.workout_type],
+  );
   const cover = map || (muscles.size > 0 && !activity.has_gps && <MuscleCover worked={muscles} />);
   const summary = <Summary activityId={activity.id} name={activity.name} />;
   const figures = <Figures {...activityFigures(activity, { pace, format, t, locale })} />;
@@ -203,6 +209,7 @@ function Detail({ activity }: { activity: ActivityDetail }) {
           <h1>{activity.name ?? t(`sport.${sport}`)}</h1>
           <p className="csub">
             {formatActivityDate(localStart(activity.start_utc, activity.timezone), locale)}
+            {workoutTypeSuffix(activity)}
             {activity.device ? ` · ${activity.device}` : ''}
           </p>
           <Meta activity={activity} />

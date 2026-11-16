@@ -7,6 +7,7 @@ import {
   formatters,
   localStart,
   monthsQuery,
+  musclesFor,
   musclesFromExercises,
   routeThumbnail,
   SPORTS,
@@ -37,6 +38,7 @@ import { FeedSkeleton } from '../Skeleton';
 import { useSyncNow } from '../syncSheet';
 import { Icon } from '../Icon';
 import { BodyThumb } from '../detail/BodyMap';
+import { workoutTypeSuffix } from '../detail/workoutTypes';
 
 type Format = ReturnType<typeof formatters>;
 const CHIPS = SPORTS.filter((s) => s !== 'other');
@@ -357,7 +359,7 @@ function Card({
 }) {
   const sport = asSport(activity.sport);
   const route = routeThumbnail(activity.route);
-  const muscles = musclesFromExercises(activity.exercises);
+  const muscles = musclesFor(musclesFromExercises(activity.exercises), activity.workout_type);
   const style = { '--sport': `var(--${sport})` } as CSSProperties;
   return (
     <NavLink
@@ -369,7 +371,10 @@ function Card({
         <SportIcon sport={sport} />
         <div className="ctext">
           <div className="ctitle">{activity.name ?? t(`sport.${sport}`)}</div>
-          <div className="csub">{formatActivityDate(start, locale)}</div>
+          <div className="csub">
+            {formatActivityDate(start, locale)}
+            {workoutTypeSuffix(activity)}
+          </div>
         </div>
       </div>
       <div className="cbody">
