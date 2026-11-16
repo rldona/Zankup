@@ -18,6 +18,7 @@ References: [architecture.md](architecture.md) · [findings.md](findings.md) · 
 | **7 · AI assistant** | Summaries, analysis and natural-language questions with a small LLM (Claude Haiku 5.5) | Per-activity summary, weekly report and "Coach" chat | **M7: "I ask Zankup how I'm doing"** |
 | **8 · Several people, one Zankup** | More than one person on an instance, each with their own data and keys, and a first run that guides them | Welcome, sample-data screens and per-user keys | **M8: "someone else starts using my Zankup"** |
 | **9 · Web and app in step** | The web catches up with the app, adapted to a large screen, and the app takes what it lacks from the web | Home, activity charts, Goals, Stats, You and Settings on the web as on the app | **M9: "the web is as good as the app"** |
+| **10 · The web catches up again** | What the app gained after M9 (Progress, the activity laid out as Strava's, weight, Stats by its period) reaches the web, adapted to a large screen | Progress, the new activity page and weight on the web | **M10: "the web has Progress too"** |
 
 **Size estimate:** S ≈ half a day · M ≈ 1–2 days · L ≈ 3–5 days. Rough totals: M1 ≈ 20–25 working days (phases 0 and 1), M2 ≈ another 30–35.
 
@@ -574,7 +575,7 @@ buffers it the answer arrives whole, which is acceptable at this length.
 
 **Goal:** the web catches up with the app. Since November 2026 every screen was polished on the app first (Home, the activity's charts, Goals, Stats, You, Settings, the Coach, gear, skeletons, sign-in), so the web is now behind. The web gets the same features and the same visual language, **adapted to a large screen rather than copied**: wider layouts, hover where the phone has a tap, keyboard and mouse, side panels instead of bottom sheets.
 
-**Status (10 Nov 2026): planned.** Built from a screen-by-screen comparison of `apps/web` and `apps/mobile`. It is parity only as far as it makes sense: some things belong to one side.
+**Status (13 Nov 2026): done** (#243 to #256), followed by phase 10 for what the app gained afterwards. Planned on 10 Nov from a screen-by-screen comparison of `apps/web` and `apps/mobile`. It is parity only as far as it makes sense: some things belong to one side.
 
 **Stays on the app only:** Health Connect, the home-screen widget, background sync, the device's fingerprint for the session, the keyboard and edge-to-edge handling, and the offline notice as a pill over the tab bar (the web keeps its own banner).
 
@@ -624,6 +625,51 @@ buffers it the answer arrives whole, which is acceptable at this length.
   - Go through both clients screen by screen, on a phone and on a desktop browser, with both languages and every theme, and note anything left; the web tests cover the new screens; architecture.md and the memory of what each side keeps are up to date.
 
 **M9 is done when** someone who uses the app every day opens the web on a computer and finds the same Home, activity, Health, Goals, Stats, You and Settings, laid out for the large screen, with nothing the app has that the web is missing except what OS-901 keeps for the app.
+
+---
+
+## Phase 10 · The web catches up again → **M10**
+
+**Goal:** what the Android app gained after M9 reaches the web. From 13 to 16 Nov 2026 (#257 to #328) the app got a Progress tab as Strava's, the activity page laid out as Strava's for rides, runs and strength, weight over time, Stats limited to what follows its period, and a round of fixes and performance work; almost all of it landed only in `apps/mobile`. The rule of phase 9 still holds: the same features and visual language, **adapted to a large screen rather than copied** (hover where the phone has a tap, dialogs or side panels where it has bottom sheets, grids where it stacks cards).
+
+**Status (16 Nov 2026): planned.** Built from the merged PRs #257 to #328 and a search of `apps/web` for each feature's endpoints and components.
+
+**Already on the web:** the strength workout's body map as its cover and the richer Sets panel (#257, #260), the Coach's "Tell me more" report and its shorter, bolded version (#266, #268), the Strava and Strava dark themes with the `page` token (#276, #277, #279), each health figure's source mark (#325, the Google part), and the shared formatting fixes in `packages/core` (cached `Intl` formatters, #321).
+
+**Stays on the app only** (added to OS-901's list): the launcher icon variants and the mint one (#281, #292, #328), the Android ripple and its tap delay (#319), the haptic clicks on charts (`modules/haptic-click`), the icon font and React Native's image cache (#322), and the bottom panel's drag (#269, #270).
+
+- **OS-1001 · Progress as a section** (M) · depends on OS-903
+  - Progress replaces Goals in the sidebar and the tab bar (Home, Activities, Progress, Health, You), as the app's tab order (#281); `/goals` keeps working and opens the Goals card's page. `/progress` lays out the app's cards in a grid on desktop (two or three columns) and one column on mobile, in the app's order: Volume, Series beside the Training log, Fitness, Relative effort, race predictions, Goals, Training zones, Skills, Best times, Monthly activities and Data sources. Each card opens its own page (`/progress/volume`, `/progress/fitness`…). The shared chip (one size, #261) and the cards' skeletons.
+- **OS-1002 · Volume, Series and the Training log** (M) · depends on OS-1001
+  - **Volume:** this week by sport and the last 12 weeks; its page measures time, distance, elevation or activities over 7 days to a year, against the span before or the same span years back, with the week's activities and a sentence on how it went. **Series:** the weekly streak in its flame (`GET /api/stats/streak`), and its month as a dialog with each day's sport and the band through the streak. **Training log:** weeks as bubbles, with filters, months and search.
+- **OS-1003 · Fitness, Relative effort and race predictions** (M) · depends on OS-1001
+  - **Fitness** (CTL, 1 month to 2 years, remembered) on Strava's scale (#259), its chart as tall as the page with the tightest round axis (#260, #324) and the day picked by hovering, "N activities" for a day with several. **Relative effort:** the weekly TRIMP against the range from the three weeks before. **Race predictions** (5 km to marathon, today or over months), the line as each week's prediction (#259), the range selector at the bottom (#283).
+- **OS-1004 · Training zones, Skills and Best times** (L) · depends on OS-1001
+  - **Training zones** (`GET /api/stats/zones`): HR in reds, pace in blues, power in purples (#281); each sport its own zones, a run opening on pace and a ride on power (#323); thick bars with the time beside them; 7D–1Y and the sentence on what moved most; a pencil to the zone settings. **Skills:** the radar of the best power over 12 durations, ringed by sprint, attack and climb, the watts on the ring underlined (#308), 8 weeks or all time; clicking a duration opens its nine levels for the rider's weight (`levelWatts`, #306), a dialog on desktop. **Best times** (`GET /api/stats/bests`, `/bests/recent`): the card with the last twelve months' three medals (#300), opening on running 10 km (#303); the page with run distances, ride power by duration and the longest ride, the record, the chart of one slot per best that scrolls in step with the list (#299, #305; drag or the wheel on desktop), bests by year and the top 10.
+- **OS-1005 · Monthly activities, Data sources and Goals in Progress** (S) · depends on OS-1001
+  - **Monthly activities:** this month's cumulative time over last month's, by sport (card and page). **Data sources:** the devices of the last 30 days (`GET /api/stats/devices`) and an "Apps and devices" page. **Goals:** the rings card and the list whose charts stay open, with the add and edit form; goals about elevation (`ascent`, #258).
+- **OS-1006 · The activity page in Strava's order** (L) · depends on OS-907
+  - `GET /api/activities/{id}/context` on the web (loaded beside the activity, not after it, as #320 does on the app). A **ride** (#271): Fitness before and after, Matched activities (with their page), Relative effort, Goals, Results (medals and segment places), the power chart with work, intensity and load, the power curve, power zones and HR zones interleaved with the charts. A **run** (#272): the same blocks, then the training analysis, splits, pace with moving and elapsed time and the fastest split, pace zones (bounds from the critical speed in the context), HR and its zones, cadence, elevation. A **strength workout** (#273): the exercises at a glance first (sets, reps, weight), relative effort, goals, heart rate and its zones, then the full sets. On desktop the blocks can sit in two columns beside the charts.
+- **OS-1007 · The activity's charts and splits as the app's** (M) · depends on OS-1006
+  - The elevation in grey behind power, HR, speed or pace and cadence; a grade-adjusted pace chart after pace (Minetti, #274); HR on rides; the altitude chart named Elevation. Zones as thick bars with the time beside them, not stacked (#283). **Training analysis** card (runs): the splits' bars in pace blue under a see-through elevation, the two fastest darker (#308, #309), and its page (`/activities/:id/analysis`) where hovering picks a split, shown in a box ("Split 1 · 5:29 /km · Zone 3 · Pace") and in the list below (`splitAt`, `elevationProfile`). **Splits** as Strava's table (Km · Pace · bar · Elev. · HR), no splits card on rides (#310).
+- **OS-1008 · Goals reached** (S) · depends on OS-1006
+  - The activity that took a goal past its target (`goals_reached` in the feed and the context): a capsule on its feed card and a banner above the Coach on its page (#274, #275).
+- **OS-1009 · Weight over time** (M) · depends on OS-902
+  - Health gets the Weight card after today's figures (latest weight, its change in 30 days, a 90-day line; with no weighing, it asks for the first), and `/health/weight` the page (#294): the line chart, 1M/3M/6M/1Y/All, the history newest first with the step from the one before, add, edit and delete (`GET/PUT /api/weight`, `DELETE /api/weight/{day}`). Changing the weight on the profile records today's weighing and refreshes the history (#297).
+- **OS-1010 · Stats by its period** (S) · depends on OS-912
+  - As #318: Stats keeps only what follows its period. Records become **Bests of the period** (each opening its best time, and a link to all of them); **Year by year** leaves for its own page (`/stats/years`), the chart filling the page with the years listed under it, a click on a year highlighting it; **how they compare with Strava** moves to Settings → Import. The summary first (#314), the period chips on the left (#288), months from last month to this one (#285), best efforts opening on power (#286) and aerobic efficiency under volume (#287). The same chips on the left in the reviews and the heatmap (#289, #290).
+- **OS-1011 · Health: whose each figure is** (S) · depends on OS-902
+  - The sleep score and Readiness are worked out by Zankup: they carry the Zankup mark in their corner, as the other figures carry their source's (#325), with "Score worked out by Zankup" as its title.
+- **OS-1012 · Charts that slide to new values** (S) · depends on OS-902
+  - As #317: when a filter changes, bars grow or shrink from their old height and lines move from the old line to the new one (never up from zero), on every chart that a filter changes (Fitness, Volume, predictions, zones, Stats). ECharts animates data updates already; check each chart keeps its series and keys between filters so it morphs instead of redrawing, and that its axis ends at the tightest round value (#324, `tightScale` moved to `packages/core`).
+- **OS-1013 · The web's own speed** (M) · depends on OS-901
+  - The web's counterpart of #320 and #321: the activity and its context fetched when the pointer rests on a feed card or a day (prefetch on hover and on touch start), the screens shown from the kept cache without waiting for the network, the React Compiler in the Vite build, and the map's cursor redrawing only its dot while a chart is scrubbed. Measured before and after with the browser's performance panel on a mid-range phone and on desktop (load, opening an activity, scrubbing a chart).
+- **OS-1014 · Parity check** (S) · depends on every other ticket of the phase
+  - As OS-920: both clients side by side, screen by screen, on a phone and on a desktop browser, both languages and every theme (Strava and Strava dark included); the web tests and the e2e flows cover Progress, the new activity page and weight; OS-901's lists in architecture.md are up to date.
+
+**Suggested blocks** (one branch and one PR each, per the working rules): Progress and its cards (OS-1001 to OS-1005); the activity page (OS-1006 to OS-1008); weight, Stats and Health (OS-1009 to OS-1011); charts and speed (OS-1012, OS-1013); then the check (OS-1014). The first two are independent of each other and can be built at the same time.
+
+**M10 is done when** someone who opened Progress, an activity and their weight on the app this week finds the same on the web, laid out for the large screen, and the only differences are the ones OS-901 keeps for each side.
 
 ---
 
