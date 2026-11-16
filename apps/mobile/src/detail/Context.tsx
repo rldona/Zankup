@@ -12,6 +12,8 @@ import {
   type Series,
   bestValue,
   type GoalMetric,
+  paceRange,
+  paceZoneSeconds,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -28,7 +30,6 @@ import { GoalRing, goalWords } from '../progress/GoalsCard';
 import { useVolumeFormat } from '../progress/VolumeCard';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
-import { paceRange, paceZoneSeconds } from './paceZones';
 
 export function useActivityContext(activityId: number) {
   const api = useApi();

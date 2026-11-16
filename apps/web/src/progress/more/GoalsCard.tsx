@@ -2,7 +2,7 @@
  * Goals on Progress (OS-1005), as the app's and Strava's: up to three goals as rings, each with what is
  * done so far and its target per period; the card opens the Goals page.
  */
-import { fraction, goalsQuery, type GoalOut, type GoalPeriod } from '@zankup/core';
+import { goalsQuery, type GoalOut, type GoalPeriod } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
@@ -14,12 +14,21 @@ import { CardTitle } from '../../ui';
 import { goalIcon, goalSport, goalValue, useFormat } from './data';
 import '../more.css';
 
-/** A goal's ring: how far along it is, filling clockwise from the top, with its sport in the middle. */
-function GoalRing({ goal, size = 56 }: { goal: GoalOut; size?: number }) {
+/**
+ * A goal's ring: how far along it is, filling clockwise from the top, with its sport in the middle (also
+ * on the activity's Goals block).
+ */
+export function GoalRing({
+  goal,
+  size = 56,
+}: {
+  goal: Pick<GoalOut, 'sport' | 'current' | 'target'>;
+  size?: number;
+}) {
   const stroke = size * 0.09;
   const r = size / 2 - stroke / 2 - 1;
   const length = 2 * Math.PI * r;
-  const done = fraction(goal);
+  const done = goal.target > 0 ? Math.min(1, goal.current / goal.target) : 0;
   return (
     <span className="goalring" style={{ width: size, height: size }} aria-hidden="true">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>

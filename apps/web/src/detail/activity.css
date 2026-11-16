@@ -1,0 +1,552 @@
+/* The activity's page in Strava's order (OS-1006 to OS-1008), as the app's: the context blocks beside
+   the charts on a large screen, the training analysis and splits, the zones as thick bars and the goals
+   it reached. The colours are the theme's tokens; the zone scales come from packages/core. */
+
+/* One column on a phone and a tablet; from 960 px of the detail's column, the blocks on the left of
+   the charts, which keep the room they had. */
+.dlayout.withside {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 960px) {
+  .dlayout.withside {
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+.dmain > .profilehead:first-child {
+  margin-top: 0;
+}
+
+/* A block's heading, its figures and the link to its page at its foot (Strava's orange line). */
+.ctxblock {
+  display: grid;
+  gap: 10px;
+}
+
+.ctxblock .ph {
+  margin-bottom: 0;
+}
+
+.ctxblock .ph h2 {
+  color: var(--fg);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ctxlink {
+  justify-self: end;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ctxlink:hover {
+  text-decoration: underline;
+}
+
+.analysiscard .ctxlink {
+  display: block;
+  width: fit-content;
+  margin: 8px 0 0 auto;
+}
+
+.ctxrow {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ctxfigs {
+  flex: 1;
+  display: flex;
+  gap: 28px;
+  min-width: 140px;
+}
+
+.ctxfig {
+  display: grid;
+}
+
+.ctxfig span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ctxfig b {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.ctxrow .fxspark {
+  width: 150px;
+}
+
+.ctxsays {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.ctxsays span {
+  flex: 1;
+  font-size: 14px;
+}
+
+.ctxsays b {
+  font-size: 26px;
+  font-weight: 300;
+}
+
+/* Above, in and below the three weeks' average: the band it fell in, in its colour. */
+.ctxbands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ctxbands li {
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ctxbands li span {
+  flex: 1;
+}
+
+.ctxbands li.on {
+  background: var(--band);
+  color: var(--accent-fg);
+  font-weight: 800;
+}
+
+.ctxlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.ctxlist li,
+.ctxrowlink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ctxrowlink {
+  flex: 1;
+  color: var(--fg);
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+.ctxrowlink:hover b {
+  text-decoration: underline;
+}
+
+.ctxlist li > span:last-child,
+.ctxrowlink > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.ctxlist b {
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctxlist small {
+  font-size: 13px;
+}
+
+.ctxrank {
+  width: 36px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.ctxcounts {
+  display: flex;
+  margin: 0;
+}
+
+.ctxcounts > div {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+}
+
+.ctxcounts dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ctxcounts dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.exicon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--strength);
+}
+
+/* Zones: a thick bar per zone, the time beside it (the progress zones' rows, see zones.css). */
+.zonerows {
+  margin-top: 4px;
+}
+
+.zones > .note {
+  margin: 0 0 12px;
+}
+
+/* --- The training analysis --------------------------------------------------------------------- */
+
+.splitschart {
+  display: flex;
+  gap: 6px;
+}
+
+.saxis {
+  position: relative;
+  flex: none;
+  width: 46px;
+  font-size: 12px;
+}
+
+.saxis span {
+  position: absolute;
+  left: 0;
+}
+
+.splotwrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.splot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.splot.picking {
+  cursor: crosshair;
+}
+
+.splot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.sbar {
+  flex-basis: 0;
+  min-width: 2px;
+  border-radius: 8px 8px 0 0;
+  transition: opacity 120ms;
+}
+
+/* The elevation over the bars, see-through, as Strava's: it greys the bars where it rises. */
+.selev {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.selev path {
+  fill: var(--muted);
+  opacity: 0.45;
+}
+
+.smean {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed var(--fg);
+  pointer-events: none;
+}
+
+.snums {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.snums span {
+  flex-basis: 0;
+  min-width: 2px;
+  text-align: center;
+}
+
+.snums span.on {
+  color: var(--fg);
+  font-weight: 800;
+}
+
+.sfoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+/* The analysis' page: the picked split in a box on top, the chart, then the splits. */
+.analysispage h1,
+.matchespage h1 {
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+
+.splitbox {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 6px;
+  min-height: 24px;
+  margin: 0 0 14px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 15px;
+  text-align: center;
+}
+
+.splitshead {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.analysislist {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analysislist tr {
+  border-left: 4px solid transparent;
+}
+
+.analysislist tr.on {
+  background: var(--surface-2);
+  border-left-color: var(--accent);
+  font-weight: 800;
+}
+
+.analysislist th,
+.analysislist td {
+  padding: 12px 10px;
+  text-align: left;
+}
+
+.analysislist td:last-child {
+  text-align: right;
+}
+
+.analysislist th .link {
+  font: inherit;
+  color: inherit;
+}
+
+/* --- The splits, as Strava's table ------------------------------------------------------------- */
+
+.splitstable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.splitstable thead th {
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.splitstable thead th:nth-last-child(-n + 2),
+.splitstable tbody td:nth-last-child(-n + 2) {
+  text-align: right;
+}
+
+.splitstable tbody th,
+.splitstable tbody td {
+  padding: 3px 0;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.splitstable tbody th {
+  width: 40px;
+  text-align: left;
+}
+
+.splitstable tbody td:nth-child(2) {
+  width: 52px;
+}
+
+.splitstable tbody tr:first-child > * {
+  padding-top: 9px;
+}
+
+.sbarcell {
+  padding-inline: 10px !important;
+}
+
+.sbarcell i {
+  display: block;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.splitstable tbody td:nth-last-child(-n + 2),
+.splitstable thead th:nth-last-child(-n + 2) {
+  width: 52px;
+}
+
+/* --- Matched activities ------------------------------------------------------------------------ */
+
+.matchyear h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.matchyear ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.matchrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border-left: 4px solid transparent;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.matchrow > span:first-child {
+  flex: 1;
+}
+
+a.matchrow:hover {
+  background: var(--surface-2);
+}
+
+.matchyear li.on .matchrow {
+  border-left-color: var(--accent);
+  font-weight: 700;
+}
+
+/* --- Goals reached (OS-1008) ------------------------------------------------------------------- */
+
+/* On the feed's card: a capsule with a trophy and the goal, so it stands out. */
+.goalcapsule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 10px 0 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.goalcapsule svg.i {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.goalcapsule span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goalcapsule b {
+  font-weight: 800;
+}
+
+/* On the activity's page, above the Coach: the congratulation, each goal under it. */
+.goalbanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.goalbanner:hover {
+  border-color: var(--accent);
+}
+
+.goalbanner > svg.i:first-child {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+.goalbanner > svg.i:last-child {
+  flex: none;
+  color: var(--muted);
+}
+
+.goalbanner > span {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.goalbanner b {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.goalbanner small {
+  color: var(--muted);
+  font-size: 13px;
+}

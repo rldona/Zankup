@@ -3,7 +3,14 @@
  * the elevation, with the pace on the left and each split's number under it; a finger along it picks a
  * split, highlighted in the chart and in the list of splits below (distance, time and pace).
  */
-import { activityQuery, formatDuration, usesPace, type Series } from '@zankup/core';
+import {
+  activityQuery,
+  elevationProfile,
+  formatDuration,
+  paceZoneOf,
+  usesPace,
+  type Series,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
@@ -12,7 +19,6 @@ import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'reac
 import { useApi } from '../../src/auth';
 import { speedText, useActivityContext } from '../../src/detail/Context';
 import { SplitsChart } from '../../src/detail/SplitsChart';
-import { elevationProfile } from '../../src/detail/splitsElevation';
 import { t } from '../../src/i18n';
 import { streamsQuery } from '../../src/offline';
 import { asSport, useFormat, useUnits } from '../../src/prefs';
@@ -44,10 +50,7 @@ export default function AnalysisScreen() {
   const pickedSpeed = picked?.time_s ? picked.distance_m / picked.time_s : 0;
   // Its pace zone: the highest whose lower bound it reaches (on a run with a threshold pace).
   const bounds = context?.pace_zones?.bounds ?? [];
-  const zone =
-    pace && pickedSpeed > 0 && bounds.length
-      ? bounds.reduce((z, b, i) => (pickedSpeed >= b ? i : z), 0)
-      : null;
+  const zone = pace ? paceZoneOf(pickedSpeed, bounds) : null;
   const select = (i: number) => {
     if (i === selected) return;
     setSelected(i);

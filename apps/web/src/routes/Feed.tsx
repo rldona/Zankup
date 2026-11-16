@@ -39,6 +39,7 @@ import { useSyncNow } from '../syncSheet';
 import { Icon } from '../Icon';
 import { BodyThumb } from '../detail/BodyMap';
 import { workoutTypeSuffix } from '../detail/workoutTypes';
+import { GoalReachedCapsule } from '../detail/GoalReached';
 
 type Format = ReturnType<typeof formatters>;
 const CHIPS = SPORTS.filter((s) => s !== 'other');
@@ -51,7 +52,10 @@ const CHIPS = SPORTS.filter((s) => s !== 'other');
  */
 export function Feed() {
   const match = useMatch('/activities/:id');
-  const detail = match !== null;
+  // An activity's own pages (its matched activities, its analysis) take the list's place too, with
+  // their own way back to the activity instead of the previous and next ones.
+  const page = useMatch('/activities/:id/:page');
+  const detail = match !== null || page !== null;
   const openId = Number(match?.params.id);
   const [params, setParams] = useSearchParams();
   const chosen = params.get('sport');
@@ -200,7 +204,7 @@ export function Feed() {
         </div>
       </section>
       <section className="detailcol">
-        {detail && (
+        {match && (
           <DetailNav
             items={items}
             openId={openId}
@@ -401,6 +405,7 @@ function Card({
           <BodyThumb worked={muscles} />
         ) : null}
       </div>
+      <GoalReachedCapsule goals={activity.goals_reached} />
     </NavLink>
   );
 }

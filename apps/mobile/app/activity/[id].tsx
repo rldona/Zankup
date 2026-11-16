@@ -9,6 +9,7 @@ import {
   activityContextQuery,
   activityQuery,
   availableMetrics,
+  elevationProfile,
   formatActivityDate,
   formatDuration,
   localStart,
@@ -57,7 +58,6 @@ import {
   useActivityContext,
 } from '../../src/detail/Context';
 import { SplitBars } from '../../src/detail/SplitsChart';
-import { elevationProfile } from '../../src/detail/splitsElevation';
 import { GoalReachedBanner } from '../../src/detail/GoalReached';
 import { BestEfforts, Laps, Power, RouteAndSegments, Splits, Zones } from '../../src/detail/Sections';
 import { ExercisesBlock, MuscleCover, Strength } from '../../src/detail/Strength';

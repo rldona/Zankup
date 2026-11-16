@@ -1,6 +1,8 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
 
 import { Activity } from './routes/Activity';
+import { Analysis } from './routes/Analysis';
+import { Matches } from './routes/Matches';
 import { AppError } from './routes/AppError';
 import { Feed } from './routes/Feed';
 import { Estimates } from './routes/Estimates';
@@ -47,7 +49,12 @@ const screens: RouteObject[] = [
   {
     path: 'activities',
     element: <Feed />,
-    children: [{ path: ':id', element: <Activity /> }],
+    // An activity opens in the feed's place; its matched activities and its analysis are its own pages.
+    children: [
+      { path: ':id', element: <Activity /> },
+      { path: ':id/matches', element: <Matches /> },
+      { path: ':id/analysis', element: <Analysis /> },
+    ],
   },
   { path: 'goals', element: <Goals /> },
   // Progress (OS-1001 to OS-1005): its cards, each opening its page.

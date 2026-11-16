@@ -37,7 +37,8 @@ const LEFT = 48;
  * One of the activity's charts on its own card (OS-907), as the app's: its heading, the chart and a
  * footer of centred figures. Hovering shows the value by the cursor (and moves the map's); a click pins
  * it there, and another click hides it. With "Section" on, dragging picks a stretch, shaded on every
- * card and on the map.
+ * card and on the map. With `backdrop` (the altitude), the elevation in grey behind the line, as
+ * Strava's (OS-1007).
  */
 export function ChartCard({
   chart,
@@ -48,6 +49,7 @@ export function ChartCard({
   selecting,
   onHover,
   onSection,
+  backdrop,
 }: {
   chart: ActivityChart;
   series: Series;
@@ -57,6 +59,8 @@ export function ChartCard({
   selecting: boolean;
   onHover: (index: number | null) => void;
   onSection: (range: [number, number] | null) => void;
+  /** The altitude, one value per sample, drawn in grey behind the chart's own line. */
+  backdrop?: (number | null)[];
 }) {
   const axis = useMemo(() => xAxis(series), [series]);
   const byDistance = axis.kind === 'dist';
@@ -68,6 +72,21 @@ export function ChartCard({
     chart.colour in KIND_COLOURS
       ? KIND_COLOURS[chart.colour as keyof typeof KIND_COLOURS]
       : tokens[chart.colour as 'muted' | 'zone4'];
+
+  // The elevation fills about four fifths of the chart's height, from a little under its lowest point.
+  const backdropRange = useMemo((): [number, number] | null => {
+    // A loop, not Math.min(...): a long activity has more samples than a call takes arguments.
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const v of backdrop ?? []) {
+      if (v == null) continue;
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null;
+    const span = hi - lo || 1;
+    return [lo - span * 0.05, hi + span * 0.25];
+  }, [backdrop]);
 
   const option = useMemo(() => {
     const x = (i: number) => (axis.values[i] ?? 0) / scale;
@@ -93,8 +112,8 @@ export function ChartCard({
         backgroundColor: tokens.surface2,
         borderColor: tokens.line,
         textStyle: { color: tokens.fg },
-        formatter: (params: { data: [number, number | null] }[]) => {
-          const point = params[0]?.data;
+        formatter: (params: { seriesId?: string; data: [number, number | null] }[]) => {
+          const point = (params.find((p) => p.seriesId === 'value') ?? params[0])?.data;
           if (!point || point[1] == null) return '';
           const index = nearestIndex(axis.values, point[0] * scale);
           return `<b>${chartValue(chart, point[1], locale)}</b><br/><span style="opacity:.7">${where(index)}</span>`;
@@ -110,24 +129,31 @@ export function ChartCard({
         },
         splitLine: { show: false },
       },
-      yAxis: {
-        type: 'value',
-        inverse: !!chart.inverted,
-        min,
-        max,
-        interval: step,
-        axisLabel: {
-          formatter: (v: number) =>
-            chart.readout.kind === 'pace'
-              ? `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`
-              : v.toLocaleString(locale),
-          hideOverlap: true,
+      yAxis: [
+        {
+          type: 'value',
+          inverse: !!chart.inverted,
+          min,
+          max,
+          interval: step,
+          axisLabel: {
+            formatter: (v: number) =>
+              chart.readout.kind === 'pace'
+                ? `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`
+                : v.toLocaleString(locale),
+            hideOverlap: true,
+          },
+          splitLine: { lineStyle: { color: tokens.line } },
         },
-        splitLine: { lineStyle: { color: tokens.line } },
-      },
+        // The elevation's own scale, hidden: its lowest point at the bottom, its highest near the top.
+        { type: 'value', show: false, scale: true, min: backdropRange?.[0], max: backdropRange?.[1] },
+      ],
       series: [
         {
+          // Stable ids, so a new option (a section, a theme) morphs the lines instead of redrawing them.
+          id: 'value',
           type: 'line',
+          z: 3,
           symbol: 'none',
           sampling: 'lttb',
           connectNulls: false,
@@ -143,9 +169,40 @@ export function ChartCard({
               }
             : undefined,
         },
+        ...(backdrop && backdropRange
+          ? [
+              {
+                id: 'elevation',
+                type: 'line',
+                yAxisIndex: 1,
+                z: 1,
+                silent: true,
+                symbol: 'none',
+                sampling: 'lttb',
+                data: kept.map((i) => [x(i), backdrop[i] ?? null]),
+                lineStyle: { width: 0 },
+                areaStyle: { color: tokens.muted, opacity: 0.22, origin: 'start' },
+                tooltip: { show: false },
+              },
+            ]
+          : []),
       ],
     };
-  }, [axis, scale, byDistance, unitLabel, series, chart, kept, tokens, colour, section, selecting]);
+  }, [
+    axis,
+    scale,
+    byDistance,
+    unitLabel,
+    series,
+    chart,
+    kept,
+    tokens,
+    colour,
+    section,
+    selecting,
+    backdrop,
+    backdropRange,
+  ]);
 
   const handlers = useRef({ onHover, onSection });
   useEffect(() => {
