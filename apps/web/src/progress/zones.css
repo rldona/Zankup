@@ -222,12 +222,6 @@
   font-size: 14px;
 }
 
-@media (min-width: 1024px) {
-  .pz-page {
-    max-width: 880px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pz-track i {
     transition: none;
