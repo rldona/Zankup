@@ -220,7 +220,10 @@ describe('app skeleton', () => {
     api();
     const router = renderAt('/activities');
     await userEvent.click(await screen.findByRole('link', { name: /Morning run/ }));
-    const detail = await screen.findByRole('article');
+    // The page itself (its charts are articles too: fetched as the pointer reached the card, OS-1013,
+    // they may already be drawn).
+    const [detail] = await screen.findAllByRole('article');
+    if (!detail) throw new Error('no detail');
     for (const name of ['Back', 'Edit', 'Share', 'Add photos'])
       expect(within(detail).getByRole('button', { name })).toHaveClass('floatbtn');
     expect(detail.querySelector('.dactions')).toBeNull();

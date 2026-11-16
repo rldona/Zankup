@@ -43,6 +43,7 @@ import { MaterialIcon } from '../MaterialIcon';
 import { usePrefs } from '../prefs';
 import { CardTitle } from '../ui';
 import { CardSkeleton, Pulse } from '../Skeleton';
+import { useActivityIntent } from '../detail/prefetch';
 
 type Format = ReturnType<typeof formatters>;
 
@@ -201,11 +202,14 @@ function DayActivity({ activity: a, format }: { activity: ActivitySummary; forma
         ? t('home.avgHr', { value: a.avg_hr })
         : null,
   ].filter(Boolean);
+  // Resting on the day's card fetches its page (OS-1013).
+  const intent = useActivityIntent();
   return (
     <Link
       to={`/activities/${a.id}`}
       className="panel dayact"
       style={{ '--sport': `var(--${sport})` } as CSSProperties}
+      {...intent(a.id)}
     >
       <b className="dname">{a.name ?? t(`sport.${sport}`)}</b>
       <div className="dbody">

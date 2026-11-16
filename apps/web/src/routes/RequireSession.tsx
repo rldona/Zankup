@@ -16,6 +16,9 @@ export function RequireSession() {
     const next = location.pathname + location.search;
     return <Navigate to={`/sign-in${next === '/' ? '' : `?next=${encodeURIComponent(next)}`}`} replace />;
   }
+  // Who is signed in is kept on the device (OS-211): the app draws from it at once while the session
+  // is checked in the background (OS-1013), even if that check fails for now.
+  if (me.data) return <Outlet />;
   if (me.isPending) return <PageSkeleton />;
   if (me.isError)
     return (
