@@ -11,10 +11,12 @@ import {
   formatDuration,
   formatters,
   gearQuery,
+  isWorkoutType,
   SPORTS,
   themes,
   type ActivitySummary,
   type Sport,
+  type WorkoutType,
 } from '@zankup/core';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -23,6 +25,8 @@ import { useNavigate } from 'react-router';
 import { api } from './api';
 import { AddPhoto, Modal } from './detail/Tools';
 import { TrackMap } from './detail/TrackMap';
+import { WorkoutTypePicker } from './detail/WorkoutType';
+import { nameWithType, rememberWorkoutType } from './detail/workoutTypes';
 import { locale, t } from './i18n';
 import { usePrefs } from './prefs';
 import { SportIcon } from './SportIcon';
@@ -97,19 +101,33 @@ function LatestPanel({ activity: a, onClose }: { activity: ActivitySummary; onCl
   const [gearId, setGearId] = useState<number | null>(null);
   const currentGear = detail.data?.gear?.id ?? 0;
   const currentDescription = detail.data?.description ?? '';
+  const currentType = isWorkoutType(a.workout_type) ? a.workout_type : null;
+  const [workoutType, setWorkoutType] = useState<WorkoutType | null | undefined>(undefined);
+  const chosenType = workoutType === undefined ? currentType : workoutType;
+  const pickType = (type: WorkoutType | null) => {
+    setWorkoutType(type);
+    setName((n) => nameWithType(type, n, a.name ?? '', detail.data?.edited_fields ?? []));
+  };
 
   const save = useMutation({
     mutationFn: async () => {
-      const body: { name?: string; description?: string; gear_id?: number } = {};
+      const body: {
+        name?: string;
+        description?: string;
+        gear_id?: number;
+        workout_type?: WorkoutType | null;
+      } = {};
       if (name.trim() && name.trim() !== (a.name ?? '')) body.name = name.trim();
       if (description !== null && description !== currentDescription) body.description = description;
       if (gearId !== null && gearId !== currentGear) body.gear_id = gearId;
+      if (chosenType !== currentType) body.workout_type = chosenType;
       if (Object.keys(body).length === 0) return;
       const { error } = await api.PATCH('/api/activities/{activity_id}', {
         params: { path: { activity_id: a.id } },
         body,
       });
       if (error) throw new Error('save');
+      rememberWorkoutType(body.workout_type ?? null);
       void queryClient.invalidateQueries({ queryKey: ['activity', a.id] });
       void queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
@@ -160,6 +178,7 @@ function LatestPanel({ activity: a, onClose }: { activity: ActivitySummary; onCl
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        {sport === 'strength' && <WorkoutTypePicker value={chosenType} onChange={pickType} />}
         <dl className="lstats num">
           {stats.map(([label, value]) => (
             <div key={label}>
