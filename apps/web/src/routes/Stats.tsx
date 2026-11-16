@@ -7,17 +7,13 @@ import {
   formatHoursMinutes,
   formatters,
   periodOf,
-  progressQuery,
   recordsQuery,
   summaryQuery,
   volumeQuery,
   yearsQuery,
   formatDuration,
   type FitnessDay,
-  stravaComparisonQuery,
   effortShown,
-  themes,
-  yearColours,
   compare,
   comparisonLabels,
 } from '@zankup/core';
@@ -28,19 +24,12 @@ import { Link, useSearchParams } from 'react-router';
 import { api } from '../api';
 import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
-import {
-  ComparisonChart,
-  CurveChart,
-  EfficiencyChart,
-  FitnessChart,
-  ProgressChart,
-  ProgressionChart,
-  VolumeChart,
-} from '../stats/charts';
+import { CurveChart, EfficiencyChart, FitnessChart, VolumeChart } from '../stats/charts';
 import { effortName } from '../stats/format';
 import { MaterialIcon } from '../MaterialIcon';
-import { CardTitle, Menu, InfoTip } from '../ui';
+import { CardTitle, Menu } from '../ui';
 import { useResolvedTheme } from '../theme';
+import '../stats/stats.css';
 
 const MODES = ['last12', 'year', 'month', 'all'] as const;
 type Mode = (typeof MODES)[number];
@@ -59,7 +48,8 @@ const monthLabel = (n: number) =>
 
 /**
  * The period in the URL (`?period=`): `last12`, `all`, a year (`2025`) or a run of months
- * (`2025-03..2025-06`, or one month `2025-03`).
+ * (`2025-03..2025-06`, or one month `2025-03`). Without one, as the app (#285): months, from last month
+ * to this one.
  */
 function readPeriod(
   value: string | null,
@@ -73,14 +63,16 @@ function readPeriod(
     return { mode: 'month', year: Math.floor(to / 12), from: Math.min(from, to), to: Math.max(from, to) };
   }
   if (/^\d{4}$/.test(value ?? '')) return { mode: 'year', year: Number(value), from: now, to: now };
-  return { mode: value === 'all' ? 'all' : 'last12', year: thisYear, from: now, to: now };
+  if (value === 'all' || value === 'last12') return { mode: value, year: thisYear, from: now, to: now };
+  return { mode: 'month', year: thisYear, from: now - 1, to: now };
 }
 
 /**
- * Stats (OS-311, OS-321, OS-322, OS-320, OS-912), as the app's: the period right above everything (the
+ * Stats (OS-311, OS-321, OS-320, OS-912, OS-1010), as the app's: the period right above everything (the
  * last 12 months, a year moved with arrows, a run of months from one to another, or all time), the
- * reviews and the heatmap in the header, then the charts for the period, the summary against last year
- * and the way to routes and segments. On a large screen the cards sit two by two.
+ * reviews and the heatmap in the header, then only what follows the period: the summary against last
+ * year, its charts and its bests; and the way to routes, segments and Year by year. On a large screen
+ * the cards sit two by two.
  */
 export function Stats() {
   const [params, setParams] = useSearchParams();
@@ -198,21 +190,16 @@ export function Stats() {
         </p>
       )}
 
+      {/* Only what follows the period (#318), the summary first (#314): the period's figures against the
+          year before, then its charts, aerobic efficiency right under volume (#287), and its bests. */}
       <div className="statgrid">
+        <Summary range={range} format={format} />
         <FitnessSection range={range} theme={theme} />
         <Volume range={range} unit={period.unit} theme={theme} format={format} />
-        <Curves range={range} theme={theme} format={format} />
         <Efficiency range={range} theme={theme} />
-        <RecordsSection range={range} theme={theme} unit={format.unit} />
-        <Progress
-          theme={theme}
-          distanceUnit={format.unit}
-          selected={shown.mode === 'year' || shown.mode === 'month' ? shown.year : today.getFullYear()}
-        />
-        <CompareWithStrava theme={theme} />
+        <Curves range={range} theme={theme} format={format} />
+        <PeriodBests range={range} unit={format.unit} />
       </div>
-      {/* The period's figures against the year before: a table, after the charts the period changes. */}
-      <Summary range={range} format={format} />
 
       <h2>{t('stats.links')}</h2>
       <Menu
@@ -220,6 +207,8 @@ export function Stats() {
         items={[
           { to: '/routes', icon: 'route', label: t('stats.routes') },
           { to: '/segments', icon: 'timeline', label: t('stats.segments') },
+          // Every year against the others: whole years, so not under the period's filter.
+          { to: '/stats/years', icon: 'show_chart', label: t('stats.progress') },
         ]}
       />
     </section>
@@ -400,7 +389,7 @@ function Curves({
   theme: ReturnType<typeof useResolvedTheme>;
   format: ReturnType<typeof formatters>;
 }) {
-  const [kind, setKind] = useState<'speed' | 'power'>('speed');
+  const [kind, setKind] = useState<'speed' | 'power'>('power'); // power first, as the app (#286)
   const sport = kind === 'speed' ? ['run'] : undefined;
   const period = useQuery(curvesQuery(api, kind, range, sport));
   const all = useQuery(curvesQuery(api, kind, { from: '2000-01-01' }, sport));
@@ -410,11 +399,11 @@ function Curves({
       <div className="ph">
         <h2>{t('stats.curves')}</h2>
         <div className="seg" role="group" aria-label={t('stats.curves')}>
-          <button type="button" aria-pressed={kind === 'speed'} onClick={() => setKind('speed')}>
-            {t('stats.pace')}
-          </button>
           <button type="button" aria-pressed={kind === 'power'} onClick={() => setKind('power')}>
             {t('stats.power')}
+          </button>
+          <button type="button" aria-pressed={kind === 'speed'} onClick={() => setKind('speed')}>
+            {t('stats.pace')}
           </button>
         </div>
       </div>
@@ -431,20 +420,15 @@ function Curves({
   );
 }
 
-function RecordsSection({
-  range,
-  theme,
-  unit,
-}: {
-  range: { from: string; to: string };
-  theme: ReturnType<typeof useResolvedTheme>;
-  unit: 'km' | 'mi';
-}) {
+/**
+ * The period's bests (running), as the app's (#318): each distance's fastest time in the period, the
+ * distance opening its best times and the time its activity; then the way to all of them. The records
+ * of all time, their progression and the top ten live on the best times' page.
+ */
+function PeriodBests({ range, unit }: { range: { from: string; to: string }; unit: 'km' | 'mi' }) {
   const records = useQuery(recordsQuery(api, range));
-  const [chosen, setChosen] = useState('5k');
   if (!records.data?.all_time.length) return null;
-  const period = new Map(records.data.period.map((r) => [r.distance_key, r]));
-  const progression = records.data.progression[chosen] ?? [];
+  const bests = records.data.period.filter((r) => effortShown(r.distance_key, unit));
   const day = (iso: string) =>
     new Date(`${iso}T12:00:00`).toLocaleDateString(locale, {
       day: 'numeric',
@@ -452,96 +436,29 @@ function RecordsSection({
       year: 'numeric',
     });
   return (
-    <section className="panel">
-      <CardTitle>{t('stats.records')}</CardTitle>
-      {progression.length > 1 && (
-        <>
-          <h3>{t('stats.progression', { distance: effortName(chosen) })}</h3>
-          <ProgressionChart
-            points={progression.map((p) => ({ day: p.day, time_s: p.time_s, activity_id: p.activity_id }))}
-            theme={theme}
-          />
-        </>
+    <section className="panel periodbests">
+      <CardTitle>{t('stats.periodBests')}</CardTitle>
+      {bests.length ? (
+        <ul className="rows">
+          {bests.map((r) => (
+            <li key={r.distance_key}>
+              <Link to={`/progress/bests?key=${encodeURIComponent(r.distance_key)}`}>
+                {effortName(r.distance_key)}
+              </Link>
+              <span className="num">
+                <Link to={`/activities/${r.activity_id}`}>{formatDuration(r.time_s)}</Link>{' '}
+                <span className="note">{day(r.day)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="note">{t('stats.noPeriodBests')}</p>
       )}
-      <div className="scroll" tabIndex={0} role="region" aria-label={t('stats.records')}>
-        <table className="num">
-          <thead>
-            <tr>
-              <th scope="col">{t('feed.stat.distance')}</th>
-              <th scope="col">{t('stats.allTime')}</th>
-              <th scope="col">{t('stats.recordsPeriod')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.data.all_time
-              .filter((r) => effortShown(r.distance_key, unit))
-              .map((r) => {
-                const p = period.get(r.distance_key);
-                return (
-                  <tr
-                    key={r.distance_key}
-                    aria-selected={chosen === r.distance_key}
-                    onClick={() => setChosen(r.distance_key)}
-                  >
-                    <th scope="row">
-                      <button type="button" className="link" onClick={() => setChosen(r.distance_key)}>
-                        {effortName(r.distance_key)}
-                      </button>
-                    </th>
-                    <td>
-                      <Link to={`/activities/${r.activity_id}`}>{formatDuration(r.time_s)}</Link>{' '}
-                      <span className="note">{day(r.day)}</span>
-                    </td>
-                    <td>
-                      {p ? <Link to={`/activities/${p.activity_id}`}>{formatDuration(p.time_s)}</Link> : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function Progress({
-  theme,
-  distanceUnit,
-  selected,
-}: {
-  theme: ReturnType<typeof useResolvedTheme>;
-  distanceUnit: 'km' | 'mi';
-  selected: number;
-}) {
-  const lines = useQuery(progressQuery(api));
-  if (!lines.data?.length) return null;
-  const colours = yearColours(
-    lines.data.map((l) => l.year),
-    selected,
-    themes[theme],
-  );
-  return (
-    <section className="panel">
-      <CardTitle info={t('stats.progressNote')}>{t('stats.progress')}</CardTitle>
-      <ProgressChart lines={lines.data} selected={selected} theme={theme} distanceUnit={distanceUnit} />
-      {/* In place of a legend, as the app: each year's colour and total. */}
-      <ul className="rows years">
-        {lines.data.map((l) => (
-          <li key={l.year} className={l.year === selected ? 'on' : undefined}>
-            <span>
-              <i style={{ background: colours.get(l.year), opacity: l.year === selected ? 1 : 0.5 }} />
-              {l.year}
-            </span>
-            <span className="num">
-              {Math.round(
-                (l.cumulative_m.at(-1) ?? 0) / (distanceUnit === 'km' ? 1000 : 1609.344),
-              ).toLocaleString(locale)}{' '}
-              {distanceUnit}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <Link to="/progress/bests" className="allbests">
+        {t('stats.allBests')}
+        <MaterialIcon name="chevron_right" />
+      </Link>
     </section>
   );
 }
@@ -568,89 +485,6 @@ function Efficiency({
       </div>
       <EfficiencyChart points={points.data} theme={theme} />
       <p className="note">{t('stats.efficiencyNote')}</p>
-    </section>
-  );
-}
-
-const COMPARED = ['effort', 'grade_adjusted_distance', 'calories'] as const;
-
-/** How our metrics compare with what Strava computed, for people who imported an export (OS-323). */
-function CompareWithStrava({ theme }: { theme: ReturnType<typeof useResolvedTheme> }) {
-  const comparison = useQuery(stravaComparisonQuery(api));
-  const [metric, setMetric] = useState<(typeof COMPARED)[number]>('effort');
-  const data = comparison.data;
-  if (!data || data.metrics.every((m) => m.count < 3)) return null;
-  const current = data.metrics.find((m) => m.metric === metric);
-  const number = (v: number | null | undefined, digits = 2) =>
-    v == null ? '–' : v.toLocaleString(locale, { maximumFractionDigits: digits });
-  return (
-    <section className="panel wide">
-      <div className="ph">
-        <h2>{t('compare.title')}</h2>
-        <div className="seg" role="group" aria-label={t('compare.metric')}>
-          {COMPARED.map((m) => (
-            <button key={m} type="button" aria-pressed={m === metric} onClick={() => setMetric(m)}>
-              {t(`compare.${m}`)}
-            </button>
-          ))}
-        </div>
-        <InfoTip text={t('compare.help')} />
-      </div>
-      {current && current.count >= 3 ? (
-        <>
-          <dl className="kpis num">
-            <div className="kpi">
-              <dd>{current.count}</dd>
-              <dt>{t('compare.count')}</dt>
-            </div>
-            <div className="kpi">
-              <dd>{number(current.r2, 3)}</dd>
-              <dt>R²</dt>
-            </div>
-            <div className="kpi">
-              <dd>{number(current.mae, 1)}</dd>
-              <dt>{t('compare.mae')}</dt>
-            </div>
-            <div className="kpi">
-              <dd>{number(current.ratio, 3)}</dd>
-              <dt>{t('compare.ratio')}</dt>
-            </div>
-          </dl>
-          <ComparisonChart
-            points={current.points}
-            theme={theme}
-            label={t('compare.chart', { metric: t(`compare.${metric}`) })}
-          />
-          <details>
-            <summary>{t('compare.largest')}</summary>
-            <ul className="rows">
-              {current.largest.map((p) => (
-                <li key={p.activity_id}>
-                  <Link to={`/activities/${p.activity_id}`}>
-                    {t('compare.activity', { id: p.activity_id })}
-                  </Link>
-                  <span className="num">
-                    Zankup {number(p.ours, 0)} · Strava {number(p.strava, 0)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </>
-      ) : (
-        <p className="state">{t('compare.notEnough')}</p>
-      )}
-      {metric === 'effort' && data.effort_scale && (
-        <details>
-          <summary>{t('compare.scale')}</summary>
-          <p className="note">
-            {t('compare.scaleHelp', { r2: number(data.effort_scale.r2, 3), count: data.effort_scale.count })}
-          </p>
-          <p className="num">
-            {data.effort_scale.coefficients.map((c, i) => `Z${i + 1}: ${number(c, 3)}`).join(' · ')}
-          </p>
-        </details>
-      )}
     </section>
   );
 }

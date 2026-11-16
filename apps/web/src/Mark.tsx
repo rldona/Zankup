@@ -24,3 +24,29 @@ export function Mark({ height }: { height?: string }) {
     </svg>
   );
 }
+
+/**
+ * The mark in a health figure's corner (OS-1011, the app's `ZankupMark`): on a figure Zankup works
+ * out itself (the sleep score, Readiness), where another figure carries its source's mark; `label`
+ * says so to screen readers and on hover.
+ */
+export function ZankupMark({ label }: { label: string }) {
+  const { path } = MARK_SHAPES;
+  return (
+    <svg
+      className="source zankup"
+      viewBox={`0 0 ${MARK_VIEWBOX.width} ${MARK_VIEWBOX.height}`}
+      role="img"
+      aria-label={label}
+    >
+      <title>{label}</title>
+      <path
+        d={path.d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={path.strokeWidth}
+        strokeLinecap={path.linecap}
+      />
+    </svg>
+  );
+}

@@ -209,7 +209,7 @@ function WeekSummary({
 
 /**
  * The personal heatmap (OS-310), as the app's (OS-520): every route with GPS on a map that fills the
- * screen under the title, the sports as chips centred over it and the number of routes at its foot.
+ * screen under the title, the sports as chips on its left (#290) and the number of routes at its foot.
  */
 export function Heatmap() {
   const [params, setParams] = useSearchParams();

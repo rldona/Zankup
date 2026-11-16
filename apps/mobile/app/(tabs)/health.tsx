@@ -4,11 +4,13 @@
  * 365 days, with the form (TSB) from training next to readiness.
  */
 import {
+  dailyWeights,
   formatDate,
   formatNumber,
   healthDaysQuery,
   healthNightQuery,
   relativeDay,
+  weightChange,
   weightQuery,
   type HealthDay,
   type HealthSourceName,
@@ -28,7 +30,6 @@ import { Icon, SourceIcon, SpinningIcon, ZankupMark } from '../../src/Icon';
 import { MenuButton } from '../../src/Menu';
 import { locale, t } from '../../src/i18n';
 import { useTheme } from '../../src/theme';
-import { change, dailyWeights } from '../../src/weight';
 import { Button, Card, CardTitle, Heading, Muted, Screen, styles as ui, Tappable } from '../../src/ui';
 
 const PERIODS = ['30', '90', '365'] as const;
@@ -342,7 +343,7 @@ function WeightCard() {
     return isoDay(d);
   };
   const latest = weight.data.at(-1);
-  const moved = change(weight.data, back(30));
+  const moved = weightChange(weight.data, back(30));
   const values = dailyWeights(weight.data, back(90), today);
   const shown = values.filter((v): v is number => v != null);
   return (

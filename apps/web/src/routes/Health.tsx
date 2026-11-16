@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
+import { ZankupMark } from '../Mark';
 import { MaterialIcon } from '../MaterialIcon';
 import { CardTitle } from '../ui';
 
@@ -19,6 +20,7 @@ import { HeartChart, ReadinessChart, SleepChart } from '../health/charts';
 import { sourceName } from '../health/names';
 import { useHealthSync, type HealthSyncState } from '../health/useHealthSync';
 import { SleepTiles, StageLanes } from '../health/SleepNight';
+import { WeightCard } from '../health/Weight';
 import { locale, t } from '../i18n';
 import { useResolvedTheme } from '../theme';
 import { localToday } from '../week/today';
@@ -94,7 +96,8 @@ function SyncNotice({ state, onClose }: { state: HealthSyncState; onClose: () =>
 /**
  * Health (OS-606): last night's sleep with its stages, today's readiness, HRV, resting HR and the
  * rest, and their trends, combined with the form (TSB) from training. Each figure says which source it
- * comes from when several recorded it (OS-605).
+ * comes from when several recorded it (OS-605); the ones Zankup works out carry its mark (OS-1011).
+ * The weight's card follows today's figures (OS-1009).
  */
 export function Health() {
   const [params, setParams] = useSearchParams();
@@ -197,6 +200,8 @@ export function Health() {
           )}
         </div>
       )}
+      {/* Weight after today's figures (OS-1009), whether or not a source gives health data. */}
+      <WeightCard />
 
       {list.length > 1 && (
         <>
@@ -236,7 +241,10 @@ function LastNight({ day, sleep }: { day: HealthDay; sleep: NonNullable<HealthDa
           ? t('health.lastNight')
           : t('health.nightOf', { day: longDay(day.day) })}
       </h2>
-      <SleepTiles sleep={sleep} />
+      <SleepTiles
+        sleep={sleep}
+        sourceMark={<SourceMark source={sleep.source} label={from(sleep.source, sleep.others)} />}
+      />
       <article className="panel night">
         {night.data && night.data.stages.length > 0 ? (
           <StageLanes night={night.data} sleep={sleep} />
@@ -275,6 +283,8 @@ function Today({ day }: { day: HealthDay }) {
       </h2>
       <div className="cards">
         <article className="panel">
+          {/* Readiness is Zankup's own, from the figures below: its mark says so. */}
+          <ZankupMark label={t('health.zankupScore')} />
           <h3>{t('health.readiness')}</h3>
           <p className="big num">{r ? r.score : '–'}</p>
           {r ? (

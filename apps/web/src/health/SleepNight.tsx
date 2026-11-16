@@ -9,8 +9,10 @@ import {
   type HealthNight,
   type MessageKey,
 } from '@zankup/core';
+import type { ReactNode } from 'react';
 
 import { t } from '../i18n';
+import { ZankupMark } from '../Mark';
 
 type Sleep = NonNullable<HealthDay['sleep']>;
 
@@ -19,8 +21,12 @@ const LABEL = 22;
 const ROW = LABEL + 6 + TRACK + 14;
 const trackTop = (lane: number) => lane * ROW + LABEL + 6;
 
-/** The score and the hours asleep, side by side, each with the band it falls in. */
-export function SleepTiles({ sleep }: { sleep: Sleep }) {
+/**
+ * The score and the hours asleep, side by side, each with the band it falls in and whose figure it is
+ * in its corner (OS-1011): Zankup's mark on the score (worked out here), the source's (`sourceMark`)
+ * on the hours.
+ */
+export function SleepTiles({ sleep, sourceMark }: { sleep: Sleep; sourceMark?: ReactNode }) {
   const asleep = sleep.asleep_s ?? 0;
   const band = sleep.score != null ? sleepScoreBand(sleep.score) : null;
   const length = sleepDurationBand(asleep);
@@ -34,6 +40,7 @@ export function SleepTiles({ sleep }: { sleep: Sleep }) {
             {t(`health.band.${band}`)}
           </span>
         )}
+        <ZankupMark label={t('health.zankupScore')} />
       </article>
       <article className="panel sleeptile">
         <p className="note">{t('health.duration')}</p>
@@ -41,6 +48,7 @@ export function SleepTiles({ sleep }: { sleep: Sleep }) {
         <span className={`pill tone-${length === 'met' ? 'good' : length === 'almost' ? 'fair' : 'poor'}`}>
           {t(`health.goal.${length}` as MessageKey)}
         </span>
+        {sourceMark}
       </article>
     </div>
   );
