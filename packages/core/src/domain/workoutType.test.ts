@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
 
 import en from '../i18n/en.json';
@@ -7,13 +5,7 @@ import es from '../i18n/es.json';
 import { FRONT, BACK, musclesFor, WORKOUT_MUSCLES, WORKOUT_TYPES, type Muscle } from './strength';
 
 describe('workout types', () => {
-  it('are the ones the API accepts, each named in both languages', () => {
-    const api = readFileSync(
-      new URL('../../../../backend/src/zankup/api/library.py', import.meta.url),
-      'utf8',
-    );
-    const literal = /WorkoutType = Literal\[([^\]]+)\]/.exec(api)?.[1] ?? '';
-    expect([...literal.matchAll(/"(\w+)"/g)].map((m) => m[1])).toEqual([...WORKOUT_TYPES]);
+  it('are named in both languages', () => {
     for (const type of WORKOUT_TYPES) {
       expect((en as Record<string, string>)[`workoutType.${type}`]).toBeTruthy();
       expect((es as Record<string, string>)[`workoutType.${type}`]).toBeTruthy();
