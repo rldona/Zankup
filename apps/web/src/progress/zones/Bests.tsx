@@ -404,16 +404,16 @@ function BestsChart({
   const n = chrono.length;
   const lower = lowerIsBetter(bestKey);
   const { record, worst } = useMemo(() => chartScale(bestKey, all), [bestKey, all]);
-  const span = Math.abs(worst - record) || Math.abs(record) * 0.1 || 1;
-  const [yMin, yMax] = lower ? [record, record + span] : [record - span, record];
-  const clamp = (v: number) => Math.min(yMax, Math.max(yMin, v));
   const line = useMemo(() => trend(chrono, 45, chrono), [chrono]);
   const right = rightIndex(offset, n);
   const year = chrono[right]?.day.slice(0, 4) ?? '';
   const c = palette(theme);
 
-  const option = useMemo(
-    () => ({
+  const option = useMemo(() => {
+    const span = Math.abs(worst - record) || Math.abs(record) * 0.1 || 1;
+    const [yMin, yMax] = lower ? [record, record + span] : [record - span, record];
+    const clamp = (v: number) => Math.min(yMax, Math.max(yMin, v));
+    return {
       animationDurationUpdate: instant ? 0 : 500,
       grid: { left: AXIS, right: 8, top: 14, bottom: 12 },
       tooltip: {
@@ -474,10 +474,8 @@ function BestsChart({
           }),
         },
       ],
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c],
-  );
+    };
+  }, [chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c, n]);
 
   // Clicking a point opens its activity, unless the pointer was dragging the chart.
   const onReady = useCallback(

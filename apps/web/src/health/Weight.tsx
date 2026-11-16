@@ -11,6 +11,7 @@ import {
   parseWeight,
   queryKeys,
   themes,
+  tightScale,
   weightChange,
   weightHistory,
   weightQuery,
@@ -68,8 +69,11 @@ function WeightLine({
   const option = useMemo(() => {
     const c = palette(theme);
     const shown = values.filter((v): v is number => v != null);
-    const min = Math.floor(Math.min(...shown) - 1);
-    const max = Math.ceil(Math.max(...shown) + 1);
+    // From the tightest round value under the lowest weighing to the one over the highest (a little
+    // room on each side, so the line does not run along an edge), in round steps.
+    const axis = tightScale([Math.min(...shown) - 0.5, Math.max(...shown) + 0.5]);
+    const [min, max] = axis.domain;
+    const interval = (max - min) / Math.max(1, axis.ticks.length - 1);
     return {
       animationDurationUpdate: 500,
       grid: bare ? { left: 4, right: 4, top: 6, bottom: 6 } : { left: 44, right: 16, top: 16, bottom: 28 },
@@ -94,6 +98,7 @@ function WeightLine({
         show: !bare,
         min,
         max,
+        interval,
         axisLabel: { color: c.muted, fontSize: 11, formatter: kg },
         splitLine: { lineStyle: { color: c.line } },
       },

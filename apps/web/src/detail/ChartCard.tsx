@@ -107,6 +107,8 @@ export function ChartCard({
         show: !selecting,
         trigger: 'axis',
         triggerOn: 'mousemove',
+        // Loose again on every new option (a click may have pinned it): the chart merges new options.
+        alwaysShowContent: false,
         confine: true,
         axisPointer: { type: 'line', lineStyle: { color: tokens.fg, width: 1 } },
         backgroundColor: tokens.surface2,

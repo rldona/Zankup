@@ -237,6 +237,7 @@ function PredictionChart({
     const byDay = new Map(points.map((p) => [p.day, p.value]));
     const values = points.map((p) => p.value);
     const ticks = timeTicks(Math.min(...values), Math.max(...values));
+    const step = (ticks[1] ?? 0) - (ticks[0] ?? 0);
     const labels = new Map(
       predictionLabelDays(range, from, today).map((d) => [
         d,
@@ -259,7 +260,8 @@ function PredictionChart({
         formatter: (p: { data: [number, number] | number | null; dataIndex: number; seriesId: string }) => {
           const value = Array.isArray(p.data) ? p.data[1] : p.data;
           const day = p.seriesId === 'pred' ? days[p.dataIndex] : today;
-          return value == null || !day ? '' : `${shortDate(day, true)}<br/><b>${raceTime(value)}</b>`;
+          if (value == null || !day) return '';
+          return `${shortDate(day, true)}<br/><b>${raceTime(value)}</b>`;
         },
       },
       xAxis: {
@@ -281,7 +283,7 @@ function PredictionChart({
         inverse: true,
         min: ticks[0],
         max: ticks.at(-1),
-        interval: (ticks[1] ?? 0) - (ticks[0] ?? 0) || undefined,
+        interval: step > 0 ? step : undefined,
         axisLabel: { color: c.fg, fontSize: 13, formatter: (v: number) => raceTime(v) },
         splitLine: { lineStyle: { color: c.line } },
       },

@@ -177,6 +177,11 @@ function ZoneMap({
         })()
       : null;
   const canBuild = centre !== null || latest.isFetched;
+  // Where the map opens, read when it is built: the map is built once per theme, not at every centre.
+  const opening = useRef(centre);
+  useEffect(() => {
+    opening.current = centre;
+  });
 
   useEffect(() => {
     const element = box.current;
@@ -184,6 +189,7 @@ function ZoneMap({
     let disposed = false;
     void loadMapLibre().then((maplibre) => {
       if (disposed) return;
+      const centre = opening.current;
       const instance = new maplibre.Map({
         container: element,
         style: mapStyle(themes[theme]) as never,
@@ -223,7 +229,6 @@ function ZoneMap({
       ready.current = false;
     };
     // The map is built once per theme; zones are drawn by the effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webgl, theme, canBuild]);
 
   useEffect(() => {

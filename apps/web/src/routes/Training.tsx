@@ -19,6 +19,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { api } from '../api';
+import { useActivityIntent } from '../detail/prefetch';
 import { TrackMap } from '../detail/TrackMap';
 import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
@@ -43,7 +44,9 @@ export function TrainingCalendar() {
   const [params, setParams] = useSearchParams();
   const now = new Date();
   const month = params.get('month') ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const [y = now.getFullYear(), m = now.getMonth() + 1] = month.split('-').map(Number);
+  const [year, monthNumber] = month.split('-').map(Number);
+  const y = year ?? now.getFullYear();
+  const m = monthNumber ?? now.getMonth() + 1;
   const first = new Date(y, m - 1, 1);
   const start = new Date(first);
   start.setDate(1 - ((first.getDay() + 6) % 7)); // back to Monday
@@ -54,6 +57,8 @@ export function TrainingCalendar() {
   const format = useMemo(() => formatters(prefs), [prefs]);
   const [selection, setSelection] = useState<[number, number] | null>(null);
   const [dragging, setDragging] = useState(false);
+  // Resting on a day fetches its activities' pages (OS-1013).
+  const intent = useActivityIntent();
   const shift = (delta: number) => {
     const d = new Date(y, m - 1 + delta, 1);
     setParams(
@@ -114,6 +119,7 @@ export function TrainingCalendar() {
               const inMonth = new Date(`${d.day}T12:00:00`).getMonth() === m - 1;
               const isSelected =
                 selection && index >= Math.min(...selection) && index <= Math.max(...selection);
+              const rest = intent(d.activities.map((a) => a.id));
               return (
                 <div
                   key={d.day}
@@ -123,7 +129,11 @@ export function TrainingCalendar() {
                     setSelection([index, index]);
                     setDragging(true);
                   }}
-                  onPointerEnter={() => dragging && selection && setSelection([selection[0], index])}
+                  onPointerEnter={(event) => {
+                    rest.onPointerEnter(event);
+                    if (dragging && selection) setSelection([selection[0], index]);
+                  }}
+                  onPointerLeave={rest.onPointerLeave}
                 >
                   <span className="dnum">{new Date(`${d.day}T12:00:00`).getDate()}</span>
                   {d.tsb != null && (
@@ -148,6 +158,8 @@ export function TrainingCalendar() {
                           title={`${a.name ?? t(`sport.${asSport(a.sport)}`)} · ${formatDuration(a.moving_s)}`}
                           aria-label={`${a.name ?? t(`sport.${asSport(a.sport)}`)} · ${formatDuration(a.moving_s)}`}
                           onPointerDown={(e) => e.stopPropagation()}
+                          onTouchStart={intent(a.id).onTouchStart}
+                          onFocus={intent(a.id).onFocus}
                         >
                           <SportGlyph sport={asSport(a.sport)} />
                         </Link>

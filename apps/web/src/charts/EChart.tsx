@@ -3,6 +3,7 @@ import type { EChartsCoreOption, EChartsType } from 'echarts/core';
 import { useEffect, useRef, useState } from 'react';
 
 import { reducedMotion, useInView } from './inView';
+import { morphOptions, withIds } from './morph';
 
 type Loaded = typeof import('./echarts');
 
@@ -13,6 +14,8 @@ const load = () => (loading ??= import('./echarts'));
  * An ECharts chart that loads when it comes near the screen, follows the theme, resizes with its
  * box and respects reduced motion (OS-215). `summary` is what screen readers get instead of the
  * drawing. `onReady` runs after every option change, to wire events; it returns their cleanup.
+ * A new option (another filter) keeps the same chart and its series, so bars and lines slide from
+ * the old values to the new ones in 320 ms (OS-1012, see ./morph.ts).
  */
 export function EChart({
   option,
@@ -33,6 +36,8 @@ export function EChart({
   const [box, seen] = useInView<HTMLDivElement>();
   const [chart, setChart] = useState<EChartsType | null>(null);
   const latest = useRef(onReady);
+  // The option on screen and the chart it is on: a new chart (a theme) starts afresh.
+  const shown = useRef<{ chart: EChartsType; option: Record<string, unknown> } | null>(null);
   useEffect(() => {
     latest.current = onReady;
   });
@@ -63,7 +68,15 @@ export function EChart({
     // once more with the disposed chart, whose zrender is gone (getZr() is null), before the new one
     // arrives. Wiring it would throw, so wait for the new one.
     if (!chart || chart.isDisposed()) return;
-    chart.setOption({ animation: !reducedMotion(), ...option }, { notMerge: true });
+    const next: Record<string, unknown> = withIds({
+      animation: !reducedMotion(),
+      animationDurationUpdate: 320,
+      animationEasingUpdate: 'cubicOut',
+      ...option,
+    });
+    const previous = shown.current?.chart === chart ? shown.current.option : null;
+    chart.setOption(next as EChartsCoreOption, morphOptions(previous, next));
+    shown.current = { chart, option: next };
     const cleanup = latest.current?.(chart);
     // On unmount the chart may already be disposed (the effect above cleans up first): its events
     // went with it, and touching it again would throw.

@@ -65,6 +65,8 @@ const pwa = VitePWA({
 });
 
 export default defineConfig({
+  // No React Compiler here (unlike the app, #321): it made the main chunk 29 % larger (322 → 417 kB
+  // gzip) for re-renders that the cursor store already avoids (OS-1013).
   plugins: [react(), themes(), pwa],
   define: { __APP_VERSION__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev') },
   // @zankup/core is workspace source, not a package to pre-bundle: edits there (catalogues, tokens,

@@ -42,14 +42,20 @@ export function VolumeChart({
 }) {
   const theme = useResolvedTheme();
   const c = useMemo(() => ({ ...commonTokens, ...themes[theme] }), [theme]);
-  const top = ticks.at(-1) || 1;
-  const rings = values.length <= 60;
   // Callers pass fresh arrays and functions on every render: the chart is drawn again only when what
-  // it shows changes, so hovering (which re-renders the caller) does not redraw it.
-  const tickText = ticks.map(tickLabel);
-  const signature = JSON.stringify([values, previous, labels, ticks, tickText]);
+  // it shows changes, so hovering (which re-renders the caller) does not redraw it. What it shows is
+  // read back from its text, so the option below depends on nothing else.
+  const signature = JSON.stringify([values, previous ?? null, labels, ticks, ticks.map(tickLabel)]);
   const option = useMemo(() => {
-    const words = new Map(labels.map((l) => [l.index, l.text]));
+    const [shownValues, before, words, steps, tickText] = JSON.parse(signature) as [
+      number[],
+      number[] | null,
+      ChartLabel[],
+      number[],
+      string[],
+    ];
+    const top = steps.at(-1) || 1;
+    const wordAt = new Map(words.map((l) => [l.index, l.text]));
     return {
       grid: { left: 6, right: 6, top: 14, bottom: 26, containLabel: true },
       tooltip: {
@@ -60,14 +66,14 @@ export function VolumeChart({
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: values.map((_, i) => i),
+        data: shownValues.map((_, i) => i),
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
           interval: 0,
           color: c.fg,
           fontSize: 12,
-          formatter: (_: string, i: number) => words.get(i) ?? '',
+          formatter: (_: string, i: number) => wordAt.get(i) ?? '',
         },
       },
       yAxis: {
@@ -75,16 +81,18 @@ export function VolumeChart({
         position: 'right',
         min: 0,
         max: top,
-        interval: ticks[1] || top,
-        axisLabel: { color: c.fg, fontSize: 12, formatter: (v: number) => tickText[nearest(ticks, v)] ?? '' },
+        interval: steps[1] || top,
+        axisLabel: { color: c.fg, fontSize: 12, formatter: (v: number) => tickText[nearest(steps, v)] ?? '' },
         splitLine: { lineStyle: { color: c.line } },
       },
+      // Their own ids, so the line keeps its place (and morphs) when the comparison comes or goes.
       series: [
-        ...(previous?.length
+        ...(before?.length
           ? [
               {
+                id: 'previous',
                 type: 'line',
-                data: previous.slice(0, values.length),
+                data: before.slice(0, shownValues.length),
                 symbol: 'none',
                 silent: true,
                 lineStyle: { color: c.fatigue, width: 2 },
@@ -94,9 +102,10 @@ export function VolumeChart({
             ]
           : []),
         {
+          id: 'value',
           type: 'line',
-          data: values.map((v) => Math.min(v, top)),
-          symbol: rings ? 'circle' : 'none',
+          data: shownValues.map((v) => Math.min(v, top)),
+          symbol: shownValues.length <= 60 ? 'circle' : 'none',
           symbolSize: 9,
           showAllSymbol: true,
           lineStyle: { color: c.accent, width: 3 },
@@ -106,7 +115,6 @@ export function VolumeChart({
         },
       ],
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, c]);
 
   // The handlers as they are now: the chart wires its events once per option.

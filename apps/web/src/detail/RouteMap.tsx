@@ -12,9 +12,10 @@ import {
   type ThemeName,
 } from '@zankup/core';
 import type { GeoJSONSource, LngLatBoundsLike, Map as MapLibre } from 'maplibre-gl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
 import { t } from '../i18n';
+import { useCursor, type CursorStore } from './cursorStore';
 import { hasWebGL, loadMapLibre } from './maplibre';
 
 const MAX_POINTS = 1500;
@@ -50,22 +51,21 @@ const point = (coordinates: [number, number] | undefined) => ({
  * The route on a map (OS-206): MapLibre with Zankup's own style, the line coloured by the chosen
  * metric (low → high), start and finish, and the point under the cursor shared with the profile
  * (OS-207) and the selected section highlighted (OS-216). Without WebGL, the route's shape in SVG.
+ * The cursor is read from its store by the dot alone (OS-1013), so it moves without redrawing the map.
  */
 export function RouteMap({
   series,
   metric,
   theme,
-  hover,
+  cursor,
   section,
-  onHover,
   colour,
 }: {
   series: Series;
   metric: Metric | null;
   theme: ThemeName;
-  hover: number | null;
+  cursor: CursorStore;
   section: [number, number] | null;
-  onHover: (index: number | null) => void;
   colour: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -83,10 +83,6 @@ export function RouteMap({
     const raw = metricValues(series, metric);
     return raw ? fillGaps(raw) : null;
   }, [series, metric]);
-  const hoverRef = useRef(onHover);
-  useEffect(() => {
-    hoverRef.current = onHover;
-  });
 
   // Create the map (again when the theme changes: the style is generated from its tokens).
   useEffect(() => {
@@ -216,9 +212,9 @@ export function RouteMap({
             bestDistance = d;
           }
         }
-        hoverRef.current(best >= 0 ? best : null);
+        cursor.set(best >= 0 ? best : null);
       });
-      instance.on('mouseout', () => hoverRef.current(null));
+      instance.on('mouseout', () => cursor.set(null));
       map.current = instance;
     });
     return () => {
@@ -226,7 +222,7 @@ export function RouteMap({
       map.current?.remove();
       map.current = null;
     };
-  }, [webgl, track, theme, colour]);
+  }, [webgl, track, theme, colour, cursor]);
 
   // Colour by the metric: 2nd to 98th percentile over the ramp.
   useEffect(() => {
@@ -250,14 +246,6 @@ export function RouteMap({
   }, [values, track, colour, loaded]);
 
   useEffect(() => {
-    const cursor = map.current?.getSource<GeoJSONSource>('cursor');
-    if (!cursor) return;
-    const lat = hover == null ? null : series.lat?.[hover];
-    const lon = hover == null ? null : series.lon?.[hover];
-    void cursor.setData(point(lat != null && lon != null ? [lon, lat] : undefined));
-  }, [hover, series, loaded]);
-
-  useEffect(() => {
     const source = map.current?.getSource<GeoJSONSource>('section');
     if (!source) return;
     if (!section) {
@@ -273,7 +261,35 @@ export function RouteMap({
   }, [section, series, loaded]);
 
   if (!webgl) return <ShapeFallback track={track} colour={colour} />;
-  return <div ref={box} className="map" />;
+  return (
+    <>
+      <div ref={box} className="map" />
+      <CursorDot map={map} cursor={cursor} series={series} loaded={loaded} />
+    </>
+  );
+}
+
+/** The dot under the cursor: the one part of the map that redraws as the pointer moves. */
+function CursorDot({
+  map,
+  cursor,
+  series,
+  loaded,
+}: {
+  map: RefObject<MapLibre | null>;
+  cursor: CursorStore;
+  series: Series;
+  loaded: number;
+}) {
+  const index = useCursor(cursor);
+  useEffect(() => {
+    const source = map.current?.getSource<GeoJSONSource>('cursor');
+    if (!source) return;
+    const lat = index == null ? null : series.lat?.[index];
+    const lon = index == null ? null : series.lon?.[index];
+    void source.setData(point(lat != null && lon != null ? [lon, lat] : undefined));
+  }, [map, index, series, loaded]);
+  return null;
 }
 
 /** Without WebGL: the route drawn in SVG, north up, keeping its proportions. */

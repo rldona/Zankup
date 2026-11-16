@@ -40,6 +40,7 @@ import { Icon } from '../Icon';
 import { BodyThumb } from '../detail/BodyMap';
 import { workoutTypeSuffix } from '../detail/workoutTypes';
 import { GoalReachedCapsule } from '../detail/GoalReached';
+import { useActivityIntent } from '../detail/prefetch';
 
 type Format = ReturnType<typeof formatters>;
 const CHIPS = SPORTS.filter((s) => s !== 'other');
@@ -169,7 +170,7 @@ export function Feed() {
           </div>
 
           {feed.isPending && <FeedSkeleton />}
-          {feed.isError && (
+          {feed.isError && !feed.data && (
             <p className="state" role="alert">
               {t('common.error')}
             </p>
@@ -365,11 +366,14 @@ function Card({
   const route = routeThumbnail(activity.route);
   const muscles = musclesFor(musclesFromExercises(activity.exercises), activity.workout_type);
   const style = { '--sport': `var(--${sport})` } as CSSProperties;
+  // Resting on the card fetches its page (OS-1013).
+  const intent = useActivityIntent();
   return (
     <NavLink
       to={{ pathname: `/activities/${activity.id}`, search }}
       className={({ isActive }) => `card${isActive ? ' on' : ''}`}
       style={style}
+      {...intent(activity.id)}
     >
       <div className="chead">
         <SportIcon sport={sport} />
