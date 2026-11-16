@@ -116,6 +116,7 @@ const PARENTS: {
   { match: /^\/routes\/./, to: '/routes', label: 'routes.title' },
   { match: /^\/segments\/./, to: '/segments', label: 'segments.title' },
   { match: /^\/(stats|estimates|gear)$/, to: '/profile', label: 'nav.you' },
+  { match: /^\/health\/weight$/, to: '/health', label: 'nav.health' },
 ];
 
 function Back({ pathname }: { pathname: string }) {

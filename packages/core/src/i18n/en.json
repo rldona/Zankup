@@ -1190,6 +1190,7 @@
   "weight.edit": "Edit weight",
   "weight.kg": "Weight (kg)",
   "weight.day": "Date (dd/mm/yyyy)",
+  "weight.date": "Date",
   "weight.save": "Save",
   "weight.invalid": "Enter a weight from 20 to 300 kg and a date that is not in the future.",
   "weight.empty": "You haven't added a weight yet. Add the first one and you'll see how it changes here.",

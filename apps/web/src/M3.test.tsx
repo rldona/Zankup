@@ -49,6 +49,25 @@ const ESTIMATES = [
   { kind: 'race_10k', value: 3211, method: 'riegel:10', day: '2026-11-08', sources: [], history: [] },
 ];
 
+const COMPARISON = {
+  metrics: [
+    {
+      metric: 'effort',
+      count: 12,
+      r2: 0.912,
+      mae: 4.2,
+      ratio: 1.03,
+      points: [
+        { activity_id: 7, ours: 80, strava: 78 },
+        { activity_id: 6, ours: 60, strava: 64 },
+      ],
+      largest: [{ activity_id: 6, ours: 60, strava: 64 }],
+    },
+  ],
+  effort_scale: null,
+};
+const COMPARE_TITLE = 'How these metrics compare';
+
 type Handler = (url: URL, request: Request) => Response | Promise<Response>;
 
 function mockApi(extra: Record<string, Handler> = {}) {
@@ -158,7 +177,8 @@ describe('phase 3 screens', () => {
     expect(await screen.findByText('Recomputing your metrics: 12 of 207 activities.')).toBeInTheDocument();
     expect((await screen.findAllByText('+100 %')).length).toBeGreaterThan(0);
     expect(screen.getByText('+150 %')).toBeInTheDocument(); // 100 km against 40
-    expect(await screen.findByRole('heading', { name: 'How the 5 km record came down' })).toBeInTheDocument();
+    // The period's bests, not the records of all time (OS-1010).
+    expect(await screen.findByRole('heading', { name: 'Bests in this period' })).toBeInTheDocument();
     // The period as on the app (OS-912): a year moved with arrows, or a run of months.
     const year = new Date().getFullYear();
     await userEvent.click(screen.getByRole('radio', { name: 'Year' }));
@@ -169,6 +189,71 @@ describe('phase 3 screens', () => {
     expect(router.state.location.search).toBe(`?period=${year}-${month}`);
     // Estimates have their own page now (OS-913).
     expect(screen.queryByText(/Riegel's formula/)).not.toBeInTheDocument();
+  });
+
+  it("stats by its period: the period's bests open their best times, the rest lives elsewhere (OS-1010)", async () => {
+    mockApi({ '/api/stats/strava-comparison': () => Response.json(COMPARISON) });
+    const router = renderAt('/stats');
+    // Without a period in the URL, months from last month to this one (#285).
+    const months = await screen.findByRole('radio', { name: 'Months' });
+    expect(months).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getAllByRole('button', { name: 'Previous' })).toHaveLength(2);
+    // The summary first (#314), best efforts on power (#286).
+    await screen.findByRole('heading', { name: 'Summary' });
+    const titles = [...document.querySelectorAll('.statgrid > .panel h2')].map((h) => h.textContent);
+    expect(titles[0]).toBe('Summary');
+    const curves = screen.getByRole('group', { name: 'Best efforts' });
+    expect(within(curves).getByRole('button', { name: 'Power' })).toHaveAttribute('aria-pressed', 'true');
+    // The period's bests: the distance opens its best times, and a link leads to all of them.
+    const bests = (await screen.findByRole('heading', { name: 'Bests in this period' })).closest('section');
+    const card = within(bests as HTMLElement);
+    expect(card.getByRole('link', { name: '5 km' })).toHaveAttribute('href', '/progress/bests?key=5k');
+    expect(card.getByRole('link', { name: '25:00' })).toHaveAttribute('href', '/activities/7');
+    expect(card.getByRole('link', { name: 'See all your best times' })).toHaveAttribute(
+      'href',
+      '/progress/bests',
+    );
+    // Year by year and the comparison with Strava are no longer on Stats.
+    expect(screen.queryByText('2025')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COMPARE_TITLE })).not.toBeInTheDocument();
+    // Year by year, from Stats' menu, on its own page: a click on a year makes it stand out.
+    await userEvent.click(screen.getByRole('link', { name: 'Year over year' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/stats/years'));
+    expect(await screen.findByRole('heading', { name: 'Year over year', level: 1 })).toBeInTheDocument();
+    const year = screen.getByRole('button', { name: /2025/ });
+    expect(year).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(year);
+    expect(year).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /2026/ })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('stats: no bests in the period says so, and still leads to all of them', async () => {
+    mockApi({
+      '/api/stats/records': () =>
+        Response.json({
+          all_time: [
+            { distance_key: '5k', distance_m: 5000, time_s: 1500, activity_id: 7, day: '2025-10-05' },
+          ],
+          period: [],
+          progression: {},
+        }),
+    });
+    renderAt('/stats');
+    expect(await screen.findByText('No bests in this period.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'See all your best times' })).toHaveAttribute(
+      'href',
+      '/progress/bests',
+    );
+  });
+
+  it('import: how the metrics compare with Strava, under the imports (OS-1010)', async () => {
+    mockApi({
+      '/api/imports': () => Response.json([]),
+      '/api/stats/strava-comparison': () => Response.json(COMPARISON),
+    });
+    renderAt('/settings/import');
+    expect(await screen.findByRole('heading', { name: COMPARE_TITLE })).toBeInTheDocument();
+    expect(screen.getByText('0.912')).toBeInTheDocument(); // R²
   });
 
   it('notifications: the bell on Home opens what the engine noticed (OS-916)', async () => {

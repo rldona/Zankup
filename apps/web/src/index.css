@@ -3620,6 +3620,16 @@ a.button {
   margin-bottom: 10px;
 }
 
+/* The period's choice under the title, on the left, as the app's (#289). */
+.review .statshead {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.review .statshead .seg {
+  margin-left: 0;
+}
+
 .review .statshead .seg a {
   padding: 6px 12px;
   text-decoration: none;
@@ -3933,6 +3943,11 @@ svg.source {
   width: 16px;
   height: 16px;
   fill: var(--muted);
+}
+
+/* Zankup's own figures (the sleep score, Readiness, OS-1011): its mark, a stroke, where a source's sits. */
+svg.source.zankup {
+  color: var(--muted);
 }
 
 /* Zankup Coach: the wand in a soft circle beside the title. */
@@ -6244,7 +6259,7 @@ h1.greeting {
 }
 
 /* Stats (docs/prototypes/web): on a desktop the cards in rows of two of equal height, so there are no
-   holes; the comparison with Strava across. */
+   holes; an odd one out across. */
 @media (min-width: 1200px) {
   .page.stats:not(.health) .statgrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6344,7 +6359,7 @@ h1.greeting {
 }
 
 /* The heatmap, full screen: the map fills all of the content area, edge to edge, with the way back
-   to Stats floating at its top left, the sports centred over it and the routes counted at its foot.
+   to Stats floating at its top left, the sports under it on the left and the routes counted at its foot.
    The title stays for screen readers only. */
 .main:has(> .page.heatmap) {
   position: relative;
@@ -6410,17 +6425,18 @@ h1.greeting {
 }
 
 .heatwrap > .note {
-  padding: 64px 24px 24px;
+  padding: 108px 24px 24px;
 }
 
+/* The sports on the left, under the way back, as the app's (#290). */
 .heatwrap .heatchips {
   position: absolute;
-  top: 12px;
+  top: calc(58px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   margin: 0;
   padding: 0 12px;
-  justify-content: center;
+  justify-content: flex-start;
   z-index: 2;
   pointer-events: none;
 }

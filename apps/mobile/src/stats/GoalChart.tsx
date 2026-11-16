@@ -6,7 +6,7 @@
  * the day's amount and the total so far; touching or sliding picks another. Days still to come have no
  * point. The days come from the calendar the Stats screen already reads, so the server needs nothing new.
  */
-import { calendarQuery, goalPoints, type GoalOut } from '@zankup/core';
+import { calendarQuery, goalPoints, niceScale, type GoalOut } from '@zankup/core';
 import { Canvas, Circle, DashPathEffect, Group, Line, Path, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -15,7 +15,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { useApi } from '../auth';
 import { locale, t } from '../i18n';
-import { niceScale, useCanvasReady } from '../charts';
+import { useCanvasReady } from '../charts';
 import { useTheme } from '../theme';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);

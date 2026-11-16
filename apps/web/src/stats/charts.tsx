@@ -1,6 +1,5 @@
 import {
   commonTokens,
-  formatDuration,
   formatHoursMinutes,
   SPORTS,
   themes,
@@ -10,6 +9,7 @@ import {
   type ThemeName,
   type VolumeBucket,
   type YearLine,
+  tightScale,
   yearColours,
 } from '@zankup/core';
 import type { EChartsType } from 'echarts/core';
@@ -238,17 +238,26 @@ export function CurveChart({
   );
 }
 
-/** Cumulative distance through each year, the selected one highlighted (OS-322). */
+/**
+ * Cumulative distance through each year, the selected one highlighted (OS-322); a click on a line picks
+ * its year (`onSelect`). The axis ends at the tightest round value, so the lines fill the chart.
+ */
 export function ProgressChart({
   lines,
   selected,
   theme,
   distanceUnit,
+  height = 260,
+  className,
+  onSelect,
 }: {
   lines: YearLine[];
   selected: number;
   theme: ThemeName;
   distanceUnit: 'km' | 'mi';
+  height?: number | string;
+  className?: string;
+  onSelect?: (year: number) => void;
 }) {
   const c = palette(theme);
   const scale = distanceUnit === 'km' ? 1000 : 1609.344;
@@ -258,6 +267,8 @@ export function ProgressChart({
       selected,
       c,
     );
+    const top = Math.max(1, ...lines.map((l) => (l.cumulative_m.at(-1) ?? 0) / scale));
+    const axis = tightScale([0, top]);
     return {
       grid: { left: 48, right: 12, top: 12, bottom: 26 },
       legend: { show: false }, // the years and their totals are listed under the chart
@@ -269,11 +280,17 @@ export function ProgressChart({
         ),
         axisLabel: { interval: 30 },
       },
-      yAxis: { type: 'value' },
+      yAxis: {
+        type: 'value',
+        min: axis.domain[0],
+        max: axis.domain[1],
+        interval: (axis.domain[1] - axis.domain[0]) / Math.max(1, axis.ticks.length - 1),
+      },
       series: lines.map((line) => ({
         name: String(line.year),
         type: 'line',
         symbol: 'none',
+        triggerLineEvent: true,
         data: line.cumulative_m.map((m) => Math.round(m / scale)),
         // The other years in their own colours, but faint, so the selected one stands out.
         lineStyle: {
@@ -286,58 +303,28 @@ export function ProgressChart({
       })),
     };
   }, [lines, selected, c, scale, distanceUnit]);
+  const pick = useCallback(
+    (chart: EChartsType) => {
+      if (!onSelect) return undefined;
+      const select = (params: { seriesName?: string }) => {
+        const year = Number(params.seriesName);
+        if (year) onSelect(year);
+      };
+      chart.on('click', select as never);
+      return () => chart.off('click');
+    },
+    [onSelect],
+  );
   return (
     <EChart
       option={option}
       theme={theme}
-      height={260}
+      height={height}
+      className={className}
+      onReady={pick}
       summary={lines
         .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${distanceUnit}`)
         .join(', ')}
-    />
-  );
-}
-
-/** A record's progression: each time it came down (OS-304). */
-export function ProgressionChart({
-  points,
-  theme,
-}: {
-  points: { day: string; time_s: number; activity_id: number }[];
-  theme: ThemeName;
-}) {
-  const c = palette(theme);
-  const open = useOpenActivity();
-  const option = useMemo(
-    () => ({
-      grid: { left: 56, right: 12, top: 12, bottom: 26 },
-      tooltip: { trigger: 'axis', valueFormatter: (v: number) => formatDuration(v) },
-      xAxis: { type: 'category', data: points.map((p) => p.day) },
-      yAxis: {
-        type: 'value',
-        scale: true,
-        inverse: true,
-        axisLabel: { formatter: (v: number) => formatDuration(v) },
-      },
-      series: [
-        {
-          type: 'line',
-          step: 'end',
-          data: points.map((p) => ({ value: p.time_s, activityId: p.activity_id })),
-          lineStyle: { color: c.accent },
-          itemStyle: { color: c.accent },
-        },
-      ],
-    }),
-    [points, c],
-  );
-  return (
-    <EChart
-      option={option}
-      theme={theme}
-      height={180}
-      onReady={open}
-      summary={points.map((p) => `${p.day} ${formatDuration(p.time_s)}`).join(', ')}
     />
   );
 }
