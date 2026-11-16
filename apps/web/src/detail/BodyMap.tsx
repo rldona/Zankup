@@ -6,6 +6,7 @@ import {
   FRONT,
   type Muscle,
 } from '@zankup/core';
+import { useId } from 'react';
 
 import { t } from '../i18n';
 
@@ -17,10 +18,17 @@ const label = (side: 'front' | 'back', worked: Map<Muscle, number>) =>
       .join(', ') || '—'
   }`;
 
-/** The glow of a worked muscle: brighter in its middle (each shape's own box, objectBoundingBox). */
-const Glow = () => (
+/**
+ * The glow of a worked muscle: brighter in its middle (each shape's own box, objectBoundingBox). Each
+ * figure has its own id: `url(#…)` takes the first element with it in the page, and when that one is in
+ * a hidden figure (the feed beside the detail) the glow paints nothing.
+ */
+/** A per-figure gradient id that is safe inside `url(#…)` (React's ids carry «»). */
+const useGlowId = () => `muscle-glow-${useId().replace(/[^\w-]/g, '')}`;
+
+const Glow = ({ id }: { id: string }) => (
   <defs>
-    <radialGradient id="muscle-glow">
+    <radialGradient id={id}>
       <stop offset="0" className="glow-core" />
       <stop offset="1" className="glow-edge" />
     </radialGradient>
@@ -28,7 +36,17 @@ const Glow = () => (
 );
 
 /** One side of the figure, its muscles shaded by how many sets worked them. */
-function Side({ side, worked, x = 0 }: { side: 'front' | 'back'; worked: Map<Muscle, number>; x?: number }) {
+function Side({
+  side,
+  worked,
+  glow,
+  x = 0,
+}: {
+  side: 'front' | 'back';
+  worked: Map<Muscle, number>;
+  glow: string;
+  x?: number;
+}) {
   const most = Math.max(1, ...worked.values());
   return (
     <g transform={x ? `translate(${x} 0)` : undefined}>
@@ -44,7 +62,7 @@ function Side({ side, worked, x = 0 }: { side: 'front' | 'back'; worked: Map<Mus
               key={`${muscle}-${i}`}
               d={d}
               className={sets ? 'muscle on' : 'muscle'}
-              style={sets ? { opacity: 0.45 + 0.55 * (sets / most) } : undefined}
+              style={sets ? { opacity: 0.45 + 0.55 * (sets / most), fill: `url(#${glow})` } : undefined}
             />
           );
         }),
@@ -55,13 +73,14 @@ function Side({ side, worked, x = 0 }: { side: 'front' | 'back'; worked: Map<Mus
 
 /** The front and back figures with the muscles worked: in the strength panel, or as the cover. */
 export function BodyMap({ worked }: { worked: Map<Muscle, number> }) {
+  const glow = useGlowId();
   return (
     <div className="bodymap">
       {(['front', 'back'] as const).map((side) => (
         <figure key={side}>
           <svg viewBox="0 0 100 200" role="img" aria-label={label(side, worked)}>
-            <Glow />
-            <Side side={side} worked={worked} />
+            <Glow id={`${glow}${side}`} />
+            <Side side={side} worked={worked} glow={`${glow}${side}`} />
           </svg>
           <figcaption className="note">{t(side === 'front' ? 'strength.front' : 'strength.back')}</figcaption>
         </figure>
@@ -88,11 +107,12 @@ export function MuscleCover({ worked }: { worked: Map<Muscle, number> }) {
 
 /** Both sides small, on a feed card's tile in place of a route. */
 export function BodyThumb({ worked }: { worked: Map<Muscle, number> }) {
+  const glow = useGlowId();
   return (
     <svg className="thumb bodythumb" viewBox="-30 -4 270 208" aria-hidden="true">
-      <Glow />
-      <Side side="front" worked={worked} />
-      <Side side="back" worked={worked} x={110} />
+      <Glow id={glow} />
+      <Side side="front" worked={worked} glow={glow} />
+      <Side side="back" worked={worked} glow={glow} x={110} />
     </svg>
   );
 }

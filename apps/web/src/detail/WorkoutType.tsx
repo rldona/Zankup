@@ -18,7 +18,7 @@ export function WorkoutTypePicker({
   return (
     <div className="field">
       <b>{label}</b>
-      <div className="chips" role="radiogroup" aria-label={label}>
+      <div className="chips wrap" role="radiogroup" aria-label={label}>
         {order.map((type) => (
           <button
             key={type}

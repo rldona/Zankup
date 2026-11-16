@@ -583,6 +583,14 @@ a.stepbtn:hover {
   }
 }
 
+/* Chips that wrap onto more lines instead of scrolling sideways: in a dialog every choice shows. */
+.chips.wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
 .zselect {
   position: relative;
   width: 100%;
@@ -2222,10 +2230,7 @@ a.button.block {
   fill: color-mix(in srgb, var(--muted) 45%, var(--bg));
 }
 
-.bodymap .muscle.on,
-.bodythumb .muscle.on {
-  fill: url(#muscle-glow);
-}
+/* A worked muscle's fill is its figure's own glow, set inline (BodyMap.tsx). */
 
 .glow-core {
   stop-color: color-mix(in srgb, var(--strength) 55%, #ffd27a);
