@@ -24,3 +24,4 @@ export * from './domain/shareCard';
 export * from './domain/efforts';
 export * from './domain/emphasis';
 export * from './domain/compare';
+export * from './progress';

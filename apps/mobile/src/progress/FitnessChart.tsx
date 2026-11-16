@@ -5,6 +5,7 @@
  * Another range slides into place.
  * `FitnessSparkline` is the same line, small, for the card on Progress.
  */
+import { loadRadius } from '@zankup/core';
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
 import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -22,7 +23,6 @@ import {
   useLineFrom,
 } from '../charts';
 import { useTheme } from '../theme';
-import { loadRadius } from './fitness';
 
 const AXIS = 34;
 const TOP = 40; // room for the picked day's badge

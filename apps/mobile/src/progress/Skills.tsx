@@ -4,7 +4,20 @@
  * weeks over all time. The card shows the strongest skill beside both radars; app/skills.tsx the
  * radar in full with each skill's level.
  */
-import { curvesQuery, meQuery } from '@zankup/core';
+import {
+  curvesQuery,
+  meQuery,
+  isoDay,
+  DURATIONS,
+  durationLabel,
+  LEVELS,
+  levelAt,
+  radialShare,
+  SKILLS,
+  strongest,
+  type Skill,
+  addDays,
+} from '@zankup/core';
 import {
   Canvas,
   Circle,
@@ -27,18 +40,6 @@ import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme, type Palette } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import {
-  DURATIONS,
-  durationLabel,
-  LEVELS,
-  levelAt,
-  radialShare,
-  SKILLS,
-  strongest,
-  type Skill,
-} from './skillLevels';
-import { addDays } from './weeks';
 
 /** Without a weight in the profile, the scale is read for a rider of this much. */
 export const REFERENCE_KG = 75;

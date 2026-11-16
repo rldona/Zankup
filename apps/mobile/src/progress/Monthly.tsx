@@ -2,7 +2,7 @@
  * Monthly activities (as Strava's): this month's moving time adding up day by day over last month's,
  * on Progress's card and, for all sports and each one, on its own screen.
  */
-import { calendarQuery } from '@zankup/core';
+import { calendarQuery, months, monthPairRange, type Month, hoursMinutes } from '@zankup/core';
 import { Canvas, Circle, DashPathEffect, Line, Path, Skia, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -16,14 +16,12 @@ import { locale, t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';
-import { months, monthsRange, type Month } from './monthTotals';
-import { hoursMinutes } from './volume';
 
 /** The calendar of this month and the last, fetched once for the card and the screen. */
 export function useMonths() {
   const api = useApi();
   const today = useMemo(() => new Date(), []);
-  const query = useQuery(calendarQuery(api, monthsRange(today)));
+  const query = useQuery(calendarQuery(api, monthPairRange(today)));
   return { calendar: query.data, today, pending: query.isPending };
 }
 

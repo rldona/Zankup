@@ -3,18 +3,13 @@
  * score is our CTL (42-day exponential average of the daily load, `packages/metrics`), over a month to
  * two years, and how much it changed from the first day of the range to the day picked.
  */
+import { isoDay } from '../domain/home';
 
 export type FitnessRange = '1m' | '3m' | '6m' | '1y' | '2y';
 
 export const FITNESS_RANGES: FitnessRange[] = ['1m', '3m', '6m', '1y', '2y'];
 
 const DAYS: Record<FitnessRange, number> = { '1m': 30, '3m': 90, '6m': 182, '1y': 365, '2y': 730 };
-
-/** `YYYY-MM-DD` of a local date. */
-export function isoDay(date: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
-}
 
 function addDays(date: Date, days: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);

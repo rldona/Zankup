@@ -27,8 +27,8 @@ export function defaultZoneKind(sport: string | null): ZoneKind {
 export function topZone(seconds: number[]): { index: number; share: number } | null {
   const total = seconds.reduce((a, b) => a + b, 0);
   if (total <= 0) return null;
-  const index = seconds.reduce((best, s, i) => (s > seconds[best] ? i : best), 0);
-  return { index, share: Math.round((seconds[index] / total) * 100) };
+  const index = seconds.reduce((best, s, i) => (s > seconds[best]! ? i : best), 0);
+  return { index, share: Math.round((seconds[index]! / total) * 100) };
 }
 
 /** How a zone's share moved against the span before, in points; null when there is nothing before. */
@@ -36,13 +36,13 @@ export function shareChange(seconds: number[], previous: number[], index: number
   const total = previous.reduce((a, b) => a + b, 0);
   const now = seconds.reduce((a, b) => a + b, 0);
   if (total <= 0 || now <= 0) return null;
-  return Math.round((seconds[index] / now) * 100 - (previous[index] / total) * 100);
+  return Math.round(((seconds[index] ?? 0) / now) * 100 - ((previous[index] ?? 0) / total) * 100);
 }
 
 /** A zone's range from the lower bounds: "<110", "111 - 150" or ">301", as Strava writes them. */
 export function zoneRange(bounds: number[], index: number): string {
   if (!bounds.length) return '';
-  const lo = bounds[index];
+  const lo = bounds[index] ?? 0;
   const next = bounds[index + 1];
   if (index === 0 && lo <= 0) return `<${(next ?? 1) - 1}`;
   if (next == null) return `>${lo}`;
@@ -61,7 +61,7 @@ export function glance(
   let zone = 0;
   let most = 0;
   seconds.forEach((s, i) => {
-    const before = previous[i];
+    const before = previous[i] ?? 0;
     if (before <= 0) return;
     const change = (s - before) / before;
     if (Math.abs(change) > Math.abs(most)) {

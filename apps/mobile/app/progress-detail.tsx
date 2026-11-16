@@ -4,7 +4,28 @@
  * its total against the span before it or against the same span some years back, the chart, and a
  * sentence on how it went. Touching the chart picks a day or week; its box opens what was done in it.
  */
-import { calendarQuery, SPORTS, streakQuery, volumeQuery, type CalendarDay } from '@zankup/core';
+import {
+  calendarQuery,
+  SPORTS,
+  streakQuery,
+  volumeQuery,
+  type CalendarDay,
+  isoDay,
+  bucketValue,
+  comparableYears,
+  metricsFor,
+  percentChange,
+  PROGRESS_RANGES,
+  volumeRange,
+  sportsIn,
+  yearsBack,
+  type Bucket,
+  type DayRange,
+  type ProgressRange,
+  type VolumeMetric,
+  addDays,
+  mondayOf,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -14,26 +35,10 @@ import { useApi } from '../src/auth';
 import { Icon, SportIcon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { asSport } from '../src/prefs';
-import { isoDay } from '../src/progress/fitness';
 import { Panel } from '../src/progress/Panel';
 import { SportSheet } from '../src/progress/SportSheet';
-import {
-  bucketValue,
-  comparableYears,
-  metricsFor,
-  percentChange,
-  PROGRESS_RANGES,
-  rangeOf,
-  sportsIn,
-  yearsBack,
-  type Bucket,
-  type Period,
-  type ProgressRange,
-  type VolumeMetric,
-} from '../src/progress/volume';
 import { monthLabels, sportIcon, useVolumeFormat, weekTitle } from '../src/progress/VolumeCard';
 import { VolumeChart } from '../src/progress/VolumeChart';
-import { addDays, mondayOf } from '../src/progress/weeks';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { Chip, CHIP_ICON } from '../src/progress/Chip';
@@ -58,8 +63,8 @@ export default function ProgressDetailScreen() {
   const [picked, setPicked] = useState<number | null>(null);
   const [panel, setPanel] = useState<'sport' | 'compare' | 'bucket' | null>(null);
 
-  const { current, previous, unit } = rangeOf(range, today);
-  const against: Period = compare ? yearsBack(current, compare) : previous;
+  const { current, previous, unit } = volumeRange(range, today);
+  const against: DayRange = compare ? yearsBack(current, compare) : previous;
   const now = useQuery(volumeQuery(api, current, unit));
   const before = useQuery(volumeQuery(api, against, unit));
   const first = useQuery(streakQuery(api)).data?.first_activity;

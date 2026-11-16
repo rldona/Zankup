@@ -10,6 +10,8 @@ import {
   zoneScale,
   type ActivityContext,
   type Series,
+  bestValue,
+  type GoalMetric,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -20,11 +22,9 @@ import { t } from '../i18n';
 import { locale } from '../i18n';
 import { useUnits } from '../prefs';
 import { bestName, Medal } from '../progress/BestsCard';
-import { bestValue } from '../progress/bests';
 import { statusColour } from '../progress/EffortCard';
 import { FitnessSparkline } from '../progress/FitnessChart';
 import { GoalRing, goalWords } from '../progress/GoalsCard';
-import { type GoalMetric } from '../progress/goals';
 import { useVolumeFormat } from '../progress/VolumeCard';
 import { useTheme } from '../theme';
 import { accent, Card, Muted } from '../ui';

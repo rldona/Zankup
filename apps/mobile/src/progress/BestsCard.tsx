@@ -4,7 +4,7 @@
  * opens app/bests.tsx on its default measure (running, 10 km), as Strava's widget does. The medal, the measures'
  * names and the medal colours are shared by both.
  */
-import { effortShown, recentBestsQuery, SPORT_ICONS } from '@zankup/core';
+import { effortShown, recentBestsQuery, SPORT_ICONS, bestValue, RUN_KEYS, durationLabel } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
@@ -16,8 +16,6 @@ import { useFormat, useUnits } from '../prefs';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { bestValue, RUN_KEYS } from './bests';
-import { durationLabel } from './skillLevels';
 
 /**
  * Medals are gold, silver and bronze in every theme: their colour is what they say. Past the third,

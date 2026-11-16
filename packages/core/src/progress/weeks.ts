@@ -3,7 +3,7 @@
  * this one, what a day's bubble shows (time, distance or elevation) and how big it is, and each week's
  * place in the streak. Pure, so it is unit-tested.
  */
-import { isoDay } from './fitness';
+import { isoDay } from '../domain/home';
 
 export type LogMetric = 'time' | 'distance' | 'ascent';
 

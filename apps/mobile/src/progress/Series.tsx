@@ -3,7 +3,17 @@
  * opens the month: each day with its sport (a tap opens the activity) and, beside each week, whether it
  * kept the streak, on a band that runs through the streak to this week's flame.
  */
-import { calendarQuery, SPORT_ICONS, streakQuery, type CalendarDay } from '@zankup/core';
+import {
+  calendarQuery,
+  SPORT_ICONS,
+  streakQuery,
+  type CalendarDay,
+  isoDay,
+  addDays,
+  weekDays,
+  weekMark,
+  type WeekMark,
+} from '@zankup/core';
 import { Canvas, Path } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -19,8 +29,6 @@ import { CardSkeleton } from '../Skeleton';
 import { monthGrid } from '../stats/dates';
 import { useTheme } from '../theme';
 import { accent, Card, InfoButton, Muted, onAccent, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import { addDays, weekDays, weekMark, type WeekMark } from './weeks';
 import { Panel } from './Panel';
 
 /** The card; its month opens in a panel the screen holds (`onOpen`), outside the row of cards. */

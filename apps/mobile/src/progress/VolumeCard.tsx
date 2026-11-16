@@ -2,7 +2,21 @@
  * Progress's first card (as Strava's): a chip per sport, this week's totals (or the week touched on the
  * chart) and the last 12 weeks of the sport's main measure, with a way into the detail screen.
  */
-import { SPORT_ICONS, SPORTS, volumeQuery } from '@zankup/core';
+import {
+  SPORT_ICONS,
+  SPORTS,
+  volumeQuery,
+  isoDay,
+  axisTicks,
+  bucketValue,
+  hoursMinutes,
+  metricsFor,
+  sportsIn,
+  type Bucket,
+  type VolumeMetric,
+  addDays,
+  weekAt,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -16,18 +30,7 @@ import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { Chip, CHIP_ICON } from './Chip';
 import { Card } from '../ui';
-import { isoDay } from './fitness';
-import {
-  axisTicks,
-  bucketValue,
-  hoursMinutes,
-  metricsFor,
-  sportsIn,
-  type Bucket,
-  type VolumeMetric,
-} from './volume';
 import { VolumeChart } from './VolumeChart';
-import { addDays, weekAt } from './weeks';
 
 const MILE = 1609.344;
 

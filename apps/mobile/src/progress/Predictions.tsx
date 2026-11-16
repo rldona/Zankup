@@ -4,7 +4,19 @@
  * badge and the time line (faster is higher) are shared by both.
  */
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
-import { estimatesQuery } from '@zankup/core';
+import {
+  estimatesQuery,
+  isoDay,
+  changeText,
+  RACES,
+  raceTime,
+  series,
+  smoothPath,
+  valueOn,
+  type Point,
+  type RaceKind,
+  addDays,
+} from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -17,18 +29,6 @@ import { t } from '../i18n';
 import { CardSkeleton } from '../Skeleton';
 import { useTheme } from '../theme';
 import { accent, Card, Muted, Tappable } from '../ui';
-import { isoDay } from './fitness';
-import {
-  changeText,
-  RACES,
-  raceTime,
-  series,
-  smoothPath,
-  valueOn,
-  type Point,
-  type RaceKind,
-} from './raceTimes';
-import { addDays } from './weeks';
 
 /** Each race's history (day and predicted seconds), oldest first. */
 export function usePredictions() {

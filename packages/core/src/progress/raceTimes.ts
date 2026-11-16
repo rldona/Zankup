@@ -42,7 +42,7 @@ export function changeText(seconds: number): string {
 /** The prediction on a day: the last change on or before it (the first one if it is older). */
 export function valueOn(history: Point[], day: string): number | null {
   if (!history.length) return null;
-  let value = history[0].value;
+  let value = history[0]!.value;
   for (const p of history) {
     if (p.day > day) break;
     value = p.value;
@@ -59,8 +59,8 @@ export function series(history: Point[], from: string, today: string): Point[] {
   if (start == null) return [];
   const out = [{ day: from, value: start }];
   for (const p of history)
-    if (p.day > from && p.day <= today && Math.abs(p.value - out[out.length - 1].value) >= 0.5) out.push(p);
-  const last = out[out.length - 1];
+    if (p.day > from && p.day <= today && Math.abs(p.value - out[out.length - 1]!.value) >= 0.5) out.push(p);
+  const last = out[out.length - 1]!;
   return last.day === today ? out : [...out, { day: today, value: last.value }];
 }
 
@@ -72,7 +72,7 @@ export function smoothPath(points: { x: number; y: number }[]): string {
   return points
     .map((p, i) => {
       if (!i) return `M${p.x} ${p.y}`;
-      const q = points[i - 1];
+      const q = points[i - 1]!;
       const mid = (q.x + p.x) / 2;
       return `C${mid} ${q.y} ${mid} ${p.y} ${p.x} ${p.y}`;
     })
@@ -90,7 +90,7 @@ export function timeTicks(lo: number, hi: number, count = 4): number[] {
   }
   const steps = [10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600];
   const step =
-    steps.find((st) => Math.ceil(hi / st) - Math.floor(lo / st) <= count) ?? steps[steps.length - 1];
+    steps.find((st) => Math.ceil(hi / st) - Math.floor(lo / st) <= count) ?? 3600;
   const out: number[] = [];
   for (let v = Math.floor(lo / step) * step; v < hi + step; v += step) {
     out.push(v);

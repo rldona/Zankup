@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fitnessChange, isoDay, loadRadius, rangePeriod, untilToday } from './fitness';
+import { isoDay } from '../domain/home';
+import { fitnessChange, loadRadius, rangePeriod, untilToday } from './fitness';
 
 describe('rangePeriod', () => {
   const today = new Date(2026, 10, 13);
@@ -40,7 +41,7 @@ describe('untilToday', () => {
     const out = untilToday([day('2026-11-12', 42)], new Date(2026, 10, 14));
     expect(out.map((d) => d.day)).toEqual(['2026-11-12', '2026-11-13', '2026-11-14']);
     expect(out[1]).toMatchObject({ load: 0, ctl: 41 });
-    expect(out[2].ctl).toBeCloseTo(41 - 41 / 42);
+    expect(out[2]?.ctl).toBeCloseTo(41 - 41 / 42);
   });
   it('leaves a series that already reaches today alone', () => {
     expect(untilToday([day('2026-11-14', 5)], new Date(2026, 10, 14))).toHaveLength(1);

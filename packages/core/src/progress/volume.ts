@@ -11,13 +11,13 @@ export const PROGRESS_RANGES: ProgressRange[] = ['7d', '1m', '3m', '6m', 'ytd', 
 export type VolumeMetric = 'time' | 'distance' | 'ascent' | 'count';
 export const VOLUME_METRICS: VolumeMetric[] = ['time', 'distance', 'ascent', 'count'];
 
-export type Period = { from: string; to: string };
+export type DayRange = { from: string; to: string };
 
 /** What a range covers (to excluded), in days or weeks, and the same span just before it. */
-export function rangeOf(
+export function volumeRange(
   range: ProgressRange,
   today: string,
-): { current: Period; previous: Period; unit: 'day' | 'week' } {
+): { current: DayRange; previous: DayRange; unit: 'day' | 'week' } {
   const tomorrow = addDays(today, 1);
   if (range === '7d' || range === '1m') {
     const from = addDays(today, range === '7d' ? -6 : -30);
@@ -139,13 +139,13 @@ export function metricsFor(sport: string | null): VolumeMetric[] {
 }
 
 /** The same span `years` years back, in whole weeks (52 each), so its days fall on the same weekdays. */
-export function yearsBack(period: Period, years: number): Period {
+export function yearsBack(period: DayRange, years: number): DayRange {
   return { from: addDays(period.from, -364 * years), to: addDays(period.to, -364 * years) };
 }
 
 /** How many years back can be compared: those that reach the first activity. */
 export function comparableYears(
-  period: Period,
+  period: DayRange,
   firstActivity: string | null | undefined,
   most = 15,
 ): number[] {

@@ -3,7 +3,7 @@
  * or speed over time, the one opened marked, and the list by year (date, pace or speed, time and
  * relative effort), each opening its activity.
  */
-import { activityQuery } from '@zankup/core';
+import { activityQuery, smoothPath } from '@zankup/core';
 import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,7 +16,6 @@ import { clock, speedText, useActivityContext } from '../src/detail/Context';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { asSport, useUnits } from '../src/prefs';
-import { smoothPath } from '../src/progress/raceTimes';
 import { ChartSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { accent, Muted } from '../src/ui';

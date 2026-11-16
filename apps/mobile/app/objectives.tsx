@@ -3,7 +3,19 @@
  * and for months and years whether it is behind an even pace), a menu to edit or delete it, and a fold
  * with this period's totals and its chart. The + adds one.
  */
-import { goalsQuery, volumeQuery, type GoalOut } from '@zankup/core';
+import {
+  goalsQuery,
+  volumeQuery,
+  type GoalOut,
+  isoDay,
+  behind,
+  chartPeriods,
+  left,
+  type GoalMetric,
+  type GoalPeriod,
+  metricOf,
+  type Bucket,
+} from '@zankup/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
@@ -13,11 +25,8 @@ import { useApi } from '../src/auth';
 import { openGoals, rememberGoal } from '../src/storage';
 import { Icon } from '../src/Icon';
 import { t } from '../src/i18n';
-import { isoDay } from '../src/progress/fitness';
-import { behind, chartPeriods, left, type GoalMetric, type GoalPeriod } from '../src/progress/goals';
 import { GoalChart, GoalRing, goalWords } from '../src/progress/GoalsCard';
 import { Panel } from '../src/progress/Panel';
-import { metricOf, type Bucket } from '../src/progress/volume';
 import { useVolumeFormat } from '../src/progress/VolumeCard';
 import { PageSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';

@@ -3,6 +3,17 @@
  * they changed in 30 days; over a month, three or six, one race with its line. The range is chosen at
  * the bottom of the screen, always there.
  */
+import {
+  isoDay,
+  racePace,
+  RACES,
+  raceTime,
+  series,
+  timeTicks,
+  valueOn,
+  type RaceKind,
+  addDays,
+} from '@zankup/core';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -11,18 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../src/Icon';
 import { locale, t } from '../src/i18n';
 import { useUnits } from '../src/prefs';
-import { isoDay } from '../src/progress/fitness';
 import { ChangeBadge, PredictionChart, RaceBadge, usePredictions } from '../src/progress/Predictions';
-import {
-  racePace,
-  RACES,
-  raceTime,
-  series,
-  timeTicks,
-  valueOn,
-  type RaceKind,
-} from '../src/progress/raceTimes';
-import { addDays } from '../src/progress/weeks';
 import { PageSkeleton } from '../src/Skeleton';
 import { useTheme } from '../src/theme';
 import { Chip } from '../src/progress/Chip';

@@ -3,12 +3,6 @@
  * eight weeks over all time (or all time alone), and each skill (sprint, attack, climb) with its level
  * on a nine-step bar; a skill opens to its durations, each with its watts and its own bar.
  */
-import { Stack } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-
-import { Icon } from '../src/Icon';
-import { locale, t } from '../src/i18n';
 import {
   durationLabel,
   LEVELS,
@@ -20,7 +14,13 @@ import {
   SKILLS,
   skillLevel,
   type Skill,
-} from '../src/progress/skillLevels';
+} from '@zankup/core';
+import { Stack } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+
+import { Icon } from '../src/Icon';
+import { locale, t } from '../src/i18n';
 import { radarColours, skillColour, SkillsRadar, useSkills } from '../src/progress/Skills';
 import { Panel } from '../src/progress/Panel';
 import { ChartSkeleton } from '../src/Skeleton';
