@@ -129,9 +129,10 @@ export function Health() {
     const out: HealthDay[] = [];
     const day = new Date(`${range.start}T00:00:00Z`);
     const last = new Date(`${range.end}T00:00:00Z`);
-    for (; day < last; day.setUTCDate(day.getUTCDate() + 1)) {
+    while (day < last) {
       const key = day.toISOString().slice(0, 10);
       out.push(byDay.get(key) ?? ({ day: key } as HealthDay));
+      day.setUTCDate(day.getUTCDate() + 1);
     }
     return out;
   }, [days.data, range]);
