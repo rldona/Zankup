@@ -283,9 +283,9 @@ export async function storeRefreshToken(token: string): Promise<void> {
 export type Unlock = { session: Session } | { signedOut: true } | { cancelled: true };
 
 /**
- * Opening the app: the fingerprint releases the refresh token, which gets a fresh access token. A key
- * Android invalidated (fingerprints changed), a token the server no longer accepts or a missing one
- * mean signing in again.
+ * Opening the app: the fingerprint releases the refresh token and the app opens on what it keeps; the
+ * client then gets a fresh access token (`authorisedClient`). A key Android invalidated (fingerprints
+ * changed), a missing token or one the server no longer accepts mean signing in again.
  */
 export async function unlock(): Promise<Unlock> {
   const baseUrl = instanceUrl();
@@ -313,21 +313,9 @@ export async function unlock(): Promise<Unlock> {
     return { signedOut: true };
   }
   if (!token) return { signedOut: true };
-  // Offline (or the server is down): open with what is kept on the phone; the client gets an access
-  // token with this refresh token as soon as a request is answered with 401.
-  const offline: Unlock = { session: { baseUrl, accessToken: '', refreshToken: token } };
-  const result = await createApiClient(baseUrl)
-    .POST('/api/auth/refresh', { body: { refresh_token: token, rotate: false } })
-    .catch(() => null);
-  if (!result) return offline;
-  if (!result.data) {
-    if (result.response.status === 401) {
-      await forget();
-      return { signedOut: true };
-    }
-    return offline;
-  }
-  return { session: { baseUrl, accessToken: result.data.access_token, refreshToken: token } };
+  // Opens at once with what is kept on the phone, never waiting for the network: the client asks for an
+  // access token with this refresh token straight away, and signs out if the server refuses it.
+  return { session: { baseUrl, accessToken: '', refreshToken: token } };
 }
 
 export async function forget(): Promise<void> {
@@ -373,8 +361,13 @@ export function authorisedClient(initial: Session, onSignedOut: () => void): Api
     return true;
   };
 
+  // Opened without an access token (unlock does not wait for the server): ask for one now. Requests wait
+  // for it, instead of each being answered 401 first.
+  if (!session.accessToken) refreshing = refresh().finally(() => (refreshing = null));
+
   api.use({
-    onRequest({ request }) {
+    async onRequest({ request }) {
+      if (refreshing) await refreshing;
       request.headers.set('Authorization', `Bearer ${session.accessToken}`);
       return request;
     },

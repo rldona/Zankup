@@ -55,6 +55,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-local-authentication',
     'expo-localization',
+    // The icon font, embedded in the app so icons draw from the first frame.
+    ['expo-font', { fonts: ['./assets/fonts/ZankupIcons.otf'] }],
     'expo-sqlite',
     'expo-background-task',
     ['expo-notifications', { color: '#20c997', defaultChannel: 'default' }],
@@ -98,6 +100,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       { image: './assets/splash-icon.png', imageWidth: 160, backgroundColor: '#111111' },
     ],
   ],
-  experiments: { typedRoutes: false },
+  // React Compiler memoises components and values itself, so screens redraw only what changed.
+  experiments: { typedRoutes: false, reactCompiler: true },
   extra: { eas: { projectId: process.env.EAS_PROJECT_ID } },
 });

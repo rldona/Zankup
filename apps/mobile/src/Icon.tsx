@@ -1,13 +1,14 @@
 /**
- * The app's icons: Material Symbols (Rounded) from packages/core, filled and drawn with Skia, as the PWA shows
- * them. `SportIcon` is a sport's icon in its colour on a soft tile, like the PWA's.
+ * The app's icons: Material Symbols (Rounded) from packages/core, as the PWA shows them, drawn as
+ * characters of an icon font built from the same paths (assets/fonts/ZankupIcons.otf,
+ * scripts/icon_font.py): plain text, so a screen with dozens of icons has no Skia canvas for each.
+ * `SportIcon` is a sport's icon in its colour on a soft tile, like the PWA's.
  */
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
 import {
   GOOGLE_G,
   MARK_SHAPES,
   MARK_VIEWBOX,
-  MATERIAL_ICONS,
   SOURCE_ICONS,
   SPORT_ICONS,
   type HealthSourceName,
@@ -15,26 +16,39 @@ import {
   type Sport,
 } from '@zankup/core';
 import { useEffect, useState } from 'react';
-import { Animated, Easing, View, type ColorValue } from 'react-native';
+import { Animated, Easing, Text, View, type ColorValue } from 'react-native';
+
+import { ICON_GLYPHS } from './iconGlyphs';
 
 import { useTheme } from './theme';
 
 export type IconName = MaterialIcon;
 
-const parsed = new Map<IconName, ReturnType<typeof Skia.Path.MakeFromSVGString>>();
-function path(name: IconName) {
-  if (!parsed.has(name)) parsed.set(name, Skia.Path.MakeFromSVGString(MATERIAL_ICONS[name]));
-  return parsed.get(name) ?? null;
-}
+/** Every icon has its character in the font: a name without one does not compile. */
+const GLYPHS: Record<IconName, string> = ICON_GLYPHS;
 
 export function Icon({ name, color, size = 24 }: { name: IconName; color: ColorValue; size?: number }) {
-  const shape = path(name);
-  if (!shape) return null;
-  // The icons sit in a 960-unit box from y = -960 to 0.
+  // The font's em is the icons' 960-unit box (ascent 960, descent 0): at `size`, a glyph fills a square
+  // of `size` exactly.
   return (
-    <Canvas style={{ width: size, height: size }}>
-      <Path path={shape} color={String(color)} transform={[{ scale: size / 960 }, { translateY: 960 }]} />
-    </Canvas>
+    <Text
+      accessible={false}
+      importantForAccessibility="no"
+      allowFontScaling={false}
+      style={{
+        width: size,
+        height: size,
+        fontFamily: 'ZankupIcons',
+        fontSize: size,
+        lineHeight: size,
+        color,
+        includeFontPadding: false,
+        textAlign: 'center',
+        textAlignVertical: 'center',
+      }}
+    >
+      {GLYPHS[name]}
+    </Text>
   );
 }
 

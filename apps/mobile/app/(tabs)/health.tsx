@@ -4,6 +4,8 @@
  * 365 days, with the form (TSB) from training next to readiness.
  */
 import {
+  formatDate,
+  formatNumber,
   healthDaysQuery,
   healthNightQuery,
   relativeDay,
@@ -36,11 +38,12 @@ type Period = (typeof PERIODS)[number];
 const isoDay = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const hours = (s: number | null | undefined) => (s ? s / 3600 : 0);
-const one = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1 });
+// Kept formatters (`formatDate`): a chart writes a label for every day of the period.
+const one = (n: number) => formatNumber(n, locale, { maximumFractionDigits: 1 });
 const shortDay = (day: string) =>
-  new Date(`${day}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  formatDate(new Date(`${day}T12:00:00`), locale, { day: 'numeric', month: 'short' });
 const longDay = (day: string) =>
-  new Date(`${day}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  formatDate(new Date(`${day}T12:00:00`), locale, { weekday: 'long', day: 'numeric', month: 'long' });
 
 /** "Today, …" only when it is today; "Yesterday, …"; otherwise the date. */
 function dayTitle(day: string): string {

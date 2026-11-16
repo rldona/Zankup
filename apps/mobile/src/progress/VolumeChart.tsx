@@ -2,15 +2,15 @@
  * Volume over time as Strava's Progress draws it: a line over a solid fill, a ring on each point when
  * there are few, the axis on the right and months (or days) along the bottom. Optionally the range
  * before it as a second line, and a picked point (a white rule and a filled dot) that touch or a
- * sideways slide moves; a vertical swipe still scrolls the screen.
+ * sideways slide moves; a vertical swipe still scrolls the screen. New values slide into place.
  */
-import { Canvas, Circle, Group, Line, Path, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Line, vec } from '@shopify/react-native-skia';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { hapticClick } from '../../modules/haptic-click/src';
-import { useCanvasReady } from '../charts';
+import { MorphPath, polyline, Rings, useCanvasReady } from '../charts';
 import { useTheme } from '../theme';
 import { CLICK_STRENGTH } from './FitnessChart';
 
@@ -54,10 +54,8 @@ export function VolumeChart({
   const x = (i: number) => 4 + i * step;
   const y = (v: number) => base - (Math.min(v, max) / max) * (base - top);
   const points = values.map((v, i) => [x(i), y(v)] as const);
-  const line = (pts: readonly (readonly [number, number])[]) =>
-    pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join('');
-  const end = points[points.length - 1];
-  const area = end ? `${line(points)}L${end[0]} ${base}L${points[0][0]} ${base}Z` : '';
+  const now = polyline(points, base);
+  const flat = polyline(points, base, true);
   const before = previous?.slice(0, values.length).map((v, i) => [x(i), y(v)] as const);
   const rings = values.length <= 60;
   const at = picked != null ? points[picked] : null;
@@ -99,24 +97,37 @@ export function VolumeChart({
                 {ticks.map((v) => (
                   <Line key={v} p1={vec(0, y(v))} p2={vec(plot + 8, y(v))} color={c.line} strokeWidth={1} />
                 ))}
-                <Path path={area} color={colour} opacity={0.3} />
+                <MorphPath d={now.area} flat={flat.area} ready={ready} color={colour} opacity={0.3} />
                 {before && before.length > 1 && (
-                  <Path
-                    path={line(before)}
+                  <MorphPath
+                    d={polyline(before, base).line}
+                    flat={polyline(before, base, true).line}
+                    ready={ready}
                     style="stroke"
                     strokeWidth={2}
                     strokeJoin="round"
                     color={c.fatigue}
                   />
                 )}
-                <Path path={line(points)} style="stroke" strokeWidth={3} strokeJoin="round" color={colour} />
-                {rings &&
-                  points.map(([px, py], i) => (
-                    <Group key={i}>
-                      <Circle cx={px} cy={py} r={4.5} color={c.surface} />
-                      <Circle cx={px} cy={py} r={4.5} style="stroke" strokeWidth={2.5} color={colour} />
-                    </Group>
-                  ))}
+                <MorphPath
+                  d={now.line}
+                  flat={flat.line}
+                  ready={ready}
+                  style="stroke"
+                  strokeWidth={3}
+                  strokeJoin="round"
+                  color={colour}
+                />
+                {rings && (
+                  <Rings
+                    points={points}
+                    base={base}
+                    r={4.5}
+                    fill={String(c.surface)}
+                    colour={colour}
+                    ready={ready}
+                  />
+                )}
                 {at && (
                   <>
                     <Line p1={vec(at[0], top)} p2={vec(at[0], base)} color={c.fg} strokeWidth={2} />
