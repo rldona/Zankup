@@ -7,6 +7,8 @@
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
 import {
   GOOGLE_G,
+  MARK_SHAPES,
+  MARK_VIEWBOX,
   SOURCE_ICONS,
   SPORT_ICONS,
   type HealthSourceName,
@@ -78,6 +80,30 @@ export function GoogleIcon({ color, size = 20 }: { color: ColorValue; size?: num
   return (
     <Canvas style={{ width: size, height: size }}>
       <Path path={GOOGLE} color={String(color)} transform={[{ scale: size / GOOGLE_G.size }]} />
+    </Canvas>
+  );
+}
+
+// The Zankup mark (packages/core): one stroke, in a 1106 × 1300 box.
+const ZANKUP = Skia.Path.MakeFromSVGString(MARK_SHAPES.path.d);
+
+/**
+ * The Zankup mark, small, in one colour: beside a figure Zankup works out itself (a sleep score), as a
+ * source's mark sits beside the figures it gives.
+ */
+export function ZankupMark({ color, size = 16 }: { color: ColorValue; size?: number }) {
+  if (!ZANKUP) return null;
+  const scale = size / MARK_VIEWBOX.height;
+  return (
+    <Canvas style={{ width: size, height: size }}>
+      <Path
+        path={ZANKUP}
+        style="stroke"
+        strokeWidth={MARK_SHAPES.path.strokeWidth}
+        strokeCap="butt"
+        color={String(color)}
+        transform={[{ translateX: (size - MARK_VIEWBOX.width * scale) / 2 }, { scale }]}
+      />
     </Canvas>
   );
 }
