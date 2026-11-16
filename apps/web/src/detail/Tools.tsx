@@ -4,10 +4,12 @@ import {
   gearQuery,
   sharedPreviewQuery,
   sharesQuery,
+  isWorkoutType,
   SPORTS,
   type ActivityDetail,
   type PhotoRef,
   type Sport,
+  type WorkoutType,
 } from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
@@ -21,6 +23,8 @@ import { locale, t } from '../i18n';
 import { usePrefs } from '../prefs';
 import { drawCard, shareImage } from '../share/card';
 import { useResolvedTheme } from '../theme';
+import { WorkoutTypePicker } from './WorkoutType';
+import { nameWithType, rememberWorkoutType } from './workoutTypes';
 
 /** A modal dialog that is open while mounted, and closes with Escape, its close button or the overlay. */
 export function Modal({
@@ -134,14 +138,29 @@ function EditActivity({ activity, onClose }: { activity: ActivityDetail; onClose
   const [description, setDescription] = useState(activity.description ?? '');
   const [sport, setSport] = useState(activity.sport);
   const [gearId, setGearId] = useState(activity.gear?.id ?? 0);
+  const [workoutType, setWorkoutType] = useState<WorkoutType | null>(
+    isWorkoutType(activity.workout_type) ? activity.workout_type : null,
+  );
+  const pickType = (type: WorkoutType | null) => {
+    setWorkoutType(type);
+    setName((n) => nameWithType(type, n, activity.name ?? '', activity.edited_fields));
+  };
   const [confirming, setConfirming] = useState(false);
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH('/api/activities/{activity_id}', {
         params: { path: { activity_id: activity.id } },
-        body: { name, description, sport: sport as Sport, gear_id: gearId },
+        body: {
+          name,
+          description,
+          sport: sport as Sport,
+          gear_id: gearId,
+          // A type belongs to strength: changing the sport clears it.
+          workout_type: sport === 'strength' ? workoutType : null,
+        },
       });
       if (error) throw new Error('save');
+      if (sport === 'strength') rememberWorkoutType(workoutType);
     },
     onSuccess: () => {
       refresh();
@@ -218,6 +237,7 @@ function EditActivity({ activity, onClose }: { activity: ActivityDetail; onClose
               options={SPORTS.map((s) => ({ value: s, label: t(`sport.${s}`) }))}
             />
           </div>
+          {sport === 'strength' && <WorkoutTypePicker value={workoutType} onChange={pickType} />}
           <div className="field">
             <b>{t('gear.title')}</b>
             <Select
