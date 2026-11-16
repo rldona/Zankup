@@ -9,7 +9,9 @@ import {
   activityQuery,
   formatDuration,
   gearQuery,
+  isWorkoutType,
   type ActivitySummary,
+  type WorkoutType,
 } from '@zankup/core';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -22,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApi } from './auth';
 import { Photos } from './detail/Tools';
+import { nameWithType, rememberWorkoutType, WorkoutTypePicker } from './detail/WorkoutType';
 import { t } from './i18n';
 import { SportIcon } from './Icon';
 import { asSport, useFormat } from './prefs';
@@ -83,19 +86,33 @@ function LatestSheet({ activity: a, onClose }: { activity: ActivitySummary; onCl
   const [gearId, setGearId] = useState<string | null>(null);
   const currentGear = String(detail.data?.gear?.id ?? 0);
   const currentDescription = detail.data?.description ?? '';
+  const currentType = isWorkoutType(a.workout_type) ? a.workout_type : null;
+  const [workoutType, setWorkoutType] = useState<WorkoutType | null | undefined>(undefined);
+  const chosenType = workoutType === undefined ? currentType : workoutType;
+  const pickType = (type: WorkoutType | null) => {
+    setWorkoutType(type);
+    setName((n) => nameWithType(type, n, a.name ?? '', detail.data?.edited_fields ?? []));
+  };
 
   const save = useMutation({
     mutationFn: async () => {
-      const body: { name?: string; description?: string; gear_id?: number } = {};
+      const body: {
+        name?: string;
+        description?: string;
+        gear_id?: number;
+        workout_type?: WorkoutType | null;
+      } = {};
       if (name.trim() && name.trim() !== (a.name ?? '')) body.name = name.trim();
       if (description !== null && description !== currentDescription) body.description = description;
       if (gearId !== null && gearId !== currentGear) body.gear_id = Number(gearId);
+      if (chosenType !== currentType) body.workout_type = chosenType;
       if (Object.keys(body).length === 0) return;
       const { error } = await api.PATCH('/api/activities/{activity_id}', {
         params: { path: { activity_id: a.id } },
         body,
       });
       if (error) throw new Error('save');
+      rememberWorkoutType(body.workout_type ?? null);
       void queryClient.invalidateQueries({ queryKey: ['activity', a.id] });
       void queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
@@ -206,6 +223,7 @@ function LatestSheet({ activity: a, onClose }: { activity: ActivitySummary; onCl
                 },
               ]}
             />
+            {sport === 'strength' && <WorkoutTypePicker value={chosenType} onChange={pickType} />}
             <View style={{ flexDirection: 'row', gap: 24 }}>
               {stats.map(([label, value]) => (
                 <Stat key={label} label={label} value={value} labelFirst />

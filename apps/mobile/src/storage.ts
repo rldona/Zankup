@@ -22,6 +22,8 @@ export const keys = {
   goalsOpen: 'zankup.goalsOpen',
   /** The range last chosen on Progress → Fitness (1m, 3m, 6m, 1y or 2y). */
   fitnessRange: 'zankup.fitnessRange',
+  /** The strength workout type last chosen, offered first next time. */
+  workoutType: 'zankup.workoutType',
 } as const;
 
 export const storage = Storage;

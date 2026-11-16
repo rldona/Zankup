@@ -224,6 +224,10 @@ class Activity(Timestamps, Base):
     description: Mapped[str | None] = mapped_column(Text)
     sport: Mapped[str] = mapped_column(String(20))
     sub_sport: Mapped[str | None] = mapped_column(String(40))
+    workout_type: Mapped[str | None] = mapped_column(
+        String(20),
+        comment="A strength workout's kind, chosen by the user (rowing, hyrox, grit…): its muscles",
+    )
     start_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     timezone: Mapped[str | None] = mapped_column(String(64))
     duration_s: Mapped[float] = mapped_column(Float)

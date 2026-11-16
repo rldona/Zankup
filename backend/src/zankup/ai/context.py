@@ -104,6 +104,7 @@ def activity_context(db: Session, activity: Activity, *, compare: bool = True) -
         "activity_id": activity.id,
         "sport": activity.sport,
         "sub_sport": activity.sub_sport,
+        "workout_type": activity.workout_type,
         "day": day.isoformat(),
         "weekday": day.strftime("%A"),
         "start_hour": (activity.start_utc + _offset(activity.timezone)).hour,

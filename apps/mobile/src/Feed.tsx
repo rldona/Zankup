@@ -6,6 +6,7 @@
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import {
+  musclesFor,
   musclesFromExercises,
   activitiesQuery,
   decodePolyline,
@@ -34,6 +35,7 @@ import { useScrollTop } from './scrollTop';
 import { useTheme } from './theme';
 import { Badge, Card, Empty, Muted, Stat, styles as ui, Tappable } from './ui';
 import { FeedSkeleton, WeekSkeleton } from './Skeleton';
+import { workoutTypeSuffix } from './detail/WorkoutType';
 
 type Format = ReturnType<typeof useFormat>;
 
@@ -165,7 +167,7 @@ export const ActivityCard = memo(function ActivityCard({
   const prefetch = usePrefetchActivity();
   const sport = asSport(a.sport);
   const moving = a.moving_s ?? a.duration_s;
-  const muscles = musclesFromExercises(a.exercises);
+  const muscles = musclesFor(musclesFromExercises(a.exercises), a.workout_type);
   const figures: [string, string][] = a.distance_m
     ? [
         [t('feed.stat.distance'), format.distance(a.distance_m)],
@@ -192,7 +194,10 @@ export const ActivityCard = memo(function ActivityCard({
             <Text numberOfLines={1} style={{ color: c.fg, fontWeight: '700', fontSize: 16 }}>
               {a.name ?? t(`sport.${sport}`)}
             </Text>
-            <Muted>{formatActivityDate(localStart(a.start_utc, a.timezone), locale)}</Muted>
+            <Muted>
+              {formatActivityDate(localStart(a.start_utc, a.timezone), locale)}
+              {workoutTypeSuffix(a)}
+            </Muted>
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
