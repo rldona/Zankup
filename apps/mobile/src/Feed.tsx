@@ -24,6 +24,7 @@ import { memo, useMemo, useRef } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { useApi } from './auth';
+import { usePrefetchActivity } from './detail/prefetch';
 import { BodyThumb } from './detail/Strength';
 import { locale, t } from './i18n';
 import { Icon, SportIcon } from './Icon';
@@ -66,7 +67,7 @@ export function Feed() {
         />
       }
       contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 32 }}
-      ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+      ItemSeparatorComponent={Separator}
     />
   );
 }
@@ -150,6 +151,9 @@ export function WeekHeader({ format, footer }: { format: Format; footer?: React.
   );
 }
 
+/** The room between two cards: one component, so the list does not remount it on each render. */
+const Separator = () => <View style={{ height: 10 }} />;
+
 export const ActivityCard = memo(function ActivityCard({
   activity: a,
   format,
@@ -158,6 +162,7 @@ export const ActivityCard = memo(function ActivityCard({
   format: Format;
 }) {
   const c = useTheme();
+  const prefetch = usePrefetchActivity();
   const sport = asSport(a.sport);
   const moving = a.moving_s ?? a.duration_s;
   const muscles = musclesFromExercises(a.exercises);
@@ -175,7 +180,11 @@ export const ActivityCard = memo(function ActivityCard({
         ...(a.avg_hr ? ([[t('feed.stat.hr'), `${a.avg_hr} bpm`]] as [string, string][]) : []),
       ];
   return (
-    <Tappable onPress={() => router.push(`/activity/${a.id}`)} accessibilityRole="button">
+    <Tappable
+      onPressIn={() => prefetch(a.id)}
+      onPress={() => router.push(`/activity/${a.id}`)}
+      accessibilityRole="button"
+    >
       <Card>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
           <SportIcon sport={sport} />

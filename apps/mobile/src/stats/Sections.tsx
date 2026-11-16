@@ -9,6 +9,7 @@ import {
   efficiencyQuery,
   estimatesQuery,
   fitnessQuery,
+  formatDate,
   formatDuration,
   formatHoursMinutes,
   progressQuery,
@@ -589,6 +590,13 @@ export function Records({ range }: { range: Range }) {
   );
 }
 
+/** The days of a (leap) year written short, once: the same for every year's line. */
+let yearDays: string[] | null = null;
+const YEAR_DAYS = () =>
+  (yearDays ??= Array.from({ length: 366 }, (_, i) =>
+    formatDate(new Date(2024, 0, 1 + i), locale, { day: 'numeric', month: 'short' }),
+  ));
+
 /**
  * Every year's distance, cumulative through it, filling the screen it is on: the chart as tall as the
  * room the years' list leaves under it. A tap on a year (`onSelect`) makes it stand out.
@@ -617,9 +625,7 @@ export function Progress({ selected, onSelect }: { selected: number; onSelect?: 
         {room > 0 && (
           <Chart
             legendGap={8}
-            days={Array.from({ length: 366 }, (_, i) =>
-              new Date(2024, 0, 1 + i).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
-            )}
+            days={YEAR_DAYS()}
             height={chartHeight}
             label={lines.data
               .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)

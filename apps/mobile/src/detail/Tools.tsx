@@ -10,7 +10,8 @@ import { fetch } from 'expo/fetch';
 import { router } from 'expo-router';
 import { File } from 'expo-file-system';
 import { Children, Fragment, isValidElement, useEffect, useRef, useState } from 'react';
-import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useApi } from '../auth';
@@ -307,7 +308,11 @@ export function Photos({
               accessibilityLabel={p.caption ?? t('photos.open')}
               onPress={() => setOpen(p.id)}
             >
-              <Image source={source(p.id, true)} style={{ width: 140, height: 140, borderRadius: 12 }} />
+              <Image
+                source={source(p.id, true)}
+                transition={150}
+                style={{ width: 140, height: 140, borderRadius: 12 }}
+              />
             </Pressable>
           ))}
         </ScrollView>
@@ -353,7 +358,8 @@ export function Photos({
         <Sheet title={current.caption ?? t('photos.title')} onClose={() => setOpen(null)}>
           <Image
             source={source(current.id, false)}
-            resizeMode="contain"
+            placeholder={source(current.id, true)}
+            contentFit="contain"
             style={{
               width: '100%',
               aspectRatio: current.width && current.height ? current.width / current.height : 1,

@@ -3,6 +3,7 @@
  * month of a year), cumulated, against a steady pace towards the target. Worked out from the calendar
  * the Stats screen already reads; shared by the app's chart (Skia) and the web's (SVG).
  */
+import { formatDate } from '../format/intl';
 import type { CalendarDay, GoalOut } from '../api/queries';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -50,8 +51,8 @@ export function goalPoints(
       const last = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + m + 1, 0));
       closes.push({
         last,
-        label: last.toLocaleDateString(locale, { month: 'narrow', timeZone: 'UTC' }),
-        when: last.toLocaleDateString(locale, { month: 'long', timeZone: 'UTC' }),
+        label: formatDate(last, locale, { month: 'narrow', timeZone: 'UTC' }),
+        when: formatDate(last, locale, { month: 'long', timeZone: 'UTC' }),
       });
     }
   } else {
@@ -61,9 +62,9 @@ export function goalPoints(
         last: day,
         label:
           goal.period === 'week'
-            ? day.toLocaleDateString(locale, { weekday: 'short', timeZone: 'UTC' }).replace('.', '')
+            ? formatDate(day, locale, { weekday: 'short', timeZone: 'UTC' }).replace('.', '')
             : String(day.getUTCDate()),
-        when: day.toLocaleDateString(locale, {
+        when: formatDate(day, locale, {
           weekday: 'long',
           day: 'numeric',
           month: 'short',

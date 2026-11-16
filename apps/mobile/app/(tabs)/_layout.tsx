@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Tabs } from 'expo-router';
-import { Image, View, type ColorValue } from 'react-native';
+import { Image } from 'expo-image';
+import { View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MATERIAL_ICONS, meQuery } from '@zankup/core';
@@ -62,6 +63,8 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // A tab out of sight does not redraw when its data refreshes: only the one on screen works.
+          freezeOnBlur: true,
           // Taller than the default, with room above the icons and above the system's gesture bar.
           tabBarStyle: {
             backgroundColor: c.surface,

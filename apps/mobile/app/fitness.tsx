@@ -4,7 +4,7 @@
  * activities.
  */
 import { calendarQuery, fitnessQuery, type CalendarDay } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -45,7 +45,11 @@ export default function FitnessScreen() {
     const saved = readSync(keys.fitnessRange);
     return FITNESS_RANGES.includes(saved as FitnessRange) ? (saved as FitnessRange) : '1m';
   });
-  const fitness = useQuery(fitnessQuery(api, rangePeriod(range, new Date())));
+  // The last range stays on screen while another loads, so its line can turn into the new one.
+  const fitness = useQuery({
+    ...fitnessQuery(api, rangePeriod(range, new Date())),
+    placeholderData: keepPreviousData,
+  });
   const days = untilToday(fitness.data ?? [], new Date());
   const last = days.length - 1;
   // The day touched on the chart; none means the last one (today).

@@ -2,15 +2,25 @@
  * Fitness drawn as Strava does (Progress → Fitness): the score as a filled line over the range, a circle
  * on each day with load (bigger, harder) when the range is short, and the picked day marked with its
  * score in a badge. Touching or sliding sideways picks a day; a vertical swipe still scrolls the screen.
+ * Another range slides into place.
  * `FitnessSparkline` is the same line, small, for the card on Progress.
  */
-import { Canvas, Circle, Group, Line, Path, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Line, Path, vec } from '@shopify/react-native-skia';
 import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { hapticClick } from '../../modules/haptic-click/src';
-import { dayTicks, niceScale, shortNumber, useCanvasReady } from '../charts';
+import {
+  dayTicks,
+  MorphPath,
+  niceScale,
+  polyline,
+  Rings,
+  shortNumber,
+  useCanvasReady,
+  useLineFrom,
+} from '../charts';
 import { useTheme } from '../theme';
 import { loadRadius } from './fitness';
 
@@ -75,6 +85,11 @@ export function FitnessChart({
   const step = count > 1 ? plot / (count - 1) : 0;
   const maxLoad = Math.max(0, ...loads);
   const colour = String(c.accent);
+  const now = polyline(pts, base);
+  // Another range turns the line on screen into the new one: the score sits far above zero.
+  const from = useLineFrom(pts);
+  const flat = polyline(from, base);
+  const radius = (i: number) => loadRadius(loads[i] ?? 0, maxLoad);
 
   const pick = (x: number) => {
     if (!count) return;
@@ -125,25 +140,30 @@ export function FitnessChart({
                       opacity={v === 0 ? 1 : 0.5}
                     />
                   ))}
-                  <Path path={areaPath(pts, base)} color={colour} opacity={0.22} />
-                  <Path
-                    path={linePath(pts)}
+                  <MorphPath d={now.area} flat={flat.area} ready={ready} color={colour} opacity={0.22} />
+                  <MorphPath
+                    d={now.line}
+                    flat={flat.line}
+                    ready={ready}
                     style="stroke"
                     strokeWidth={2.5}
                     strokeJoin="round"
                     strokeCap="round"
                     color={colour}
                   />
-                  {showLoads &&
-                    pts.map(([px, py], i) => {
-                      const r = loadRadius(loads[i] ?? 0, maxLoad);
-                      return r ? (
-                        <Group key={i}>
-                          <Circle cx={px} cy={py} r={r} color={c.bg} />
-                          <Circle cx={px} cy={py} r={r} style="stroke" strokeWidth={2} color={colour} />
-                        </Group>
-                      ) : null;
-                    })}
+                  {/* A circle on every day (none on a day without load), so they slide with the line. */}
+                  {showLoads && pts.some((_, i) => radius(i) > 0) && (
+                    <Rings
+                      points={pts}
+                      base={base}
+                      r={radius}
+                      fill={String(c.bg)}
+                      colour={colour}
+                      strokeWidth={2}
+                      ready={ready}
+                      from={from}
+                    />
+                  )}
                   {at && (
                     <>
                       <Line
