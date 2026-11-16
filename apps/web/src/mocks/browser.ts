@@ -14,4 +14,12 @@ export async function startMocks() {
     onUnhandledFrame: 'warn',
     quiet: true,
   });
+  // A hard reload (Cmd+Shift+R) skips every service worker, so the page's calls would go to the
+  // backend proxy instead of the mocks: reload once, normally, so the worker controls the page.
+  if (!navigator.serviceWorker.controller && !sessionStorage.getItem('zankup.mockReload')) {
+    sessionStorage.setItem('zankup.mockReload', '1');
+    location.reload();
+    await new Promise(() => undefined); // nothing else starts before the reload
+  }
+  sessionStorage.removeItem('zankup.mockReload');
 }
