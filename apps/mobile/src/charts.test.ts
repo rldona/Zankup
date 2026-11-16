@@ -6,8 +6,18 @@ vi.mock('react-native-gesture-handler', () => ({}));
 vi.mock('./theme', () => ({}));
 vi.mock('react-native-reanimated', () => ({ Easing: { out: (f: unknown) => f, cubic: (t: number) => t } }));
 
-const { circlesPath, dayTicks, resample, domainOf, linePath, niceScale, polyline, rectsPath, shortNumber } =
-  await import('./charts');
+const {
+  circlesPath,
+  dayTicks,
+  resample,
+  domainOf,
+  linePath,
+  niceScale,
+  polyline,
+  rectsPath,
+  shortNumber,
+  tightScale,
+} = await import('./charts');
 
 /** A path's commands, without their numbers: two paths with the same ones can slide into each other. */
 const verbs = (d: string) => d.replace(/[^A-Za-z]/g, '');
@@ -103,5 +113,14 @@ describe('charts', () => {
       [0, 7],
       [4, 7],
     ]);
+  });
+});
+
+describe('the axis', () => {
+  it('ends at the tightest round value, in four to six steps', () => {
+    expect(tightScale([0, 5312]).ticks).toEqual([0, 1000, 2000, 3000, 4000, 5000, 6000]);
+    expect(niceScale([0, 5312]).ticks.at(-1)).toBe(8000);
+    // A tie keeps the fewer steps.
+    expect(tightScale([0, 100]).ticks).toEqual([0, 25, 50, 75, 100]);
   });
 });
