@@ -31,7 +31,7 @@ production build has none of it (the worker and the handlers are only loaded in 
 - **Signed in from the start.** Signing out works; to sign in again use any e-mail, password `demo`
   and code `123456`, or "Sign in as owner (dev)".
 - **The handlers** (`src/mocks/handlers/*`, by domain) are typed by the API's OpenAPI: `json(path,
-  method, body)` checks every answer against `packages/core/src/api/schema.ts`, so when the backend
+method, body)` checks every answer against `packages/core/src/api/schema.ts`, so when the backend
   changes a field, the typecheck shows which mock is out of date (`pnpm generate:api` first).
 - **A call with no handler** is warned about in the console (in the browser) and fails the test
   (in Vitest): add it to its domain's file.
@@ -50,4 +50,3 @@ server.use(route('get', '/api/week', () => json('/api/week', 'get', week)));
 
 To check what was sent, listen to MSW's request events (`server.events.on('request:start', …)`).
 Don't stub `fetch` in a test: it bypasses the mock API.
-
