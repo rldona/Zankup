@@ -5,10 +5,14 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { db } from './mocks/db';
+import { server } from './mocks/node';
+import { json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true, weight_kg: 72.5 };
-const night = {
+type HealthDay = Res<'/api/wellness/days', 'get'>[number];
+
+const night: NonNullable<HealthDay['sleep']> = {
   source: 'garmin',
   start_utc: '2026-11-08T00:00:00Z',
   end_utc: '2026-11-08T07:30:00Z',
@@ -21,7 +25,7 @@ const night = {
   score: 86,
   others: [],
 };
-const DAYS = [
+const DAYS: HealthDay[] = [
   {
     day: '2026-11-08',
     sleep: night,
@@ -34,37 +38,44 @@ const DAYS = [
     readiness: { score: 74, hrv: 80, resting_hr: 65, sleep: 86, form: 63 },
   },
 ];
-const WEIGHT = [
+const WEIGHT: Res<'/api/weight', 'get'> = [
   { day: '2026-10-01', weight_kg: 74 },
   { day: '2026-11-01', weight_kg: 73 },
   { day: '2026-11-06', weight_kg: 72.5 },
 ];
 
-type Handler = (request: Request) => Response | Promise<Response>;
+const weightIs = (list: Res<'/api/weight', 'get'>) =>
+  route('get', '/api/weight', () => json('/api/weight', 'get', list));
 
-function mockApi(extra: Record<string, Handler> = {}) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
-  const handlers: Record<string, Handler> = {
-    '/api/auth/me': () => Response.json(ME),
-    '/api/wellness/days': () => Response.json(DAYS),
-    '/api/wellness/nights/2026-11-08': () => Response.json({ day: '2026-11-08', chosen: night, stages: [] }),
-    '/api/weight': () => Response.json(WEIGHT),
-    'PUT /api/weight': () => Response.json({ day: '2026-11-08', weight_kg: 71.8 }),
-    'DELETE /api/weight/2026-11-06': () => new Response(null, { status: 204 }),
-    ...extra,
-  };
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      const text = request.method === 'GET' ? '' : await request.clone().text();
-      calls.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : null });
-      const handler = handlers[`${request.method} ${url.pathname}`] ?? handlers[url.pathname];
-      return handler ? handler(request) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
+/** The fixtures above in place of the demo athlete's health and weighings. */
+function useFixtures() {
+  db.user.weight_kg = 72.5;
+  server.use(
+    route('get', '/api/wellness/days', () => json('/api/wellness/days', 'get', DAYS)),
+    route('get', '/api/wellness/nights/{day}', () =>
+      json('/api/wellness/nights/{day}', 'get', {
+        day: '2026-11-08',
+        chosen: night,
+        stages: [],
+        alternatives: [],
+      }),
+    ),
+    weightIs(WEIGHT),
+    route('delete', '/api/weight/{day}', () => new Response(null, { status: 204 })),
   );
+}
+
+/** Records every request: method, path and JSON body (null for GET). */
+function record() {
+  const calls: { method: string; path: string; body: unknown }[] = [];
+  server.events.on('request:start', async ({ request }) => {
+    const text = request.method === 'GET' ? '' : await request.clone().text();
+    calls.push({
+      method: request.method,
+      path: new URL(request.url).pathname,
+      body: text ? (JSON.parse(text) as unknown) : null,
+    });
+  });
   return calls;
 }
 
@@ -84,12 +95,12 @@ describe('weight over time (OS-1009)', () => {
     };
   });
   afterEach(() => {
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
     vi.useRealTimers();
   });
 
   it('shows the Weight card on Health with the latest and its change in 30 days, and opens its page', async () => {
-    mockApi();
+    useFixtures();
     const router = renderAt('/health');
     const card = await screen.findByRole('link', { name: 'Weight, 72.5 kg' });
     expect(within(card).getByText('72.5 kg')).toBeInTheDocument();
@@ -110,13 +121,15 @@ describe('weight over time (OS-1009)', () => {
   });
 
   it('asks for the first weighing when there is none', async () => {
-    mockApi({ '/api/weight': () => Response.json([]) });
+    useFixtures();
+    server.use(weightIs([]));
     renderAt('/health');
     expect(await screen.findByText(/You haven't added a weight yet/)).toBeInTheDocument();
   });
 
   it('adds a weighing from the dialog with PUT /api/weight', async () => {
-    const calls = mockApi();
+    useFixtures();
+    const calls = record();
     renderAt('/health/weight');
     await userEvent.click(await screen.findByRole('button', { name: 'Add weight' }));
     const dialog = await screen.findByRole('dialog', { name: 'Add weight' });
@@ -135,7 +148,8 @@ describe('weight over time (OS-1009)', () => {
   });
 
   it('deletes a weighing after a confirmation', async () => {
-    const calls = mockApi();
+    useFixtures();
+    const calls = record();
     renderAt('/health/weight');
     await userEvent.click(await screen.findByRole('button', { name: 'Delete: November 6, 2026' }));
     const confirm = await screen.findByRole('dialog', { name: 'Delete' });
@@ -149,14 +163,14 @@ describe('weight over time (OS-1009)', () => {
 
 describe('whose each health figure is (OS-1011)', () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
     vi.useRealTimers();
   });
 
   it('marks the sleep score and Readiness as worked out by Zankup', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-08T12:00:00'));
-    mockApi();
+    useFixtures();
     renderAt('/health');
     await screen.findByRole('heading', { name: 'Last night' });
     const marks = screen.getAllByRole('img', { name: 'Score worked out by Zankup' });

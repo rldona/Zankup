@@ -2,14 +2,16 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { server } from './mocks/node';
+import { json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'runner@example.com', display_name: null, totp_enabled: true };
+type SyncStatus = Res<'/api/sync/{run_id}', 'get'>;
 
-const run = (status: string, extra: object = {}) => ({
+const run = (status: SyncStatus['status'], extra: Partial<SyncStatus> = {}): SyncStatus => ({
   id: 9,
   trigger: 'button',
   status,
@@ -29,17 +31,12 @@ const run = (status: string, extra: object = {}) => ({
   ...extra,
 });
 
-function mockApi(handlers: Record<string, (request: Request) => Response | Promise<Response>>) {
+/** Records every request as "METHOD /path". */
+function record() {
   const calls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request) => {
-      const url = new URL(input.url);
-      calls.push(`${input.method} ${url.pathname}`);
-      const handler = handlers[`${input.method} ${url.pathname}`] ?? handlers[url.pathname];
-      return handler ? handler(input) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
-  );
+  server.events.on('request:start', ({ request }) => {
+    calls.push(`${request.method} ${new URL(request.url).pathname}`);
+  });
   return calls;
 }
 
@@ -50,24 +47,24 @@ function renderAt(path: string) {
 
 describe('sync', () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
   });
 
   it('syncs from the Activities header, follows the progress and refreshes the feed', async () => {
-    let state: object[] = [];
+    let state: SyncStatus[] = [];
     let polls = 0;
-    const calls = mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      '/api/activities': () => Response.json({ items: [], next_cursor: null }),
-      'GET /api/sync': () => {
+    server.use(
+      route('get', '/api/activities', () => json('/api/activities', 'get', { items: [], next_cursor: null })),
+      route('get', '/api/sync', () => {
         if (state.length && ++polls >= 1) state = [run('success')];
-        return Response.json(state);
-      },
-      'POST /api/sync': () => {
+        return json('/api/sync', 'get', state);
+      }),
+      route('post', '/api/sync', () => {
         state = [run('running')];
         return Response.json(state[0], { status: 202 });
-      },
-    });
+      }),
+    );
+    const calls = record();
     renderAt('/activities');
     // As in the app, sync sits in the Activities header; the frame has no sync button of its own.
     await userEvent.click(await screen.findByRole('button', { name: 'Sync' }));
@@ -83,14 +80,13 @@ describe('sync', () => {
 
   it('starts the whole history from the Sync screen', async () => {
     let body: unknown = null;
-    mockApi({
-      '/api/auth/me': () => Response.json(ME),
-      'GET /api/sync': () => Response.json([]),
-      'POST /api/sync': async (request) => {
+    server.use(
+      route('get', '/api/sync', () => json('/api/sync', 'get', [])),
+      route('post', '/api/sync', async ({ request }) => {
         body = await request.json();
         return Response.json(run('queued', { trigger: 'initial' }), { status: 202 });
-      },
-    });
+      }),
+    );
     renderAt('/sync');
     await userEvent.click(await screen.findByRole('button', { name: 'Load the whole history' }));
     expect(await screen.findByText('Waiting for its turn…')).toBeInTheDocument();

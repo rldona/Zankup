@@ -1,9 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { App } from './App';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
 const activity = (id: number, sport: string, distance_m: number | null, moving_s: number) => ({
@@ -13,6 +15,7 @@ const activity = (id: number, sport: string, distance_m: number | null, moving_s
   load: 40,
   distance_m,
   moving_s,
+  start: '2026-11-03T08:00:00Z',
 });
 
 /** November 2026 from Monday 26 October: five weeks, the second with a run and a ride. */
@@ -35,19 +38,8 @@ function month() {
 }
 
 describe('Training calendar', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it("puts each week's distance first, its time and activities under it, and a bar a day", async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: Request | string) => {
-        const url = new URL(typeof input === 'string' ? input : input.url, 'http://localhost');
-        if (url.pathname === '/api/auth/me')
-          return Response.json({ id: 1, email: 'me@example.com', display_name: 'R', totp_enabled: true });
-        if (url.pathname === '/api/stats/calendar') return Response.json(month());
-        return Response.json({ detail: 'Not Found' }, { status: 404 });
-      }),
-    );
+    server.use(route('get', '/api/stats/calendar', () => json('/api/stats/calendar', 'get', month())));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <App

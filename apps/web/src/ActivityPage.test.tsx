@@ -2,15 +2,25 @@ import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { App } from './App';
+import {
+  activityContext,
+  activityDetail,
+  activitySummary,
+  type Context,
+  type Detail,
+  type Summary,
+} from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { fail, json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
 /** The activity's page in Strava's order (OS-1006 to OS-1008), as the app's. */
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true };
-const SETTINGS = { theme: 'system', language: 'en', units: 'metric', hr_max: 190, hr_rest: null };
+type Streams = Res<'/api/activities/{activity_id}/streams', 'get'>;
+
 const n = 61;
 const STREAMS = {
   t: Array.from({ length: n }, (_, i) => i * 10),
@@ -18,26 +28,7 @@ const STREAMS = {
   alt: Array.from({ length: n }, (_, i) => 100 + (i % 20)),
   hr: Array.from({ length: n }, (_, i) => (i < 30 ? 120 : 160)),
 };
-const BASE = {
-  sub_sport: null,
-  source: 'garmin',
-  timezone: '+01:00',
-  duration_s: 600,
-  moving_s: 590,
-  distance_m: 3000,
-  ascent_m: 40,
-  avg_hr: 140,
-  avg_power: null,
-  has_gps: false,
-  route: null,
-  photo: null,
-  photos: 0,
-  laps: [],
-  best_efforts: [],
-  photo_list: [],
-};
-const RIDE = {
-  ...BASE,
+const RIDE = activityDetail({
   id: 5,
   name: 'Long ride',
   sport: 'ride',
@@ -62,9 +53,8 @@ const RIDE = {
     power_curve: [],
     speed_curve: [],
   },
-};
-const RUN = {
-  ...BASE,
+});
+const RUN = activityDetail({
   id: 7,
   name: 'Morning run',
   sport: 'run',
@@ -75,45 +65,58 @@ const RUN = {
     { distance_m: 1000, time_s: 300, elevation_change_m: -3, avg_hr: 150 },
     { distance_m: 1000, time_s: 315, elevation_change_m: 1, avg_hr: 155 },
   ],
-};
-const GOAL = { goal_id: 3, period: 'year', metric: 'distance', sport: 'run', target: 1_000_000 };
-const context = (over: Record<string, unknown> = {}) => ({
-  fitness: {
-    before: 40,
-    after: 43,
-    points: [
-      { day: '2026-11-01', ctl: 38 },
-      { day: '2026-11-12', ctl: 43 },
-    ],
-  },
-  effort: { score: 84, average: 60, status: 'above' },
-  goals: [{ period: 'month', metric: 'distance', sport: null, target: 200_000, current: 150_000 }],
-  matches: [
-    { activity_id: 2, day: '2025-10-01', speed_mps: 3.0, moving_s: 1000, relative_effort: 50, this: false },
-    { activity_id: 7, day: '2026-11-12', speed_mps: 3.2, moving_s: 940, relative_effort: 60, this: true },
-  ],
-  medals: [{ key: '5k', value: 1500, rank: 1, scope: 'year' }],
-  segments: [],
-  power: null,
-  pace_zones: null,
-  goals_reached: [],
-  ...over,
 });
+const GOAL = { goal_id: 3, period: 'year', metric: 'distance', sport: 'run', target: 1_000_000 };
+const context = (over: Partial<Context> = {}) =>
+  activityContext({
+    fitness: {
+      before: 40,
+      after: 43,
+      points: [
+        { day: '2026-11-01', ctl: 38 },
+        { day: '2026-11-12', ctl: 43 },
+      ],
+    },
+    effort: { score: 84, average: 60, status: 'above' },
+    goals: [{ period: 'month', metric: 'distance', sport: null, target: 200_000, current: 150_000 }],
+    matches: [
+      { activity_id: 2, day: '2025-10-01', speed_mps: 3.0, moving_s: 1000, relative_effort: 50, this: false },
+      { activity_id: 7, day: '2026-11-12', speed_mps: 3.2, moving_s: 940, relative_effort: 60, this: true },
+    ],
+    medals: [{ key: '5k', value: 1500, rank: 1, scope: 'year' }],
+    ...over,
+  });
 
-function mockApi(body: Record<string, unknown>) {
+/** The mock API answers with this activity (in the feed too), its series and context. */
+function mockActivity(
+  activity: Detail,
+  { streams, ...over }: { streams?: Streams; context?: Context; feed?: Summary[] } = {},
+) {
   const calls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      calls.push(url.pathname);
-      const data = { '/api/auth/me': ME, '/api/settings': SETTINGS, ...body }[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
-    }),
+  const listener = ({ request }: { request: Request }) => {
+    calls.push(new URL(request.url).pathname);
+  };
+  server.events.on('request:start', listener);
+  onTestFinished(() => server.events.removeListener('request:start', listener));
+  server.use(
+    route('get', '/api/activities', () =>
+      json('/api/activities', 'get', {
+        items: over.feed ?? [activitySummary(activity)],
+        next_cursor: null,
+      }),
+    ),
+    // Only this activity: /api/activities/months and the like go on to the default handlers.
+    route('get', '/api/activities/{activity_id}', ({ params }) =>
+      params.activity_id === String(activity.id)
+        ? json('/api/activities/{activity_id}', 'get', activity)
+        : undefined,
+    ),
+    route('get', '/api/activities/{activity_id}/context', () =>
+      json('/api/activities/{activity_id}/context', 'get', over.context ?? context()),
+    ),
+    route('get', '/api/activities/{activity_id}/streams', () =>
+      streams ? json('/api/activities/{activity_id}/streams', 'get', streams) : fail(404, 'No series'),
+    ),
   );
   return calls;
 }
@@ -139,14 +142,10 @@ function expectInOrder(actual: string[], expected: string[]) {
 }
 
 describe('the activity page in Strava order (OS-1006)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('lays a ride out: the context blocks, then each chart with its zones, and no splits', async () => {
-    const calls = mockApi({
-      '/api/activities': { items: [RIDE], next_cursor: null },
-      '/api/activities/5': RIDE,
-      '/api/activities/5/streams': { ...STREAMS, power: Array.from({ length: n }, (_, i) => 150 + i) },
-      '/api/activities/5/context': context({
+    const calls = mockActivity(RIDE, {
+      streams: { ...STREAMS, power: Array.from({ length: n }, (_, i) => 150 + i) },
+      context: context({
         matches: [],
         medals: [],
         segments: [
@@ -190,11 +189,9 @@ describe('the activity page in Strava order (OS-1006)', () => {
   });
 
   it('lays a run out: the blocks, the training analysis and splits, pace and its zones', async () => {
-    mockApi({
-      '/api/activities': { items: [RUN], next_cursor: null },
-      '/api/activities/7': RUN,
-      '/api/activities/7/streams': STREAMS,
-      '/api/activities/7/context': context({
+    mockActivity(RUN, {
+      streams: STREAMS,
+      context: context({
         pace_zones: { threshold_mps: 3.3, bounds: [0, 2.574, 2.904, 3.135, 3.3, 3.6] },
       }),
     });
@@ -241,11 +238,7 @@ describe('the activity page in Strava order (OS-1006)', () => {
   });
 
   it('lists the matched activities by year, each opening its activity', async () => {
-    mockApi({
-      '/api/activities': { items: [RUN], next_cursor: null },
-      '/api/activities/7': RUN,
-      '/api/activities/7/context': context(),
-    });
+    mockActivity(RUN);
     const router = renderAt('/activities/7/matches');
     expect(await screen.findByRole('heading', { name: 'Matched runs', level: 1 })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^2025/ })).toBeInTheDocument();
@@ -255,14 +248,10 @@ describe('the activity page in Strava order (OS-1006)', () => {
 });
 
 describe('the training analysis page (OS-1007)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('picks the split under the pointer, in the box and in the list, and a click keeps it', async () => {
-    mockApi({
-      '/api/activities': { items: [RUN], next_cursor: null },
-      '/api/activities/7': RUN,
-      '/api/activities/7/streams': STREAMS,
-      '/api/activities/7/context': context({
+    mockActivity(RUN, {
+      streams: STREAMS,
+      context: context({
         pace_zones: { threshold_mps: 3.3, bounds: [0, 2.574, 2.904, 3.135, 3.3, 3.6] },
       }),
     });
@@ -291,13 +280,10 @@ describe('the training analysis page (OS-1007)', () => {
 });
 
 describe('goals reached (OS-1008)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('shows a capsule on the feed card and a banner above the Coach on the page', async () => {
-    mockApi({
-      '/api/activities': { items: [{ ...RUN, goals_reached: [GOAL] }], next_cursor: null },
-      '/api/activities/7': RUN,
-      '/api/activities/7/context': context({ goals_reached: [GOAL] }),
+    mockActivity(RUN, {
+      feed: [activitySummary({ ...RUN, goals_reached: [GOAL] })],
+      context: context({ goals_reached: [GOAL] }),
     });
     const router = renderAt('/activities');
     const card = await screen.findByRole('link', { name: /Morning run/ });

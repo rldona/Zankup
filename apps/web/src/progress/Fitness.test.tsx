@@ -3,9 +3,11 @@ import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { App } from '../App';
+import { server } from '../mocks/node';
+import { json, route } from '../mocks/route';
 import { routes } from '../router';
 
 const today = isoDay(new Date());
@@ -37,65 +39,62 @@ const RIDE = {
   start: `${today}T17:00:00Z`,
 };
 
+/** The answers the cards are read from, and every request made (path and query). */
 function mockApi() {
   const calls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      const query = url.searchParams;
-      calls.push(`${url.pathname}?${query}`);
-      switch (url.pathname) {
-        case '/api/auth/me':
-          return Response.json({
-            id: 1,
-            email: 'me@example.com',
-            display_name: 'Runner',
-            totp_enabled: true,
-          });
-        case '/api/stats/fitness':
-          return Response.json(fitnessDays(query.get('from') ?? today));
-        case '/api/stats/volume': {
-          if (query.get('unit') === 'week') {
-            const count = WEEK_LOADS.length;
-            return Response.json(WEEK_LOADS.map((load, i) => bucket(weekAt(count - 1 - i, today), load)));
-          }
-          return Response.json([bucket(today, 120)]);
-        }
-        case '/api/stats/estimates':
-          return Response.json([
-            {
-              kind: 'race_5k',
-              value: 1500,
-              method: 'riegel',
-              day: today,
-              sources: [],
-              history: [
-                { day: addDays(today, -60), value: 1560 },
-                { day: addDays(today, -20), value: 1530 },
-                { day: addDays(today, -3), value: 1500 },
-              ],
-            },
-            {
-              kind: 'race_10k',
-              value: 3120,
-              method: 'riegel',
-              day: today,
-              sources: [],
-              history: [{ day: addDays(today, -60), value: 3120 }],
-            },
-          ]);
-        case '/api/stats/calendar':
-          return Response.json(
-            (query.get('from') ?? '') <= today && today < (query.get('to') ?? '')
-              ? [{ day: today, tsb: null, activities: [RIDE] }]
-              : [],
-          );
-        default:
-          return Response.json({ detail: 'Not Found' }, { status: 404 });
+  server.events.on('request:start', ({ request }) => {
+    const url = new URL(request.url);
+    calls.push(`${url.pathname}?${url.searchParams}`);
+  });
+  const query = (request: Request) => new URL(request.url).searchParams;
+  server.use(
+    route('get', '/api/stats/fitness', ({ request }) =>
+      json('/api/stats/fitness', 'get', fitnessDays(query(request).get('from') ?? today)),
+    ),
+    route('get', '/api/stats/volume', ({ request }) => {
+      if (query(request).get('unit') === 'week') {
+        const count = WEEK_LOADS.length;
+        return json(
+          '/api/stats/volume',
+          'get',
+          WEEK_LOADS.map((load, i) => bucket(weekAt(count - 1 - i, today), load)),
+        );
       }
+      return json('/api/stats/volume', 'get', [bucket(today, 120)]);
+    }),
+    route('get', '/api/stats/estimates', () =>
+      json('/api/stats/estimates', 'get', [
+        {
+          kind: 'race_5k',
+          value: 1500,
+          method: 'riegel',
+          day: today,
+          sources: [],
+          history: [
+            { day: addDays(today, -60), value: 1560 },
+            { day: addDays(today, -20), value: 1530 },
+            { day: addDays(today, -3), value: 1500 },
+          ],
+        },
+        {
+          kind: 'race_10k',
+          value: 3120,
+          method: 'riegel',
+          day: today,
+          sources: [],
+          history: [{ day: addDays(today, -60), value: 3120 }],
+        },
+      ]),
+    ),
+    route('get', '/api/stats/calendar', ({ request }) => {
+      const q = query(request);
+      return json(
+        '/api/stats/calendar',
+        'get',
+        (q.get('from') ?? '') <= today && today < (q.get('to') ?? '')
+          ? [{ day: today, tsb: null, activities: [RIDE] }]
+          : [],
+      );
     }),
   );
   return calls;
@@ -110,7 +109,7 @@ function renderAt(path: string) {
 
 describe('Fitness, Relative effort and race predictions (OS-1003)', () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    server.events.removeAllListeners();
     localStorage.clear();
   });
 

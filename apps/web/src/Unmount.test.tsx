@@ -1,58 +1,42 @@
 import { QueryClient } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { activityDetail, activitySummary } from './mocks/activityFixtures';
+import { server } from './mocks/node';
+import { json, route } from './mocks/route';
 import { routes } from './router';
 
 const n = 61;
-const RUN = {
+const RUN = activityDetail({
   id: 7,
-  name: 'Morning run',
-  sport: 'run',
-  sub_sport: null,
-  source: 'garmin',
   start_utc: '2026-11-07T08:00:00Z',
-  timezone: '+01:00',
   duration_s: 1800,
   moving_s: 1750,
   distance_m: 6000,
-  ascent_m: 40,
   avg_hr: 150,
-  avg_power: null,
   has_gps: true,
-  route: null,
-};
+  streams: { series: ['t', 'dist', 'hr'], sample_count: n },
+});
 
 describe('leaving an activity', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it("does not crash when the activity's charts go away", async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: Request) => {
-        const path = new URL(input.url).pathname;
-        if (path === '/api/auth/me')
-          return Response.json({ id: 1, email: 'me@example.com', display_name: null, totp_enabled: true });
-        if (path === '/api/activities') return Response.json({ items: [RUN], next_cursor: null });
-        if (path === '/api/activities/7')
-          return Response.json({
-            ...RUN,
-            laps: [],
-            splits: [],
-            best_efforts: [],
-            sets: [],
-            streams: { series: ['t', 'dist', 'hr'], sample_count: n },
-          });
-        if (path === '/api/activities/7/streams')
-          return Response.json({
-            t: Array.from({ length: n }, (_, i) => i * 10),
-            dist: Array.from({ length: n }, (_, i) => i * 30),
-            hr: Array.from({ length: n }, () => 140),
-          });
-        return Response.json({ detail: 'Not Found' }, { status: 404 });
-      }),
+    server.use(
+      route('get', '/api/activities', () =>
+        json('/api/activities', 'get', { items: [activitySummary(RUN)], next_cursor: null }),
+      ),
+      route('get', '/api/activities/{activity_id}', ({ params }) =>
+        params.activity_id === '7' ? json('/api/activities/{activity_id}', 'get', RUN) : undefined,
+      ),
+      route('get', '/api/activities/{activity_id}/streams', () =>
+        json('/api/activities/{activity_id}/streams', 'get', {
+          t: Array.from({ length: n }, (_, i) => i * 10),
+          dist: Array.from({ length: n }, (_, i) => i * 30),
+          hr: Array.from({ length: n }, () => 140),
+        }),
+      ),
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

@@ -68,8 +68,14 @@ const pwa = VitePWA({
 export default defineConfig({
   // No React Compiler here (unlike the app, #321): it made the main chunk 29 % larger (322 → 417 kB
   // gzip) for re-renders that the cursor store already avoids (OS-1013).
-  // MSW's service worker, served in development for the mock API (`pnpm dev:mock`, VITE_API_MOCK=1).
-  plugins: [react(), themes(), pwa, msw({ mode: 'worker-only' })],
+  // MSW's service worker, only for the mock API (`pnpm dev:mock`, VITE_API_MOCK=1): a production
+  // build neither serves nor precaches it.
+  plugins: [
+    react(),
+    themes(),
+    pwa,
+    ...(process.env.VITE_API_MOCK === '1' ? [msw({ mode: 'worker-only' })] : []),
+  ],
   define: { __APP_VERSION__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev') },
   // @zankup/core is workspace source, not a package to pre-bundle: edits there (catalogues, tokens,
   // queries) must reach the dev server at once.

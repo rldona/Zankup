@@ -247,17 +247,28 @@ export function resetDb() {
 
 /** The feed's summary of an activity: the detail's extras left out. */
 export function summary(a: MockActivity): Summary {
-  const {
-    description: _d,
-    calories: _c,
-    max_hr: _m,
-    device: _v,
-    gear_id: _g,
-    edited_fields: _e,
-    points: _p,
-    ...rest
-  } = a;
-  return rest;
+  return {
+    id: a.id,
+    name: a.name,
+    sport: a.sport,
+    sub_sport: a.sub_sport,
+    workout_type: a.workout_type,
+    source: a.source,
+    start_utc: a.start_utc,
+    timezone: a.timezone,
+    duration_s: a.duration_s,
+    moving_s: a.moving_s,
+    distance_m: a.distance_m,
+    ascent_m: a.ascent_m,
+    avg_hr: a.avg_hr,
+    avg_power: a.avg_power,
+    has_gps: a.has_gps,
+    route: a.route,
+    photo: a.photo,
+    photos: a.photos,
+    exercises: a.exercises,
+    goals_reached: a.goals_reached,
+  };
 }
 
 export type { ApiPaths };

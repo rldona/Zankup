@@ -5,10 +5,11 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { server } from './mocks/node';
+import { fail, json, route, type Res } from './mocks/route';
 import { routes } from './router';
 
-const ME = { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true };
-const SETTINGS = {
+const SETTINGS: Res<'/api/settings', 'get'> = {
   theme: 'system',
   language: null,
   units: 'metric',
@@ -19,10 +20,19 @@ const SETTINGS = {
   lthr: null,
   ftp: null,
   privacy_zones: [],
-  notifications: {},
+  notifications: {
+    activity: true,
+    record: true,
+    sync_error: true,
+    garmin_key: true,
+    estimate: true,
+    import: true,
+    health_reauth: true,
+    weekly: true,
+  },
   ai: { enabled: true, summaries: true, weekly: true },
 };
-const STATUS = {
+const STATUS: Res<'/api/ai/status', 'get'> = {
   available: true,
   enabled: true,
   summaries: true,
@@ -32,26 +42,7 @@ const STATUS = {
   sends: ['sport, date and distance'],
   never_sends: ['coordinates and routes'],
 };
-const RUN = {
-  id: 7,
-  name: 'Morning run',
-  sport: 'run',
-  sub_sport: null,
-  source: 'garmin',
-  start_utc: '2026-11-04T07:30:00Z',
-  timezone: '+01:00',
-  duration_s: 3600,
-  moving_s: 3500,
-  distance_m: 10000,
-  ascent_m: 80,
-  avg_hr: 150,
-  avg_power: null,
-  has_gps: false,
-  route: null,
-  photo: null,
-  photos: 0,
-};
-const SUMMARY = {
+const SUMMARY: Res<'/api/activities/{activity_id}/summary', 'get'> = {
   activity_id: 7,
   language: 'en',
   suggested_title: 'Steady 10 km with a 5 km record',
@@ -60,7 +51,7 @@ const SUMMARY = {
   model: 'claude-haiku-5-5',
   created_at: '2026-11-04T09:00:00Z',
 };
-const REPORT = {
+const REPORT: Res<'/api/ai/weekly', 'get'>[number] = {
   id: 1,
   week_start: '2026-11-02',
   status: 'done',
@@ -74,31 +65,30 @@ const REPORT = {
   finished_at: '2026-11-09T06:20:00Z',
 };
 
-type Handler = (url: URL, request: Request) => Response | Promise<Response>;
+const statusIs = (status: Res<'/api/ai/status', 'get'>) =>
+  route('get', '/api/ai/status', () => json('/api/ai/status', 'get', status));
 
-function mockApi(extra: Record<string, Handler> = {}) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
-  const handlers: Record<string, Handler> = {
-    '/api/auth/me': () => Response.json(ME),
-    '/api/settings': () => Response.json(SETTINGS),
-    '/api/ai/status': () => Response.json(STATUS),
-    '/api/activities': () => Response.json({ items: [RUN], next_cursor: null }),
-    '/api/ai/tokens': () => Response.json([]),
-    '/api/ai/weekly': () => Response.json([REPORT]),
-    ...extra,
-  };
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      const text = request.method === 'GET' ? '' : await request.clone().text();
-      calls.push({ method: request.method, path: url.pathname, body: text ? JSON.parse(text) : null });
-      const handler = handlers[`${request.method} ${url.pathname}`] ?? handlers[url.pathname];
-      return handler ? handler(url, request) : Response.json({ detail: 'Not Found' }, { status: 404 });
-    }),
+/** The fixtures above for the AI; the activities (activity 7 among them) are the demo athlete's. */
+function useFixtures() {
+  server.use(
+    route('get', '/api/settings', () => json('/api/settings', 'get', SETTINGS)),
+    statusIs(STATUS),
+    route('get', '/api/ai/tokens', () => json('/api/ai/tokens', 'get', [])),
+    route('get', '/api/ai/weekly', () => json('/api/ai/weekly', 'get', [REPORT])),
   );
+}
+
+/** Records every request: method, path and JSON body (null for GET). */
+function record() {
+  const calls: { method: string; path: string; body: unknown }[] = [];
+  server.events.on('request:start', async ({ request }) => {
+    const text = request.method === 'GET' ? '' : await request.clone().text();
+    calls.push({
+      method: request.method,
+      path: new URL(request.url).pathname,
+      body: text ? (JSON.parse(text) as unknown) : null,
+    });
+  });
   return calls;
 }
 
@@ -122,19 +112,19 @@ const ndjson = (events: object[]) =>
   );
 
 describe('phase 7: the AI assistant', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    server.events.removeAllListeners();
+    vi.unstubAllGlobals();
+  });
 
   it("shows the Coach in Home's header only when this server has a model and the switch is on", async () => {
-    mockApi();
+    useFixtures();
     renderAt('/');
     // In Home's header (on a phone) and at the foot of the rail.
     const header = within(await screen.findByRole('main'));
     expect(await header.findByRole('link', { name: 'Coach' })).toHaveAttribute('href', '/coach');
     expect(await screen.findAllByRole('link', { name: 'Coach' })).toHaveLength(2);
-    vi.unstubAllGlobals();
-    mockApi({
-      '/api/ai/status': () => Response.json({ ...STATUS, available: false, model: null, budget: null }),
-    });
+    server.use(statusIs({ ...STATUS, available: false, model: null, budget: null }));
     renderAt('/coach');
     expect(
       await screen.findByText('Zankup Coach turns on as soon as you save an Anthropic key above.'),
@@ -142,8 +132,9 @@ describe('phase 7: the AI assistant', () => {
   });
 
   it('answers a question as it streams, with the tools it used and links to activities', async () => {
-    const calls = mockApi({
-      'POST /api/ai/coach': () =>
+    useFixtures();
+    server.use(
+      route('post', '/api/ai/coach', () =>
         ndjson([
           { type: 'tool', name: 'search_activities', status: 'running' },
           { type: 'tool', name: 'search_activities', status: 'done' },
@@ -154,7 +145,9 @@ describe('phase 7: the AI assistant', () => {
           },
           { type: 'done', tools: ['search_activities'], usage: {} },
         ]),
-    });
+      ),
+    );
+    const calls = record();
     renderAt('/coach');
     expect(await screen.findByRole('heading', { name: "Coach's weekly report" })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'A solid week' })).toBeInTheDocument();
@@ -171,31 +164,28 @@ describe('phase 7: the AI assistant', () => {
   });
 
   it('tells the user when the budget is spent instead of asking', async () => {
-    mockApi({
-      '/api/ai/status': () =>
-        Response.json({
-          ...STATUS,
-          budget: { month_cost_usd: 5, limit_usd: 5, warning: true, exceeded: true },
-        }),
-    });
+    useFixtures();
+    server.use(
+      statusIs({ ...STATUS, budget: { month_cost_usd: 5, limit_usd: 5, warning: true, exceeded: true } }),
+    );
     renderAt('/coach');
     expect(await screen.findByText(/This month's Zankup Coach budget is spent/)).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('shows the summary on the activity and lets the user write it and take the title', async () => {
-    let summary: object | null = null;
-    const calls = mockApi({
-      '/api/activities/7': () => Response.json({ ...RUN, laps: [], splits: [], best_efforts: [] }),
-      '/api/activities/7/summary': () =>
-        summary ? Response.json(summary) : Response.json({ detail: 'No summary yet' }, { status: 404 }),
-      'POST /api/activities/7/summary': () => {
+    let summary: typeof SUMMARY | null = null;
+    useFixtures();
+    server.use(
+      route('get', '/api/activities/{activity_id}/summary', () =>
+        summary ? json('/api/activities/{activity_id}/summary', 'get', summary) : fail(404, 'No summary yet'),
+      ),
+      route('post', '/api/activities/{activity_id}/summary', () => {
         summary = SUMMARY;
-        return Response.json(SUMMARY);
-      },
-      'PATCH /api/activities/7': (_url, request) =>
-        request.json().then((body: { name: string }) => Response.json({ ...RUN, name: body.name })),
-    });
+        return json('/api/activities/{activity_id}/summary', 'post', SUMMARY);
+      }),
+    );
+    const calls = record();
     renderAt('/activities/7');
     expect(await screen.findByRole('heading', { name: 'Zankup Coach' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Ask for a summary' }));
@@ -213,7 +203,7 @@ describe('phase 7: the AI assistant', () => {
   });
 
   it('"Tell me more" writes the longer report and shows the recommendation apart', async () => {
-    const REPORT_ROW = {
+    const REPORT_ROW: Res<'/api/activities/{activity_id}/report', 'post'> = {
       activity_id: 7,
       language: 'en',
       headline: 'A steady threshold run.',
@@ -225,11 +215,16 @@ describe('phase 7: the AI assistant', () => {
       model: 'claude-haiku-5-5',
       created_at: '2026-11-04T09:00:00Z',
     };
-    const calls = mockApi({
-      '/api/activities/7': () => Response.json({ ...RUN, laps: [], splits: [], best_efforts: [] }),
-      '/api/activities/7/summary': () => Response.json(SUMMARY),
-      'POST /api/activities/7/report': () => Response.json(REPORT_ROW),
-    });
+    useFixtures();
+    server.use(
+      route('get', '/api/activities/{activity_id}/summary', () =>
+        json('/api/activities/{activity_id}/summary', 'get', SUMMARY),
+      ),
+      route('post', '/api/activities/{activity_id}/report', () =>
+        json('/api/activities/{activity_id}/report', 'post', REPORT_ROW),
+      ),
+    );
+    const calls = record();
     renderAt('/activities/7');
     await userEvent.click(await screen.findByRole('button', { name: 'Tell me more' }));
     expect(await screen.findByText('A steady threshold run.')).toBeInTheDocument();
@@ -239,10 +234,11 @@ describe('phase 7: the AI assistant', () => {
   });
 
   it('has the AI switches, the explanation and the MCP tokens in Settings', async () => {
-    let tokens: object[] = [];
-    const calls = mockApi({
-      '/api/ai/tokens': () => Response.json(tokens),
-      'POST /api/ai/tokens': () => {
+    let tokens: Res<'/api/ai/tokens', 'get'> = [];
+    useFixtures();
+    server.use(
+      route('get', '/api/ai/tokens', () => json('/api/ai/tokens', 'get', tokens)),
+      route('post', '/api/ai/tokens', () => {
         tokens = [
           {
             id: 3,
@@ -252,15 +248,25 @@ describe('phase 7: the AI assistant', () => {
             last_used_at: null,
           },
         ];
-        return Response.json({ ...tokens[0], token: 'zk_abcdefghij', url: '/api/mcp' }, { status: 201 });
-      },
-      'PATCH /api/settings': (_url, request) =>
-        request.json().then((body: object) => Response.json({ ...SETTINGS, ...body })),
-      'DELETE /api/ai/tokens/3': () => {
+        const [created] = tokens;
+        if (!created) throw new Error('no token');
+        return json(
+          '/api/ai/tokens',
+          'post',
+          { ...created, token: 'zk_abcdefghij', url: '/api/mcp' },
+          { status: 201 },
+        );
+      }),
+      route('patch', '/api/settings', async ({ request }) => {
+        const body = await request.json();
+        return json('/api/settings', 'patch', { ...SETTINGS, ai: { ...SETTINGS.ai, ...body.ai } });
+      }),
+      route('delete', '/api/ai/tokens/{token_id}', () => {
         tokens = [];
         return new Response(null, { status: 204 });
-      },
-    });
+      }),
+    );
+    const calls = record();
     renderAt('/settings/ai');
     expect(await screen.findByRole('heading', { name: 'Zankup Coach' })).toBeInTheDocument();
     expect(await screen.findByText('coordinates and routes')).toBeInTheDocument();
@@ -285,7 +291,7 @@ describe('phase 7: the AI assistant', () => {
   });
 
   it('the Coach as on the app: two examples, and its note behind the (i) (OS-915)', async () => {
-    mockApi();
+    useFixtures();
     renderAt('/coach');
     expect(await screen.findByText('Questions you could ask:')).toBeInTheDocument();
     const chat = screen.getByRole('region', { name: 'Zankup Coach' });
@@ -301,7 +307,10 @@ describe('phase 7: the AI assistant', () => {
 });
 
 describe('connecting an AI assistant by OAuth', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    server.events.removeAllListeners();
+    vi.unstubAllGlobals();
+  });
 
   const query =
     '?response_type=code&client_id=abc&redirect_uri=' +
@@ -313,11 +322,15 @@ describe('connecting an AI assistant by OAuth', () => {
   it('says who asks and, allowed, sends the code back to the assistant', async () => {
     const assign = vi.fn();
     vi.stubGlobal('location', { ...window.location, assign });
-    const calls = mockApi({
-      '/api/oauth/client': () => Response.json({ name: 'Claude' }),
-      'POST /api/oauth/approve': () =>
-        Response.json({ redirect: 'https://claude.ai/api/mcp/auth_callback?code=k&state=xyz' }),
-    });
+    server.use(
+      route('get', '/api/oauth/client', () => json('/api/oauth/client', 'get', { name: 'Claude' })),
+      route('post', '/api/oauth/approve', () =>
+        json('/api/oauth/approve', 'post', {
+          redirect: 'https://claude.ai/api/mcp/auth_callback?code=k&state=xyz',
+        }),
+      ),
+    );
+    const calls = record();
     renderAt(`/oauth/authorize${query}`);
     expect(await screen.findByRole('heading', { name: 'Claude wants to access your Zankup' })).toBeVisible();
     expect(screen.getByText('If you allow it, Claude will be able to, on your behalf:')).toBeVisible();
@@ -330,7 +343,7 @@ describe('connecting an AI assistant by OAuth', () => {
   });
 
   it('refuses a link that is not a valid request', async () => {
-    mockApi({ '/api/oauth/client': () => Response.json({ detail: 'no' }, { status: 400 }) });
+    server.use(route('get', '/api/oauth/client', () => fail(400, 'no')));
     renderAt(`/oauth/authorize${query}`);
     expect(await screen.findByText(/not valid or has expired/)).toBeVisible();
   });

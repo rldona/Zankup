@@ -6,6 +6,8 @@ import { createMemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../App';
+import { server } from '../mocks/node';
+import { json, route } from '../mocks/route';
 import { routes } from '../router';
 
 const THIS_WEEK = '2026-11-09';
@@ -15,6 +17,7 @@ const totals = (moving_s: number, distance_m: number, ascent_m: number) => ({
   moving_s,
   distance_m,
   ascent_m,
+  load: 0,
 });
 
 /** A bucket per day or week of the range asked: this week busier than the others. */
@@ -61,23 +64,21 @@ function calendar(url: URL) {
 }
 
 function mockApi() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: Request | string, init?: RequestInit) => {
-      const request =
-        typeof input === 'string' ? new Request(new URL(input, 'http://localhost'), init) : input;
-      const url = new URL(request.url);
-      const body: Record<string, unknown> = {
-        '/api/auth/me': { id: 1, email: 'me@example.com', display_name: 'Runner', totp_enabled: true },
-        '/api/stats/volume': volume(url),
-        '/api/stats/calendar': calendar(url),
-        '/api/stats/streak': { weeks: 5, activities: 12, since: '2026-10-12', first_activity: '2026-06-03' },
-      };
-      const data = body[url.pathname];
-      return data === undefined
-        ? Response.json({ detail: 'Not Found' }, { status: 404 })
-        : Response.json(data);
-    }),
+  server.use(
+    route('get', '/api/stats/volume', ({ request }) =>
+      json('/api/stats/volume', 'get', volume(new URL(request.url))),
+    ),
+    route('get', '/api/stats/calendar', ({ request }) =>
+      json('/api/stats/calendar', 'get', calendar(new URL(request.url))),
+    ),
+    route('get', '/api/stats/streak', () =>
+      json('/api/stats/streak', 'get', {
+        weeks: 5,
+        activities: 12,
+        since: '2026-10-12',
+        first_activity: '2026-06-03',
+      }),
+    ),
   );
 }
 
@@ -97,10 +98,7 @@ describe('Volume, Series and the Training log (OS-1002)', () => {
     };
     mockApi();
   });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
-  });
+  afterEach(() => vi.useRealTimers());
 
   it("shows this week's volume on the card and opens the detail page", async () => {
     const router = renderAt('/progress');
