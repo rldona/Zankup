@@ -1,6 +1,7 @@
 {
   "variants": [
     { "name": "default", "background": ["#20c997"], "mark": "#ffffff" },
+    { "name": "mint", "background": ["#20c997"], "mark": "#06221a" },
     { "name": "black", "background": ["#000000"], "mark": "#ffffff" },
     { "name": "white", "background": ["#ffffff"], "mark": "#20c997" },
     { "name": "night", "background": ["#06221a"], "mark": "#20c997" },
