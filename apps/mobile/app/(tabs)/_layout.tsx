@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Tabs } from 'expo-router';
-import { Image, View, type ColorValue } from 'react-native';
+import { Image } from 'expo-image';
+import { View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MATERIAL_ICONS, meQuery } from '@zankup/core';

@@ -22,7 +22,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Alert, Pressable, Text, View } from 'react-native';
 
 import { useApi, useAuth } from '../auth';
 import { Sheet } from '../detail/Tools';
