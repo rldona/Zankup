@@ -98,6 +98,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       { image: './assets/splash-icon.png', imageWidth: 160, backgroundColor: '#111111' },
     ],
   ],
-  experiments: { typedRoutes: false },
+  // React Compiler memoises components and values itself, so screens redraw only what changed.
+  experiments: { typedRoutes: false, reactCompiler: true },
   extra: { eas: { projectId: process.env.EAS_PROJECT_ID } },
 });

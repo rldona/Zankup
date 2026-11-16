@@ -67,7 +67,7 @@ export function Feed() {
         />
       }
       contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 32 }}
-      ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+      ItemSeparatorComponent={Separator}
     />
   );
 }
@@ -150,6 +150,9 @@ export function WeekHeader({ format, footer }: { format: Format; footer?: React.
     </Card>
   );
 }
+
+/** The room between two cards: one component, so the list does not remount it on each render. */
+const Separator = () => <View style={{ height: 10 }} />;
 
 export const ActivityCard = memo(function ActivityCard({
   activity: a,

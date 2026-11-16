@@ -9,6 +9,7 @@ import {
   efficiencyQuery,
   estimatesQuery,
   fitnessQuery,
+  formatDate,
   formatDuration,
   formatHoursMinutes,
   progressQuery,
@@ -627,6 +628,13 @@ export function Records({ range }: { range: Range }) {
   );
 }
 
+/** The days of a (leap) year written short, once: the same for every year's line. */
+let yearDays: string[] | null = null;
+const YEAR_DAYS = () =>
+  (yearDays ??= Array.from({ length: 366 }, (_, i) =>
+    formatDate(new Date(2024, 0, 1 + i), locale, { day: 'numeric', month: 'short' }),
+  ));
+
 export function Progress({ selected }: { selected: number }) {
   const api = useApi();
   const c = useTheme();
@@ -646,9 +654,7 @@ export function Progress({ selected }: { selected: number }) {
       <CardTitle info={t('stats.progressNote')}>{t('stats.progress')}</CardTitle>
       <Chart
         legendGap={18}
-        days={Array.from({ length: 366 }, (_, i) =>
-          new Date(2024, 0, 1 + i).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
-        )}
+        days={YEAR_DAYS()}
         height={170}
         label={lines.data
           .map((l) => `${l.year}: ${Math.round((l.cumulative_m.at(-1) ?? 0) / scale)} ${format.unit}`)

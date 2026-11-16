@@ -3,6 +3,7 @@
  * has, each in the unit it is read in, with its colour, how its readout is written and the figures in
  * its footer. Shared by the app (Skia) and the web (ECharts), which only draw them.
  */
+import { formatNumber } from '../format/intl';
 import type { ActivityDetail } from '../api/queries';
 import type { Sport } from '../domain/sports';
 import type { formatters } from '../format';
@@ -170,7 +171,7 @@ export function activityCharts(
         [t('chart.avgFull'), text(a?.avg_hr ?? avgOf(hr))],
         [t('chart.maxFull'), text(a?.max_hr ?? maxOf(hr))],
         ...(a?.metrics?.trimp != null
-          ? ([[t('chart.effort'), Math.round(a.metrics.trimp).toLocaleString(locale)]] as [string, string][])
+          ? ([[t('chart.effort'), formatNumber(Math.round(a.metrics.trimp), locale)]] as [string, string][])
           : []),
       ],
     });
@@ -197,7 +198,7 @@ export function activityCharts(
                 ? [
                     [
                       t('chart.vi'),
-                      (a.normalized_power / a.avg_power).toLocaleString(locale, { maximumFractionDigits: 2 }),
+                      formatNumber(a.normalized_power / a.avg_power, locale, { maximumFractionDigits: 2 }),
                     ],
                   ]
                 : []),
@@ -255,5 +256,5 @@ export function chartValue(chart: Pick<ActivityChart, 'readout'>, v: number, loc
     return `${minutes}:${String(seconds).padStart(2, '0')}${suffix}`;
   }
   const digits = kind === 'dec1' ? 1 : 0;
-  return `${v.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits })}${suffix}`;
+  return `${formatNumber(v, locale, { minimumFractionDigits: digits, maximumFractionDigits: digits })}${suffix}`;
 }

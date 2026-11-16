@@ -2,6 +2,7 @@
  * The activity's figures under its title (OS-518, OS-908): the six that matter, as Strava lays them out,
  * and the rest behind "More". Shared by the app and the web, which only lay them out.
  */
+import { formatNumber } from '../format/intl';
 import type { ActivityDetail } from '../api/queries';
 import type { formatters } from '../format';
 import { formatDuration } from '../format';
@@ -32,22 +33,22 @@ export function activityFigures(
   if (kcal)
     main.push([
       t('activity.calories'),
-      `${Math.round(kcal).toLocaleString(locale)} kcal${a.calories == null ? ' *' : ''}`,
+      `${formatNumber(Math.round(kcal), locale)} kcal${a.calories == null ? ' *' : ''}`,
     ]);
   if (a.moving_s && a.duration_s - a.moving_s > 60)
     more.push([t('activity.elapsed'), formatDuration(a.duration_s)]);
   if (a.avg_power && a.avg_hr) more.push([t('feed.stat.hr'), `${a.avg_hr} bpm`]);
   if (a.max_hr) more.push([t('activity.maxHr'), `${a.max_hr} bpm`]);
   if (a.normalized_power) more.push([t('activity.np'), `${a.normalized_power} W`]);
-  if (m?.trimp != null) more.push([t('activity.effort'), Math.round(m.trimp).toLocaleString(locale)]);
+  if (m?.trimp != null) more.push([t('activity.effort'), formatNumber(Math.round(m.trimp), locale)]);
   if (pace && m?.gap_speed) more.push([t('activity.gap'), format.pace(m.gap_speed)]);
   if (m?.decoupling != null)
     more.push([
       t('activity.decoupling'),
-      `${m.decoupling.toLocaleString(locale, { maximumFractionDigits: 1 })} %`,
+      `${formatNumber(m.decoupling, locale, { maximumFractionDigits: 1 })} %`,
     ]);
   if (a.training_effect)
-    more.push([t('activity.te'), a.training_effect.toLocaleString(locale, { maximumFractionDigits: 1 })]);
+    more.push([t('activity.te'), formatNumber(a.training_effect, locale, { maximumFractionDigits: 1 })]);
   // Without a distance (strength, indoor), the next figures fill the six places.
   main.push(...more.splice(0, Math.max(0, 6 - main.length)));
   return { main, more };

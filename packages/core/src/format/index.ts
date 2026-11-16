@@ -2,7 +2,10 @@
  * Formatting for numbers the app shows everywhere. Pure functions over SI units (metres, seconds, m/s),
  * locale-aware through Intl. Units (metric or imperial) are a setting independent of the language.
  */
+import { formatDate, formatNumber } from './intl';
 import type { Locale } from '../i18n';
+
+export { formatDate, formatNumber } from './intl';
 
 export type Units = 'metric' | 'imperial';
 
@@ -36,7 +39,7 @@ export function formatHoursMinutes(seconds: number): string {
 /** Distance in km or mi with two decimals, without the unit: 6615 → "6.62" (en) or "6,62" (es). */
 export function formatDistance(metres: number, { locale, units }: FormatOptions): string {
   const value = units === 'metric' ? metres / 1000 : metres / METRES_PER_MILE;
-  return value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatNumber(value, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function distanceUnit(units: Units): 'km' | 'mi' {
@@ -53,18 +56,18 @@ export function formatPace(metresPerSecond: number, { units }: Pick<FormatOption
 /** Speed in km/h or mph with one decimal: 8.33 m/s → "30" (en) or "30" (es), 8.4 → "30.2" / "30,2". */
 export function formatSpeed(metresPerSecond: number, { locale, units }: FormatOptions): string {
   const value = units === 'metric' ? metresPerSecond * 3.6 : (metresPerSecond * 3600) / METRES_PER_MILE;
-  return value.toLocaleString(locale, { maximumFractionDigits: 1 });
+  return formatNumber(value, locale, { maximumFractionDigits: 1 });
 }
 
 /** Activity start shown in its own local time: "Tue, 27 Oct · 19:05" (en-GB style) or "mar, 27 oct · 19:05". */
 export function formatActivityDate(isoLocal: string, locale: Locale): string {
   const date = new Date(isoLocal.replace(' ', 'T'));
-  const day = date.toLocaleDateString(locale === 'en' ? 'en-GB' : locale, {
+  const day = formatDate(date, locale === 'en' ? 'en-GB' : locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
   });
-  const time = date.toLocaleTimeString(locale === 'en' ? 'en-GB' : locale, {
+  const time = formatDate(date, locale === 'en' ? 'en-GB' : locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -86,7 +89,7 @@ export function localStart(startUtc: string, timezone: string | null | undefined
 /** "2026-10" → "October 2026" (en) or "octubre de 2026" (es). */
 export function formatMonth(month: string, locale: Locale): string {
   const [year, index] = month.split('-').map(Number);
-  return new Date(Date.UTC(year ?? 1970, (index ?? 1) - 1, 1)).toLocaleDateString(locale, {
+  return formatDate(new Date(Date.UTC(year ?? 1970, (index ?? 1) - 1, 1)), locale, {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
@@ -96,7 +99,7 @@ export function formatMonth(month: string, locale: Locale): string {
 /** Elevation in metres or feet, rounded: 123 → "123 m" or "404 ft". */
 export function formatElevation(metres: number, { locale, units }: FormatOptions): string {
   const value = units === 'metric' ? metres : metres / 0.3048;
-  return `${Math.round(value).toLocaleString(locale)} ${units === 'metric' ? 'm' : 'ft'}`;
+  return `${formatNumber(Math.round(value), locale)} ${units === 'metric' ? 'm' : 'ft'}`;
 }
 
 /** Formatters with their units, for screens that show many figures. */

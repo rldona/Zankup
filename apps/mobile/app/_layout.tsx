@@ -41,6 +41,8 @@ export default function Root() {
   }, []);
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const c = palette(choice, scheme);
+  // One value while the choice holds, so the screens reading the theme do not all redraw.
+  const themeChoice = useMemo(() => ({ choice, setChoice }), [choice, setChoice]);
   const [state, setState] = useState<State>({ kind: 'starting' });
 
   const open = useCallback(async () => {
@@ -98,7 +100,7 @@ export default function Root() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.bg }}>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <ThemeContext.Provider value={{ choice, setChoice }}>
+        <ThemeContext.Provider value={themeChoice}>
           <PersistQueryClientProvider
             client={queryClient}
             persistOptions={{
