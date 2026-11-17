@@ -19,12 +19,15 @@ export function useSync() {
   });
   const latest = runs.data?.[0];
 
-  // When a run finishes, the feed, its months and the profile show what it brought.
+  // When a run finishes, the feed, its months, the statistics (under 'activities'), the goals and the
+  // profile show what it brought.
   const was = useRef(latest?.status);
   useEffect(() => {
     if (was.current && active({ status: was.current } as SyncRun) && latest && !active(latest)) {
       void queryClient.invalidateQueries({ queryKey: ['activities'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+      // A goal's progress comes from the activities too.
+      void queryClient.invalidateQueries({ queryKey: ['goals'] });
     }
     was.current = latest?.status;
   }, [latest, queryClient]);

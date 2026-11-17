@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -34,8 +34,9 @@ describe('password recovery and Google', () => {
     const bodies = signedOut();
     const router = renderAt('/sign-in');
     await userEvent.click(await screen.findByRole('link', { name: 'Forgot it?' }));
-    expect(router.state.location.pathname).toBe('/forgot');
-    await userEvent.type(screen.getByLabelText('E-mail'), 'me@example.com');
+    // The page comes in its own file: the router moves there once it has loaded.
+    await waitFor(() => expect(router.state.location.pathname).toBe('/forgot'));
+    await userEvent.type(await screen.findByLabelText('E-mail'), 'me@example.com');
     await userEvent.click(screen.getByRole('button', { name: 'Send link' }));
     expect(await screen.findByRole('status')).toHaveTextContent('If that e-mail has an account');
     expect(bodies['/api/auth/password/forgot']).toEqual({ email: 'me@example.com' });
@@ -44,7 +45,7 @@ describe('password recovery and Google', () => {
   it('sets a new password with the link and a code', async () => {
     const bodies = signedOut(); // the demo's code is 123456: any other does not match
     renderAt('/reset-password?token=abc');
-    await userEvent.type(screen.getByLabelText(/^Password/), 'a brand new long passphrase');
+    await userEvent.type(await screen.findByLabelText(/^Password/), 'a brand new long passphrase');
     await userEvent.type(screen.getByLabelText('Code from the app or a recovery code'), '000000');
     await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
     expect(await screen.findByText('That code does not match')).toBeInTheDocument();

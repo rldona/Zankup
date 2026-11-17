@@ -43,6 +43,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
+import { resample } from '../../charts/resample';
 import { locale, t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
 import { usePrefs } from '../../prefs';
@@ -81,7 +82,7 @@ export function BestsCard() {
     );
   const shown = cardMedals(medals.data ?? [], (key) => effortShown(key, unit));
   return (
-    <Link to="/progress/bests" className="panel pb-card">
+    <Link to="/progress/bests" className="panel pb-card tap">
       <CardTitle right={<MaterialIcon name="chevron_right" />}>
         <MaterialIcon name="trophy" />
         {t('progress.bests')}
@@ -108,6 +109,9 @@ export function BestsCard() {
     </Link>
   );
 }
+
+/** How long the list's scroll events after the chart moved it are taken for its echo. */
+const ECHO_MS = 150;
 
 export function BestsPage() {
   const { unit, imperial } = useUnit();
@@ -157,8 +161,11 @@ export function BestsPage() {
   if (view.for !== chrono) setView({ for: chrono, offset: high, scrolled: false });
   const offset = view.for === chrono ? view.offset : high;
   const list = useRef<HTMLDivElement>(null);
-  // The scroll the chart last asked of the list: its own scroll event is not news.
-  const asked = useRef<number | null>(null);
+  // When the chart last scrolled the list: the list's own scroll events right after are its echo, not
+  // the hand, and following them would send the chart back and forth (a trackpad sends many at once).
+  const chartMoved = useRef(0);
+  const frame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
   useEffect(() => {
     if (list.current) list.current.scrollTop = 0;
   }, [chrono]);
@@ -170,13 +177,16 @@ export function BestsPage() {
     return { tops: rows.map((r) => r.offsetTop), header };
   };
   const onListScroll = () => {
-    const box = list.current;
-    if (!box) return;
-    if (asked.current != null && Math.abs(box.scrollTop - asked.current) < 2) return;
-    asked.current = null;
-    const { tops, header } = measure();
-    const o = offsetForScroll(box.scrollTop, tops, header);
-    if (o != null) setView({ for: chrono, offset: o, scrolled: true });
+    if (performance.now() - chartMoved.current < ECHO_MS) return;
+    // Once a frame, however many events the trackpad sends.
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => {
+      const box = list.current;
+      if (!box) return;
+      const { tops, header } = measure();
+      const o = offsetForScroll(box.scrollTop, tops, header);
+      if (o != null) setView({ for: chrono, offset: o, scrolled: true });
+    });
   };
   const onChartMove = (o: number) => {
     const next = Math.min(high, Math.max(low, o));
@@ -185,14 +195,14 @@ export function BestsPage() {
     if (!box) return;
     const { tops, header } = measure();
     if (tops.length < n) return;
-    const y = scrollForOffset(next, tops, header);
-    asked.current = y;
-    box.scrollTop = y;
+    cancelAnimationFrame(frame.current);
+    chartMoved.current = performance.now();
+    box.scrollTop = scrollForOffset(next, tops, header);
   };
   const toYear = (year: string) => {
     const box = list.current;
     if (!box) return;
-    asked.current = null;
+    chartMoved.current = 0;
     const { tops, header } = measure();
     const k = year ? ordered.findIndex((b) => b.day <= `${year}-12-31`) : 0;
     box.scrollTo({ top: k <= 0 ? 0 : Math.max(0, (tops[k] ?? 0) - header), behavior: 'smooth' });
@@ -444,17 +454,23 @@ function BestsChart({
       },
       series: [
         {
+          // The trend morphs from one distance to another (see charts/resample); the bests are drawn afresh.
           id: 'trend',
           type: 'line',
-          smooth: true,
           showSymbol: false,
           silent: true,
           clip: true,
           lineStyle: { color: c.fitness, width: 2.5 },
-          data: n > 1 ? chrono.map((_, i) => [i, clamp(line[i] ?? record)]) : [],
+          data:
+            n > 1
+              ? resample(
+                  chrono.map((_, i) => clamp(line[i] ?? record)),
+                  { smooth: true },
+                )
+              : [],
         },
         {
-          id: 'bests',
+          id: `bests:${bestKey}`,
           type: 'scatter',
           clip: true,
           symbolSize: 12,
@@ -475,7 +491,7 @@ function BestsChart({
         },
       ],
     };
-  }, [chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c, n]);
+  }, [bestKey, chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c, n]);
 
   // Clicking a point opens its activity, unless the pointer was dragging the chart.
   const onReady = useCallback(
@@ -498,18 +514,29 @@ function BestsChart({
   useEffect(() => {
     const element = box.current;
     if (!element) return;
+    // A trackpad sends many events a frame: they add up and the chart moves once a frame.
+    let pending: number | null = null;
+    let raf = 0;
     const wheel = (event: WheelEvent) => {
       const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
       const slot = Math.max(1, (element.clientWidth - AXIS - 8) / CHART_SLOTS);
       const [lo, hi] = offsetRange(n);
-      const { offset: now, onMove: move } = latest.current;
+      const now = pending ?? latest.current.offset;
       const next = Math.min(hi, Math.max(lo, now + delta / slot));
       if (next === now) return;
       event.preventDefault();
-      move(next);
+      pending = next;
+      raf ||= requestAnimationFrame(() => {
+        raf = 0;
+        if (pending != null) latest.current.onMove(pending);
+        pending = null;
+      });
     };
     element.addEventListener('wheel', wheel, { passive: false });
-    return () => element.removeEventListener('wheel', wheel);
+    return () => {
+      element.removeEventListener('wheel', wheel);
+      cancelAnimationFrame(raf);
+    };
   }, [n]);
 
   const drag = useRef<{ x: number; offset: number } | null>(null);

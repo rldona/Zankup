@@ -31,7 +31,7 @@ export function ProgressLink({
   children: ReactNode;
 }) {
   return (
-    <Link to={to} className="panel fxcard" aria-label={label}>
+    <Link to={to} className="panel fxcard tap" aria-label={label}>
       <CardTitle
         right={
           <span className="fxwhen">

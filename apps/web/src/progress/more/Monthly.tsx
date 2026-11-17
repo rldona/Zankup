@@ -155,7 +155,7 @@ export function MonthlyCard() {
     );
   const { current, previous } = months(calendar, today);
   return (
-    <Link to="/progress/monthly" className="panel morecard monthlycard">
+    <Link to="/progress/monthly" className="panel morecard monthlycard tap">
       <CardTitle
         right={
           <span className="morehint">

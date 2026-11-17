@@ -10,7 +10,11 @@ import type { EChartsType } from 'echarts/core';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { EChart } from '../../charts/EChart';
+import { pointToIndex, resample } from '../../charts/resample';
 import { useResolvedTheme } from '../../theme';
+
+/** Where the real points are among the series (after the comparison and the line). */
+const POINTS = 2;
 
 /** The tick closest to an axis value (ECharts' steps can be a rounding away from ours). */
 const nearest = (ticks: number[], v: number) =>
@@ -56,24 +60,29 @@ export function VolumeChart({
     ];
     const top = steps.at(-1) || 1;
     const wordAt = new Map(words.map((l) => [l.index, l.text]));
+    const n = shownValues.length;
     return {
       grid: { left: 6, right: 6, top: 14, bottom: 26, containLabel: true },
+      // Moved only by the pointer below, onto the real points.
       tooltip: {
         trigger: 'axis',
+        triggerOn: 'none',
         showContent: false,
         axisPointer: { type: 'line', lineStyle: { color: c.fg, width: 2, type: 'solid' } },
       },
       xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: shownValues.map((_, i) => i),
+        // The points by their place, so the line can be drawn between them (see charts/resample).
+        type: 'value',
+        min: 0,
+        max: Math.max(1, n - 1),
         axisLine: { show: false },
         axisTick: { show: false },
+        splitLine: { show: false },
         axisLabel: {
-          interval: 0,
+          customValues: words.map((l) => l.index),
           color: c.fg,
           fontSize: 12,
-          formatter: (_: string, i: number) => wordAt.get(i) ?? '',
+          formatter: (v: number) => wordAt.get(Math.round(v)) ?? '',
         },
       },
       yAxis: {
@@ -85,32 +94,35 @@ export function VolumeChart({
         axisLabel: { color: c.fg, fontSize: 12, formatter: (v: number) => tickText[nearest(steps, v)] ?? '' },
         splitLine: { lineStyle: { color: c.line } },
       },
-      // Their own ids, so the line keeps its place (and morphs) when the comparison comes or goes.
+      // Their own ids, in a fixed order (the pointer finds the points by it): the lines morph from one
+      // range to another, the comparison comes and goes, and other points are drawn afresh.
       series: [
-        ...(before?.length
-          ? [
-              {
-                id: 'previous',
-                type: 'line',
-                data: before.slice(0, shownValues.length),
-                symbol: 'none',
-                silent: true,
-                lineStyle: { color: c.fatigue, width: 2 },
-                itemStyle: { color: c.fatigue },
-                emphasis: { disabled: true },
-              },
-            ]
-          : []),
+        {
+          id: 'previous',
+          type: 'line',
+          data: before?.length ? resample(before.slice(0, n)) : [],
+          symbol: 'none',
+          silent: true,
+          lineStyle: { color: c.fatigue, width: 2 },
+          emphasis: { disabled: true },
+        },
         {
           id: 'value',
           type: 'line',
-          data: shownValues.map((v) => Math.min(v, top)),
-          symbol: shownValues.length <= 60 ? 'circle' : 'none',
-          symbolSize: 9,
-          showAllSymbol: true,
+          data: resample(shownValues.map((v) => Math.min(v, top))),
+          symbol: 'none',
+          silent: true,
           lineStyle: { color: c.accent, width: 3 },
-          itemStyle: { color: c.surface, borderColor: c.accent, borderWidth: 2 },
           areaStyle: { color: c.accent, opacity: 0.3 },
+          emphasis: { disabled: true },
+        },
+        {
+          id: `points:${n}`,
+          type: 'scatter',
+          data: shownValues.map((v, i) => [i, Math.min(v, top)]),
+          symbol: n <= 60 ? 'circle' : 'none',
+          symbolSize: 9,
+          itemStyle: { color: c.surface, borderColor: c.accent, borderWidth: 2 },
           emphasis: { scale: 1.8, itemStyle: { color: c.accent, borderColor: c.accent } },
         },
       ],
@@ -125,30 +137,28 @@ export function VolumeChart({
   const chart = useRef<EChartsType | null>(null);
   const shown = useRef<number | null>(null);
   const [focus, setFocus] = useState<number | null>(null);
-  const main = previous?.length ? 1 : 0;
 
+  const count = useRef(values.length);
+  useEffect(() => {
+    count.current = values.length;
+  });
   const ready = useCallback((instance: EChartsType) => {
     chart.current = instance;
-    const pointer = (event: { axesInfo?: { axisDim: string; value: number }[] }) => {
-      const info = event.axesInfo?.find((a) => a.axisDim === 'x');
-      if (!info || info.value === shown.current) return;
-      shown.current = info.value;
-      handlers.current.onHover(info.value);
-    };
+    const pointer = pointToIndex(instance, {
+      count: () => count.current,
+      seriesIndex: () => POINTS,
+      onIndex: (index) => {
+        shown.current = index;
+        handlers.current.onHover(index);
+      },
+    });
     const click = () => {
       if (shown.current != null) handlers.current.onPick?.(shown.current);
     };
-    const out = () => {
-      shown.current = null;
-      handlers.current.onHover(null);
-    };
-    instance.on('updateAxisPointer', pointer as never);
     instance.getZr().on('click', click);
-    instance.getZr().on('globalout', out);
     return () => {
-      instance.off('updateAxisPointer');
+      pointer();
       instance.getZr().off('click', click);
-      instance.getZr().off('globalout', out);
     };
   }, []);
 
@@ -167,7 +177,7 @@ export function VolumeChart({
       const i = moves[event.key] ?? last;
       setFocus(i);
       shown.current = i;
-      chart.current?.dispatchAction({ type: 'showTip', seriesIndex: main, dataIndex: i });
+      chart.current?.dispatchAction({ type: 'showTip', seriesIndex: POINTS, dataIndex: i });
       onHover(i);
     } else if ((event.key === 'Enter' || event.key === ' ') && focus != null && onPick) {
       event.preventDefault();

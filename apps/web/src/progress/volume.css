@@ -457,8 +457,9 @@
   flex-direction: column;
 }
 
-.vseries:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+/* The flame and its weeks let the press through to the card's button below them. */
+.vseries .vflamebox {
+  pointer-events: none;
 }
 
 .vseries .ph svg.i {
@@ -703,10 +704,6 @@
   gap: 12px;
   color: var(--fg);
   text-decoration: none;
-}
-
-.vlogcard:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 
 .vlogcard .ph {

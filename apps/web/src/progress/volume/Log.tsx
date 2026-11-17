@@ -70,7 +70,7 @@ export function LogCard() {
   return (
     <Link
       to="/progress/log"
-      className="panel vlogcard"
+      className="panel vlogcard tap"
       aria-label={`${t('progress.log')}: ${t('progress.thisWeek')} ${time(thisWeek)}`}
     >
       <CardTitle right={<MaterialIcon name="chevron_right" />}>

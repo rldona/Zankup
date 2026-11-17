@@ -23,11 +23,12 @@ import {
 } from '@zankup/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EChartsType } from 'echarts/core';
-import { useCallback, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 
 import { api } from '../api';
 import { EChart } from '../charts/EChart';
+import { pointToIndex, resample } from '../charts/resample';
 import { Modal } from '../detail/Tools';
 import { t } from '../i18n';
 import { MaterialIcon } from '../MaterialIcon';
@@ -39,6 +40,14 @@ import { daysBetween, kg, longDay, shortDay, signed } from './weightFormat';
 import './weight.css';
 
 const palette = (theme: ThemeName) => ({ ...commonTokens, ...themes[theme] });
+
+/** About six places across `count` days for their dates. */
+const sixDates = (count: number) => {
+  const step = Math.max(1, Math.ceil(count / 6));
+  const out: number[] = [];
+  for (let i = 0; i < count; i += step) out.push(i);
+  return out;
+};
 
 const back = (today: string, days: number) => {
   const d = new Date(`${today}T12:00:00`);
@@ -78,25 +87,29 @@ function WeightLine({
     return {
       animationDurationUpdate: 500,
       grid: bare ? { left: 4, right: 4, top: 6, bottom: 6 } : { left: 44, right: 16, top: 16, bottom: 28 },
+      // Moved only by the pointer below, onto the days.
       tooltip: bare
         ? undefined
         : {
             trigger: 'axis',
+            triggerOn: 'none',
             showContent: false,
             axisPointer: { type: 'line', lineStyle: { color: c.muted, width: 1 } },
           },
       xAxis: {
-        type: 'category',
+        // The days by their place, so the line can be drawn between them (see charts/resample).
+        type: 'value',
         show: !bare,
-        boundaryGap: false,
-        data: days,
+        min: 0,
+        max: Math.max(1, days.length - 1),
         axisLine: { show: false },
         axisTick: { show: false },
+        splitLine: { show: false },
         // About six dates across the range, not one per day.
         axisLabel: {
-          formatter: shortDay,
+          customValues: sixDates(days.length),
+          formatter: (i: number) => shortDay(days[Math.round(i)] ?? ''),
           hideOverlap: true,
-          interval: Math.max(0, Math.ceil(days.length / 6) - 1),
           color: c.muted,
           fontSize: 11,
         },
@@ -110,35 +123,40 @@ function WeightLine({
         axisLabel: { color: c.muted, fontSize: 11, formatter: kg },
         splitLine: { lineStyle: { color: c.line } },
       },
+      // The line morphs from one range to another; the days (dots where weighed) are drawn afresh.
       series: [
         {
           id: 'weight',
           type: 'line',
-          data: values.map((v) => (v == null ? null : Math.round(v * 100) / 100)),
+          data: resample(values),
+          symbol: 'none',
+          silent: true,
+          lineStyle: { color: c.accent, width: bare ? 2.5 : 3, join: 'round', cap: 'round' },
+          areaStyle: bare ? { color: c.accent, opacity: 0.12 } : undefined,
+          emphasis: { disabled: true },
+        },
+        {
+          id: `days:${days.length}`,
+          type: 'scatter',
+          silent: bare,
+          data: values.map((v, i) => [i, v == null ? null : Math.round(v * 100) / 100]),
           symbol: (_: unknown, params: { dataIndex: number }) =>
             weighed?.has(days[params.dataIndex] ?? '') ? 'circle' : 'none',
           symbolSize: 6,
-          silent: bare,
-          lineStyle: { color: c.accent, width: bare ? 2.5 : 3, join: 'round', cap: 'round' },
           itemStyle: { color: c.accent },
-          areaStyle: bare ? { color: c.accent, opacity: 0.12 } : undefined,
         },
       ],
     };
   }, [days, values, weighed, bare, theme]);
+  const count = useRef(days.length);
+  useEffect(() => {
+    count.current = days.length;
+  });
   const ready = useCallback(
-    (chart: EChartsType) => {
-      if (!onPick) return undefined;
-      const point = (event: unknown) =>
-        onPick((event as { axesInfo?: { value: number }[] }).axesInfo?.[0]?.value ?? null);
-      const out = () => onPick(null);
-      chart.on('updateAxisPointer', point);
-      chart.getZr().on('globalout', out);
-      return () => {
-        chart.off('updateAxisPointer', point);
-        chart.getZr().off('globalout', out);
-      };
-    },
+    (chart: EChartsType) =>
+      onPick
+        ? pointToIndex(chart, { count: () => count.current, seriesIndex: () => 1, onIndex: onPick })
+        : undefined,
     [onPick],
   );
   return (

@@ -5,7 +5,6 @@
  * (today, or the one under the pointer) and that day's activities.
  */
 import {
-  calendarQuery,
   fitnessChange,
   fitnessQuery,
   fitnessScale,
@@ -15,7 +14,6 @@ import {
   rangePeriod,
   spreadDays,
   untilToday,
-  type CalendarDay,
   type FitnessRange,
 } from '@zankup/core';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -33,6 +31,7 @@ import { Link } from 'react-router';
 
 import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
+import { resample } from '../../charts/resample';
 import { t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
 import { CardSkeleton, ChartSkeleton, Pulse } from '../../Skeleton';
@@ -46,7 +45,9 @@ import {
   savedFitnessRange,
   saveFitnessRange,
   shortDate,
+  useCalendarDays,
   useToday,
+  type CalendarActivities,
 } from './data';
 import { CardLine, ChangePill, ProgressLink } from './parts';
 
@@ -144,6 +145,8 @@ export function FitnessPage() {
   const first = days[0];
   const change = day && first ? fitnessChange(first.ctl, day.ctl) : null;
   const [box, height] = useFillHeight();
+  // The range's activities at once: the day under the pointer reads its own from them.
+  const calendar = useCalendarDays(first?.day ?? today, addDays(today, 1));
 
   const choose = (r: FitnessRange) => {
     setRange(r);
@@ -198,7 +201,12 @@ export function FitnessPage() {
               onPick={setPicked}
               height={height}
             />
-            <DayActivities key={day.day} day={day.day} />
+            <DayActivities
+              key={day.day}
+              day={day.day}
+              activities={calendar.days.get(day.day) ?? []}
+              pending={calendar.pending}
+            />
           </>
         )}
       </div>
@@ -211,7 +219,7 @@ type Day = { day: string; ctl: number; load: number };
 /**
  * The score as a filled line over the range, a ring on each day with load (bigger, harder) over a
  * month, and the picked day marked with its score in a badge. The pointer (or a tap) picks a day; so
- * do the arrow keys. Another range turns the line into the new one (the series keep their ids).
+ * do the arrow keys. Another range morphs the line into the new one, each point up or down to its place.
  */
 function FitnessChart({
   days,
@@ -247,14 +255,19 @@ function FitnessChart({
       animationDurationUpdate: 600,
       grid: { left: 36, right: 24, top: 46, bottom: 26 },
       xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: days.map((d) => d.day),
+        // The days by their place (0 is the range's first), so the line can sit between them.
+        type: 'value',
+        min: 0,
+        max: Math.max(1, days.length - 1),
+        splitLine: { show: false },
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          interval: (i: number) => marks.has(i),
-          formatter: (d: string) => label(d),
+          customValues: [...marks],
+          formatter: (i: number) => {
+            const d = days[Math.round(i)]?.day;
+            return d ? label(d) : '';
+          },
           color: c.muted,
           fontSize: 11,
           alignMinLabel: 'left',
@@ -273,7 +286,7 @@ function FitnessChart({
         {
           id: 'ctl',
           type: 'line',
-          data: days.map((d) => d.ctl),
+          data: resample(days.map((d) => d.ctl)),
           symbol: 'none',
           silent: true,
           lineStyle: { color: c.accent, width: 2.5, join: 'round', cap: 'round' },
@@ -302,7 +315,7 @@ function FitnessChart({
       setChart(instance);
       redraw((n) => n + 1);
       const move = (event: { offsetX: number; offsetY: number }) => {
-        const at = instance.convertFromPixel({ xAxisIndex: 0 }, [event.offsetX, event.offsetY]);
+        const at = instance.convertFromPixel({ gridIndex: 0 }, [event.offsetX, event.offsetY]);
         const i = Math.round(Array.isArray(at) ? (at[0] ?? 0) : at);
         if (Number.isFinite(i)) pick.current(Math.max(0, Math.min(count - 1, i)));
       };
@@ -338,7 +351,7 @@ function FitnessChart({
   const point = ((): number[] | null => {
     try {
       return chart && !chart.isDisposed() && day
-        ? chart.convertToPixel({ seriesId: 'ctl' }, [index, day.ctl])
+        ? chart.convertToPixel({ gridIndex: 0 }, [index, day.ctl])
         : null;
     } catch {
       return null; // Not drawn yet.
@@ -373,13 +386,18 @@ function FitnessChart({
 }
 
 /** The picked day's activities, each opening its page; more than one, how many until clicked. */
-function DayActivities({ day }: { day: string }) {
+function DayActivities({
+  day,
+  activities,
+  pending,
+}: {
+  day: string;
+  activities: CalendarActivities;
+  pending: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const calendar = useQuery(calendarQuery(api, { from: day, to: addDays(day, 1) }));
-  const activities =
-    (calendar.data as CalendarDay[] | undefined)?.find((d) => d.day === day)?.activities ?? [];
   const when = shortDate(day, true);
-  if (calendar.isPending) return <div className="fxday" aria-busy="true" />;
+  if (pending) return <div className="fxday" aria-busy="true" />;
   if (!activities.length)
     return (
       <div className="fxday">

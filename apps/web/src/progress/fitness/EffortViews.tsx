@@ -7,24 +7,21 @@
 import {
   activityBand,
   addDays,
-  calendarQuery,
   cumulative,
   formatHoursMinutes,
+  isoDay,
   monthLabels,
   SPORT_ICONS,
   weekAt,
   weekDays,
-  type CalendarDay,
   type EffortRange,
   type EffortStatus,
   type EffortWeek,
 } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
 import type { EChartsType } from 'echarts/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
 import { locale, t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
@@ -37,9 +34,11 @@ import {
   dayLetter,
   palette,
   statusPaint,
+  useCalendarDays,
   useEffortDays,
   useEffortWeeks,
   useToday,
+  type CalendarActivities,
 } from './data';
 import { ProgressLink } from './parts';
 
@@ -214,9 +213,44 @@ function WeekSoFar({
 
 export function EffortPage() {
   const { weeks, isPending } = useEffortWeeks(WEEKS);
+  // The weeks' activities at once: the week under the pointer reads its own from them.
+  const calendar = useCalendarDays(
+    weeks[0]?.monday ?? isoDay(new Date()),
+    addDays(weeks.at(-1)?.monday ?? isoDay(new Date()), 7),
+  );
   const [picked, setPicked] = useState<number | null>(null);
   // The last week the chart shows (none: the latest). Only the arrows move it.
   const [end, setEnd] = useState<number | null>(null);
+  // Where the weeks stand: the week picked and the chart's window around it.
+  const count = weeks.length;
+  const index = Math.min(picked ?? count - 1, count - 1);
+  const last = Math.min(end ?? count - 1, count - 1);
+  const first = Math.max(0, last - WINDOW + 1);
+  /** The arrows: the week before or after, the chart following when it leaves it. */
+  const go = (to: number) => {
+    const next = Math.max(0, Math.min(count - 1, to));
+    if (next === index) return;
+    setPicked(next);
+    if (next < first) setEnd(next + WINDOW - 1);
+    else if (next > last) setEnd(next);
+  };
+  // The keyboard's left and right arrows do what the card's arrows do.
+  const keyStep = useRef(go);
+  useEffect(() => {
+    keyStep.current = go;
+  });
+  useEffect(() => {
+    const keys = (event: globalThis.KeyboardEvent) => {
+      const by = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+      if (by == null || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="slider"]')) return;
+      event.preventDefault();
+      keyStep.current(index + by);
+    };
+    window.addEventListener('keydown', keys);
+    return () => window.removeEventListener('keydown', keys);
+  }, [index]);
   const body = () => {
     if (isPending)
       return (
@@ -226,18 +260,7 @@ export function EffortPage() {
         </Pulse>
       );
     if (!weeks.length) return <p className="note">{t('progress.noEffort')}</p>;
-    const index = Math.min(picked ?? weeks.length - 1, weeks.length - 1);
     const week = weeks[index] as EffortWeek;
-    const last = Math.min(end ?? weeks.length - 1, weeks.length - 1);
-    const first = Math.max(0, last - WINDOW + 1);
-    /** The arrows: the week before or after, the chart following when it leaves it. */
-    const go = (to: number) => {
-      const next = Math.max(0, Math.min(weeks.length - 1, to));
-      if (next === index) return;
-      setPicked(next);
-      if (next < first) setEnd(next + WINDOW - 1);
-      else if (next > last) setEnd(next);
-    };
     return (
       <div className="fxeffort">
         <div className="fxweek" data-status={week.status}>
@@ -272,11 +295,11 @@ export function EffortPage() {
           </div>
           <h2>{t(`progress.effortTitle.${week.status}`)}</h2>
           <p>{t(`progress.effortText.${week.status}`)}</p>
-          <DayBars monday={week.monday} />
+          <DayBars monday={week.monday} calendar={calendar.days} />
         </div>
         <div className="fxweekside">
           <WeeksChart weeks={weeks} index={index} first={first} onPick={setPicked} />
-          <WeekActivities monday={week.monday} />
+          <WeekActivities monday={week.monday} calendar={calendar.days} />
         </div>
       </div>
     );
@@ -292,16 +315,9 @@ export function EffortPage() {
 }
 
 /** The week's days as bars of their effort, a dash on a day without any. */
-function DayBars({ monday }: { monday: string }) {
-  const calendar = useQuery(calendarQuery(api, { from: monday, to: addDays(monday, 7) }));
-  const byDay = new Map(
-    ((calendar.data ?? []) as CalendarDay[]).map((d) => [
-      d.day,
-      d.activities.reduce((s, a) => s + (a.load ?? 0), 0),
-    ]),
-  );
+function DayBars({ monday, calendar }: { monday: string; calendar: Map<string, CalendarActivities> }) {
   const days = weekDays(monday);
-  const values = days.map((d) => byDay.get(d) ?? 0);
+  const values = days.map((d) => (calendar.get(d) ?? []).reduce((s, a) => s + (a.load ?? 0), 0));
   const max = Math.max(1, ...values);
   return (
     <ul className="fxbars">
@@ -420,7 +436,7 @@ function WeeksChart({
   });
   const ready = useCallback((instance: EChartsType) => {
     const move = (event: { offsetX: number; offsetY: number }) => {
-      const value = instance.convertFromPixel({ xAxisIndex: 0 }, [event.offsetX, event.offsetY]);
+      const value = instance.convertFromPixel({ gridIndex: 0 }, [event.offsetX, event.offsetY]);
       const i = Math.round(Array.isArray(value) ? (value[0] ?? 0) : value);
       const { onPick: to, first: from, count } = pick.current;
       if (Number.isFinite(i)) to(from + Math.max(0, Math.min(count - 1, i)));
@@ -450,9 +466,8 @@ function WeeksChart({
 }
 
 /** The week's activities, newest last: when, what, how long, and their effort in its band's colour. */
-function WeekActivities({ monday }: { monday: string }) {
-  const calendar = useQuery(calendarQuery(api, { from: monday, to: addDays(monday, 7) }));
-  const activities = ((calendar.data ?? []) as CalendarDay[]).flatMap((d) => d.activities);
+function WeekActivities({ monday, calendar }: { monday: string; calendar: Map<string, CalendarActivities> }) {
+  const activities = weekDays(monday).flatMap((d) => calendar.get(d) ?? []);
   if (!activities.length) return null;
   return (
     <section className="panel fxacts">

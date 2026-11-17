@@ -9,12 +9,6 @@
   text-decoration: none;
 }
 
-.pz-card:hover,
-.pk-card:hover,
-.pb-card:hover {
-  border-color: var(--muted);
-}
-
 .pz-card .ph h2,
 .pk-card .ph h2,
 .pb-card .ph h2 {
@@ -121,12 +115,18 @@
 /* --- Training zones' page ------------------------------------------------------------------------ */
 .pz-main {
   display: grid;
-  gap: 16px;
+  /* Room between the sports, the headline, the zones and the ranges. */
+  gap: 24px;
 }
 
 .pz-main .chips {
   margin: 0;
   padding: 0;
+}
+
+/* Heart rate, pace or power: as wide as its buttons, not the card's whole width. */
+.pz-main > .seg {
+  justify-self: start;
 }
 
 .pz-main .chip svg.i {
@@ -148,13 +148,13 @@
 .pz-head h2 {
   font-size: 24px;
   font-weight: 800;
-  margin: 0 0 2px;
+  margin: 0 0 6px;
 }
 
 .pz-change {
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 6px;
 }
 
 .pz-rows {
@@ -162,13 +162,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 14px;
+  gap: 20px;
 }
 
 .pz-rows li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .pz-rows li > b {
@@ -180,7 +180,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -211,7 +211,7 @@
 
 .pz-glance p {
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .pz-glance .ph h2 {
@@ -307,6 +307,8 @@
 
 .pk-watts:hover:not(:disabled),
 .pk-watts:focus-visible {
+  /* Only the figure turns green: the buttons' hover background would hide the ring under it. */
+  background: none;
   color: var(--accent);
 }
 

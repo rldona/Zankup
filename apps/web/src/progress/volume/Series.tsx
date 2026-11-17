@@ -40,7 +40,7 @@ export function SeriesCard() {
   const weeks = streak.data?.weeks ?? 0;
   return (
     <>
-      <article className="panel vseries">
+      <article className="panel vseries tap">
         {/* The title's button covers the whole card (a heading cannot sit inside a button). */}
         <CardTitle right={<MaterialIcon name="chevron_right" />}>
           <button

@@ -8,10 +8,21 @@
     sans-serif;
 }
 
+/* The web's cards are less rounded than the app's (the themes' 14 px, set per theme in packages/core):
+   doubled, so it wins over every theme's own. */
+:root:root {
+  --radius: 10px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+}
+
+/* The app scrolls inside its columns: the document itself does not bounce past the screen's edge. */
+html {
+  overscroll-behavior: none;
 }
 
 a {
@@ -248,6 +259,9 @@ svg.i.m {
 }
 
 .main {
+  /* Positioned, so what is placed absolutely inside (the visually hidden labels among it) stays in the
+     column's scroll instead of making the document taller than the screen. */
+  position: relative;
   overflow: auto;
   min-width: 0;
   display: flex;
@@ -305,6 +319,9 @@ svg.i.m {
 
 /* The list is the screen, centred at the width of the cards; an activity takes its place when opened. */
 .feedcol {
+  /* Its top padding, which the month headers rise over when they stick (see .mhead). */
+  --feed-top: 20px;
+  position: relative;
   overflow: auto;
   padding: 20px;
 }
@@ -316,6 +333,7 @@ svg.i.m {
 
 .detailcol {
   --detailnav-h: 56px;
+  position: relative;
   overflow: auto;
   min-width: 0;
   display: none;
@@ -334,8 +352,8 @@ svg.i.m {
 /* Above an open activity: back to the list, and the previous and next ones. A phone has its own
    floating buttons over the map. */
 .detailnav {
-  position: sticky;
-  top: 0;
+  /* In its place at the top: it scrolls away with the page instead of following it. */
+  position: relative;
   z-index: 7;
   display: flex;
   align-items: center;
@@ -539,6 +557,10 @@ a.stepbtn:hover {
   .feedcol,
   .page {
     padding: 14px var(--gutter);
+  }
+
+  .feedcol {
+    --feed-top: 14px;
   }
 
   .crumbrow + .page {
@@ -843,11 +865,18 @@ a.stepbtn:hover {
 }
 
 .mhead {
+  /* Held at the top of the list while its month scrolls under it; the next month's takes its place. */
+  position: sticky;
+  /* Up over the list's top padding, so no card shows above it; as tall again, so its words stay put. */
+  top: calc(-1 * var(--feed-top, 0px));
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin: 18px 2px 8px;
+  margin: calc(10px - var(--feed-top, 0px)) -2px 0;
+  padding: calc(10px + var(--feed-top, 0px)) 4px 8px;
+  background: var(--bg);
   font-size: 13px;
   font-weight: 400;
 }
@@ -875,10 +904,6 @@ a.stepbtn:hover {
   margin-bottom: 10px;
   color: var(--fg);
   text-decoration: none;
-}
-
-.card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 
 .card.on {
@@ -994,6 +1019,19 @@ a.stepbtn:hover {
   margin-bottom: 14px;
 }
 
+/* From a tablet up, the activity's name and its actions stay at the top while the rest scrolls under
+   them, on the page's background (a phone has its floating buttons over the map instead). */
+@media (min-width: 600px) {
+  .page.detail > .dhead {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 12px var(--gutter);
+    background: var(--bg);
+  }
+}
+
 .dhead h1 {
   font-size: 22px;
   margin: 0;
@@ -1038,6 +1076,20 @@ a.stepbtn:hover {
 .kpi dt {
   font-size: 12px;
   color: var(--muted);
+}
+
+/* The year's figures in a card of their own (You), headed by the year: four figures in a row, no box
+   around each. */
+.yearcard .kpis {
+  margin: 0;
+}
+
+.yearcard .kpi {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  gap: 2px;
 }
 
 .panel {
@@ -1237,6 +1289,47 @@ button.link {
 
 .maplibregl-ctrl-attrib a {
   color: var(--muted);
+}
+
+/* MapLibre's buttons (zoom, back to the start) square inside their rounded group, apart by a hairline,
+   their icons in the theme's ink: the app's round, outlined buttons drew an arc across them. MapLibre's
+   stylesheet loads after this one, hence the map's class in front. */
+.maplibregl-map .maplibregl-ctrl-group {
+  overflow: hidden;
+}
+
+.maplibregl-map .maplibregl-ctrl-group button {
+  border: 0;
+  border-radius: 0;
+  color: var(--fg);
+}
+
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line);
+}
+
+.maplibregl-map .maplibregl-ctrl-group button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.maplibregl-map .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,
+.maplibregl-map .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
+  background: currentColor;
+  mask: var(--glyph) center / 18px no-repeat;
+}
+
+.maplibregl-map .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 5v14M5 12h14' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.maplibregl-map .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12h14' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Back to where the map opened, under the zoom buttons. */
+.maplibregl-map .maplibregl-ctrl-group .maplibregl-ctrl-reset {
+  display: grid;
+  place-items: center;
 }
 
 /* Settings and profile (OS-212, OS-218). */
@@ -3172,6 +3265,14 @@ button.primary {
   border-color: transparent;
 }
 
+/* A main button with an icon: the icon and its words centred on one line, not on the text's baseline. */
+button.primary:has(> svg.i) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 button.link {
   border: 0;
   background: none;
@@ -3804,16 +3905,42 @@ a.button {
 }
 
 .summary .suggested {
-  margin-top: 10px;
+  margin: 14px 0 0;
 }
 
-/* The gap under the header belongs to the body, so the card folded is as tall above as below. */
-.summary .coach-head {
+/* The summary's parts apart from each other: the words, the highlights, the suggested title and the
+   button, each with room, as were they sitting on one another. */
+.summary .coach-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.summary #summary-body .desc {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.summary .highlights {
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.summary .highlights li {
+  padding: 4px 12px;
+}
+
+.summary #summary-body > button.primary {
+  margin-top: 18px;
+}
+
+/* The gap under the header belongs to the body, so the card folded is as tall above as below (the
+   card's own class too: the panels' headers have a margin of their own). */
+.page .panel.summary > .coach-head {
   margin-bottom: 0;
 }
 
 .summary #summary-body {
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 .weekly h3 {
@@ -3919,16 +4046,20 @@ a.button {
   margin-top: 12px;
 }
 
+.settingsmain .aiprivacy h3,
 .aiprivacy h3 {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   font-size: 14px;
 }
 
 .aiprivacy ul {
+  display: grid;
+  gap: 6px;
   margin: 0;
   padding-left: 18px;
   color: var(--muted);
   font-size: 14px;
+  line-height: 1.4;
 }
 
 /* A health figure's source (Garmin, Google Health, Health Connect) in its panel's top-right corner. */
@@ -3989,7 +4120,7 @@ svg.source.zankup {
  * soft corners and room under their label, and choices filled with the accent as on the phone.
  */
 .panel {
-  border-radius: 16px;
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 
@@ -4234,13 +4365,18 @@ textarea {
 
 .homegrid {
   display: grid;
-  grid-template-areas: 'week' 'day' 'last' 'metrics';
+  grid-template-areas: 'week' 'day' 'metrics' 'last';
   gap: 24px 20px;
   align-items: start;
 }
 
 .h-week {
   grid-area: week;
+}
+
+/* The grid's gap is the only space between the widgets: none of their own margin below them. */
+.homegrid > * > :last-child {
+  margin-bottom: 0;
 }
 
 .h-day {
@@ -4351,7 +4487,19 @@ textarea {
 }
 
 .week {
-  border-radius: 16px;
+  border-radius: var(--radius);
+}
+
+/* Every card the same padding inside, 14 px above and below and 16 px at the sides: the week, the
+   Activities list's cards and the activity's figures (below) had their own, and the week's title the margins
+   of the page's headings (22 px above it). */
+.week,
+.card {
+  padding: 14px 16px;
+}
+
+.page .week .weekhead h2 {
+  margin: 0;
 }
 
 .hblock {
@@ -4451,10 +4599,6 @@ textarea {
   margin: 0;
   color: var(--fg);
   text-decoration: none;
-}
-
-.panel.dayact:hover {
-  border-color: var(--sport);
 }
 
 .dayact .dname {
@@ -4849,7 +4993,7 @@ textarea {
 .mapblock {
   position: relative;
   margin: 0 0 16px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--line);
 }
@@ -5032,7 +5176,7 @@ textarea {
     background: var(--surface);
     border: 1px solid var(--card-line);
     border-radius: var(--radius);
-    padding: 14px 20px;
+    padding: 14px 16px;
   }
 
   .figs {
@@ -5283,11 +5427,17 @@ button.danger svg.i {
 
 /* Stats (OS-912), as the app's: the period over everything, the cards two by two on a large screen. */
 .periodbar {
+  /* Held at the top while the statistics scroll under it, on the page's background. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 20px;
-  margin-bottom: 16px;
+  margin: 0 calc(-1 * var(--gutter)) 16px;
+  padding: 10px var(--gutter);
+  background: var(--bg);
 }
 
 .periodbar .chips {
@@ -5353,7 +5503,8 @@ button.danger svg.i {
   position: absolute;
   right: 0;
   top: 44px;
-  z-index: 5;
+  /* Over the bars that stay at the top of a page (Statistics' period, Health's header), at 5 and 6. */
+  z-index: 20;
   min-width: 220px;
   display: grid;
   padding: 8px 0;
@@ -5466,6 +5617,60 @@ button.danger svg.i {
 
 .settingsmain .panel > .note:not(:last-child) {
   margin-bottom: 10px;
+}
+
+/* Room between the texts in Settings, which sat on each other: the menu's titles and their lines, the
+   help's lines, the headings and what they head, the checkboxes, a row's name and its detail. */
+.panel.menu.settingslist a > span {
+  gap: 4px;
+}
+
+.panel.menu.settingslist a small {
+  line-height: 1.35;
+}
+
+.settingsmain .note,
+.settingsmain .warn {
+  line-height: 1.5;
+}
+
+.settingsmain .panel h3 {
+  margin: 18px 0 6px;
+  font-size: 15px;
+}
+
+.settingsmain .panel > h3:first-child {
+  margin-top: 0;
+}
+
+.settingsmain fieldset.checks {
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.settingsmain .checks legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-weight: 700;
+}
+
+.settingsmain .checks + :is(.note, .warn) {
+  margin-top: 12px;
+}
+
+.settingsmain .rows li > span:not(.sp) {
+  gap: 3px;
+}
+
+.settingsmain .rows li > span .note {
+  margin: 0;
+}
+
+.settingsmain .panel > .rows + button,
+.settingsmain .panel > .rows + .actions {
+  margin-top: 14px;
 }
 
 /* Signing out ends the sign-in card, apart from the passkeys above it. */
@@ -6000,11 +6205,9 @@ h1.greeting {
   }
 }
 
-/* The profile charts: two by two across the full width. */
-@media (min-width: 1200px) {
-  .page.detail .chartgrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* The profile charts: one under the other, across the full width, at every size. */
+.page.detail .chartgrid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* The Activities header's search bar, as the app's. */
@@ -6126,6 +6329,17 @@ h1.greeting {
 
 /* Health (docs/prototypes/web): the period as a segmented control in the header; last night beside
    today on a desktop, today's tiles two by three; the three trends in one row. */
+/* Health's header (the title, the period, sync and settings) held at the top while the figures
+   scroll under it, on the page's background. */
+.page.health > .titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 10px var(--gutter);
+  background: var(--bg);
+}
+
 .page.health .titlebar .periods {
   margin-right: 6px;
 }
@@ -6239,8 +6453,9 @@ h1.greeting {
     background: var(--surface);
     border: 1px solid var(--card-line);
     border-radius: var(--radius);
-    padding: 20px;
-    margin-top: 40px;
+    /* The cards' padding, and its top level with the first card beside it. */
+    padding: 14px 16px;
+    margin-top: 0;
     margin-bottom: 16px;
   }
 
@@ -6295,20 +6510,22 @@ h1.greeting {
   border-radius: 12px;
 }
 
-/* The Coach (docs/prototypes/web): on a desktop the weekly report on the left and the conversation on
-   the right, in a card the height of the screen, the suggestions centred in it and the question field
-   held at its foot. */
+/* The Coach (docs/prototypes/web) as wide as the Activities list: on a desktop the weekly report above
+   the conversation, in a card the height of the screen, the suggestions centred in it and the question
+   field held at its foot. */
+.page.coach {
+  max-width: calc(720px + 2 * var(--gutter));
+}
+
 @media (min-width: 1200px) {
   .coachgrid {
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     align-items: start;
   }
 
   .coachgrid > .weekly {
-    position: sticky;
-    top: 20px;
     margin: 0;
   }
 
@@ -6515,8 +6732,51 @@ h1.greeting {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
+/* A card that opens something (Progress's, Home's activities, the Activities list): the same light
+   shade under the pointer, and Android's ripple from where it is pressed (routes/Shell.tsx). */
+.tap {
+  position: relative;
+  overflow: clip;
+  cursor: pointer;
+}
+
+.tap:hover {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fg) 14%, transparent);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  animation: ripple 450ms ease-out forwards;
+}
+
+@keyframes ripple {
+  70% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple {
+    animation-duration: 1ms;
+  }
+}
+
+.progress .pgrid > .panel,
 .progress .pgrid > * > .panel,
 .progress .ppair > .panel {
+  /* Its padding and border inside the cell's height, or it overflows onto the card below. */
+  box-sizing: border-box;
   height: 100%;
   margin: 0;
 }

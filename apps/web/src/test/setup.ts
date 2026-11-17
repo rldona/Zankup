@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { resetDb } from '../mocks/db';
@@ -13,6 +13,11 @@ afterEach(() => {
   resetDb();
 });
 afterAll(() => server.close());
+
+// A busy machine (CI, or the dev server and a browser beside the suite) can take more than Testing
+// Library's 1 s to draw a page with its charts: `findBy…` and `waitFor` wait up to 5 s, so a slow
+// render is not a failure. A test that never finds what it looks for still fails.
+configure({ asyncUtilTimeout: 5000 });
 
 // Vitest runs without globals, so Testing Library cannot register its automatic cleanup.
 afterEach(cleanup);

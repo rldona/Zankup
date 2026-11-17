@@ -206,7 +206,7 @@ describe('settings and profile', () => {
     expect(await screen.findByText('Madrid')).toBeInTheDocument();
     expect(screen.queryByText(/fēnix 6X Pro/)).not.toBeInTheDocument();
     expect(screen.getByText('12 weeks in a row')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '2026 so far' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '2026' })).toBeInTheDocument();
     expect(screen.getByText('121')).toBeInTheDocument(); // activities this year
     expect(screen.getByText('120 activities')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Apr.*2025/ })).toHaveAttribute('href', '/activities/42');
