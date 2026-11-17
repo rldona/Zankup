@@ -125,6 +125,11 @@
   padding: 0;
 }
 
+/* Heart rate, pace or power: as wide as its buttons, not the card's whole width. */
+.pz-main > .seg {
+  justify-self: start;
+}
+
 .pz-main .chip svg.i {
   width: 18px;
   height: 18px;
