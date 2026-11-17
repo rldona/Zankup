@@ -17,7 +17,7 @@ import {
   type WeekMark,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type PointerEvent } from 'react';
 import { Link } from 'react-router';
 
 import { api } from '../../api';
@@ -31,6 +31,7 @@ import { asSport, dayLetters, type Activities } from './format';
 export function SeriesCard() {
   const streak = useQuery(streakQuery(api));
   const [open, setOpen] = useState(false);
+  const [ripple, setRipple] = useState<Ripple | null>(null);
   if (streak.isPending)
     return (
       <Pulse>
@@ -40,7 +41,7 @@ export function SeriesCard() {
   const weeks = streak.data?.weeks ?? 0;
   return (
     <>
-      <article className="panel vseries">
+      <article className="panel vseries" onPointerDown={(e) => setRipple(rippleAt(e))}>
         {/* The title's button covers the whole card (a heading cannot sit inside a button). */}
         <CardTitle right={<MaterialIcon name="chevron_right" />}>
           <button
@@ -57,6 +58,15 @@ export function SeriesCard() {
           <Flame weeks={weeks} size={96} />
           <b>{t('progress.weeksWord', { count: weeks })}</b>
         </span>
+        {ripple && (
+          <span
+            key={ripple.key}
+            className="vripple"
+            style={{ left: ripple.x, top: ripple.y, width: ripple.size, height: ripple.size }}
+            onAnimationEnd={() => setRipple(null)}
+            aria-hidden="true"
+          />
+        )}
       </article>
       {open && (
         <Modal title={t('progress.series')} className="vmonthmodal" onClose={() => setOpen(false)}>
@@ -65,6 +75,22 @@ export function SeriesCard() {
       )}
     </>
   );
+}
+
+interface Ripple {
+  x: number;
+  y: number;
+  size: number;
+  key: number;
+}
+
+/** Android's press ripple: a circle that grows from where the card was pressed until it covers it. */
+function rippleAt(e: PointerEvent<HTMLElement>): Ripple {
+  const box = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - box.left;
+  const y = e.clientY - box.top;
+  const reach = Math.hypot(Math.max(x, box.width - x), Math.max(y, box.height - y));
+  return { x, y, size: reach * 2, key: e.timeStamp };
 }
 
 /**
