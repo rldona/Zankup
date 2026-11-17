@@ -5,7 +5,7 @@ import {
   type MessageKey,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 
 import { api } from '../api';
@@ -140,6 +140,15 @@ function Back({ pathname }: { pathname: string }) {
  */
 export function Shell() {
   const { pathname } = useLocation();
+  // Every screen starts at its top, not where the last one was left.
+  const main = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const column = main.current;
+    if (!column) return;
+    column.scrollTop = 0;
+    const detail = column.querySelector('.detailcol');
+    if (detail) detail.scrollTop = 0;
+  }, [pathname]);
   useServerTheme();
   useServerLanguage();
   const online = useOnline();
@@ -177,7 +186,7 @@ export function Shell() {
 
         <LatestActivity />
 
-        <main className="main">
+        <main className="main" ref={main}>
           {!online && (
             <p className="offline" role="status">
               {t('offline.notice')}
