@@ -115,7 +115,7 @@ describe('Volume, Series and the Training log (OS-1002)', () => {
     // Run is measured by distance: 11 weeks of 10 km and this one's 28.97 km, against 12 weeks of 10 km.
     expect(await screen.findByRole('heading', { name: 'Total distance' })).toBeInTheDocument();
     expect(await screen.findByText('139.0 km')).toBeInTheDocument();
-    expect(screen.getByText('▲ 16 %')).toBeInTheDocument();
+    expect(await screen.findByText('▲ 16 %')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Nice work! You logged 139.0 km in the last three months, 16 % more than the period before (120.0 km).',
@@ -146,7 +146,7 @@ describe('Volume, Series and the Training log (OS-1002)', () => {
     await userEvent.click(card);
     expect(router.state.location.pathname).toBe('/progress/log');
     expect(await screen.findByRole('heading', { name: 'Training log' })).toBeInTheDocument();
-    expect(screen.getByText('9 - 15 NOV')).toBeInTheDocument();
+    expect(await screen.findByText('9 - 15 NOV')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /^2026-11-10: 0:50/ })).toBeInTheDocument();
 
     // A day with two activities lists them.

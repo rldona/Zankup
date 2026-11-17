@@ -5,7 +5,7 @@ import { queryClient } from './api';
 import { App } from './App';
 import { locale } from './i18n';
 import './index.css';
-import { createRouter } from './router';
+import { createRouter, prefetchScreens } from './router';
 import { installTheme } from './theme';
 
 installTheme();
@@ -26,7 +26,13 @@ async function mockApi() {
   }
 }
 
-void mockApi().then(() =>
+/** Once the first screen is drawn and the browser is idle, the other screens' files are fetched. */
+function whenIdle(task: () => void) {
+  if ('requestIdleCallback' in window) window.requestIdleCallback(task, { timeout: 4000 });
+  else setTimeout(task, 2000);
+}
+
+void mockApi().then(() => {
   createRoot(root).render(
     <StrictMode>
       <App
@@ -35,5 +41,6 @@ void mockApi().then(() =>
         offline={import.meta.env.VITE_API_MOCK !== '1'}
       />
     </StrictMode>,
-  ),
-);
+  );
+  whenIdle(prefetchScreens);
+});

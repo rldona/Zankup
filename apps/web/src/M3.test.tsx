@@ -250,7 +250,7 @@ describe('phase 3 screens', () => {
     await userEvent.click(screen.getByRole('link', { name: 'Year over year' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/stats/years'));
     expect(await screen.findByRole('heading', { name: 'Year over year', level: 1 })).toBeInTheDocument();
-    const year = screen.getByRole('button', { name: /2025/ });
+    const year = await screen.findByRole('button', { name: /2025/ });
     expect(year).toHaveAttribute('aria-pressed', 'false');
     await userEvent.click(year);
     expect(year).toHaveAttribute('aria-pressed', 'true');
