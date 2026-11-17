@@ -324,13 +324,18 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  /* The text in the middle of the bar's height, not at the top of its 24 px. */
+  align-items: center;
+  align-content: center;
   gap: 0 6px;
   min-height: 24px;
   margin: 0 0 14px;
   padding: 16px;
+  border: 1px solid var(--card-line);
   border-radius: var(--radius);
-  background: var(--fg);
-  color: var(--bg);
+  /* A raised surface, not the text's colour: a white bar shouted on the dark theme. */
+  background: var(--surface-2);
+  color: var(--fg);
   font-size: 15px;
   text-align: center;
 }
