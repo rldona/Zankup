@@ -1078,6 +1078,20 @@ a.stepbtn:hover {
   color: var(--muted);
 }
 
+/* The year's figures in a card of their own (You), headed by the year: four figures in a row, no box
+   around each. */
+.yearcard .kpis {
+  margin: 0;
+}
+
+.yearcard .kpi {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  gap: 2px;
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--card-line);
@@ -6438,8 +6452,9 @@ h1.greeting {
     background: var(--surface);
     border: 1px solid var(--card-line);
     border-radius: var(--radius);
-    padding: 20px;
-    margin-top: 40px;
+    /* The cards' padding, and its top level with the first card beside it. */
+    padding: 14px 16px;
+    margin-top: 0;
     margin-bottom: 16px;
   }
 

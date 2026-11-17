@@ -143,8 +143,10 @@ function YearNumbers({ summary }: { summary: ProfileSummary }) {
     { count: 0, distance: 0, time: 0, ascent: 0 },
   );
   return (
-    <>
-      <h2>{t('profile.year', { year: summary.year })}</h2>
+    <section className="panel yearcard" aria-labelledby="year-title">
+      <div className="ph">
+        <h2 id="year-title">{summary.year}</h2>
+      </div>
       <dl className="kpis num">
         <div className="kpi">
           <dd>{total.count.toLocaleString(locale)}</dd>
@@ -163,7 +165,7 @@ function YearNumbers({ summary }: { summary: ProfileSummary }) {
           <dt>{t('feed.stat.ascent')}</dt>
         </div>
       </dl>
-    </>
+    </section>
   );
 }
 
