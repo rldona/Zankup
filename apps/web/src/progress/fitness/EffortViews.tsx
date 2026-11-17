@@ -217,6 +217,36 @@ export function EffortPage() {
   const [picked, setPicked] = useState<number | null>(null);
   // The last week the chart shows (none: the latest). Only the arrows move it.
   const [end, setEnd] = useState<number | null>(null);
+  // Where the weeks stand: the week picked and the chart's window around it.
+  const count = weeks.length;
+  const index = Math.min(picked ?? count - 1, count - 1);
+  const last = Math.min(end ?? count - 1, count - 1);
+  const first = Math.max(0, last - WINDOW + 1);
+  /** The arrows: the week before or after, the chart following when it leaves it. */
+  const go = (to: number) => {
+    const next = Math.max(0, Math.min(count - 1, to));
+    if (next === index) return;
+    setPicked(next);
+    if (next < first) setEnd(next + WINDOW - 1);
+    else if (next > last) setEnd(next);
+  };
+  // The keyboard's left and right arrows do what the card's arrows do.
+  const keyStep = useRef(go);
+  useEffect(() => {
+    keyStep.current = go;
+  });
+  useEffect(() => {
+    const keys = (event: globalThis.KeyboardEvent) => {
+      const by = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+      if (by == null || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="slider"]')) return;
+      event.preventDefault();
+      keyStep.current(index + by);
+    };
+    window.addEventListener('keydown', keys);
+    return () => window.removeEventListener('keydown', keys);
+  }, [index]);
   const body = () => {
     if (isPending)
       return (
@@ -226,18 +256,7 @@ export function EffortPage() {
         </Pulse>
       );
     if (!weeks.length) return <p className="note">{t('progress.noEffort')}</p>;
-    const index = Math.min(picked ?? weeks.length - 1, weeks.length - 1);
     const week = weeks[index] as EffortWeek;
-    const last = Math.min(end ?? weeks.length - 1, weeks.length - 1);
-    const first = Math.max(0, last - WINDOW + 1);
-    /** The arrows: the week before or after, the chart following when it leaves it. */
-    const go = (to: number) => {
-      const next = Math.max(0, Math.min(weeks.length - 1, to));
-      if (next === index) return;
-      setPicked(next);
-      if (next < first) setEnd(next + WINDOW - 1);
-      else if (next > last) setEnd(next);
-    };
     return (
       <div className="fxeffort">
         <div className="fxweek" data-status={week.status}>
