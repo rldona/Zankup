@@ -173,6 +173,7 @@
   "activity.fig.more": "Más datos",
   "activity.fig.less": "Menos datos",
   "activity.mapOptions": "Opciones del mapa",
+  "activity.mapReset": "Volver a la vista inicial",
   "activity.colourBy": "Colorear por",
   "activity.hint": "Pasa por la gráfica o por el recorrido. Arrastra sobre la gráfica para elegir un tramo.",
   "activity.sectionHint": "Arrastra sobre una gráfica para elegir un tramo.",

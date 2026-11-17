@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
 
 import { api } from '../api';
-import { hasWebGL, loadMapLibre } from '../detail/maplibre';
+import { hasWebGL, loadMapLibre, resetControl } from '../detail/maplibre';
 import { t } from '../i18n';
 import { useSaveSettings } from '../settings';
 import { useResolvedTheme } from '../theme';
@@ -199,6 +199,12 @@ function ZoneMap({
         cooperativeGestures: true,
       });
       instance.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+      instance.addControl(
+        resetControl(t('activity.mapReset'), (map) =>
+          map.easeTo({ center: centre ?? [0, 30], zoom: centre ? 13 : 1.5 }),
+        ),
+        'top-right',
+      );
       instance.on('load', () => {
         instance.addSource('zones', { type: 'geojson', data: zonesGeoJson([], null) });
         instance.addLayer({

@@ -3,7 +3,7 @@ import type { Map as MapLibre } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
 
 import { t } from '../i18n';
-import { hasWebGL, loadMapLibre } from './maplibre';
+import { hasWebGL, loadMapLibre, resetControl } from './maplibre';
 
 /**
  * One or many tracks on a map in the theme's style (OS-309, OS-310, OS-325). With `heat`, many faint
@@ -45,18 +45,23 @@ export function TrackMap({
       if (disposed) return;
       const lons = all.map((p) => p[0]);
       const lats = all.map((p) => p[1]);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lons), Math.min(...lats)],
+        [Math.max(...lons), Math.max(...lats)],
+      ];
       const instance = new maplibre.Map({
         container: element,
         style: mapStyle(themes[theme]) as never,
-        bounds: [
-          [Math.min(...lons), Math.min(...lats)],
-          [Math.max(...lons), Math.max(...lats)],
-        ],
+        bounds,
         fitBoundsOptions: { padding: 24 },
         attributionControl: { compact: true },
         cooperativeGestures: true,
       });
       instance.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+      instance.addControl(
+        resetControl(t('activity.mapReset'), (map) => map.fitBounds(bounds, { padding: 24 })),
+        'top-right',
+      );
       // The credits start folded behind their (i): MapLibre unfolds them once, when the map's data
       // first arrives, so they are folded when it first settles.
       instance.once('idle', () =>

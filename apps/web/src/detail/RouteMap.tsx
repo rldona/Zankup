@@ -16,7 +16,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
 import { t } from '../i18n';
 import { useCursor, type CursorStore } from './cursorStore';
-import { hasWebGL, loadMapLibre } from './maplibre';
+import { hasWebGL, loadMapLibre, resetControl } from './maplibre';
 
 const MAX_POINTS = 1500;
 
@@ -53,6 +53,12 @@ const point = (coordinates: [number, number] | undefined) => ({
  * (OS-207) and the selected section highlighted (OS-216). Without WebGL, the route's shape in SVG.
  * The cursor is read from its store by the dot alone (OS-1013), so it moves without redrawing the map.
  */
+/**
+ * The route clears what floats over the map: the activity's bar (or a phone's floating buttons) over
+ * the top 56 px, and the replay bar over the bottom 52 px.
+ */
+const ROUTE_PADDING = { top: 32 + 56, bottom: 12 + 52, left: 32, right: 32 };
+
 export function RouteMap({
   series,
   metric,
@@ -102,9 +108,7 @@ export function RouteMap({
         container: element,
         style: mapStyle(themes[theme]) as never,
         bounds,
-        // The route clears what floats over the map: the activity's bar (or a phone's floating buttons)
-        // over the top 56 px, and the replay bar over the bottom 52 px.
-        fitBoundsOptions: { padding: { top: 32 + 56, bottom: 12 + 52, left: 32, right: 32 } },
+        fitBoundsOptions: { padding: ROUTE_PADDING },
         attributionControl: { compact: true },
         // With a mouse, the wheel scrolls the page, never the map (zoom is on its buttons, a double
         // click or a pinch), so there is no "use ⌘ + scroll" overlay. On a touch screen one finger
@@ -118,6 +122,10 @@ export function RouteMap({
         element.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'),
       );
       instance.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+      instance.addControl(
+        resetControl(t('activity.mapReset'), (map) => map.fitBounds(bounds, { padding: ROUTE_PADDING })),
+        'top-right',
+      );
       const start = track[0]?.lonLat ?? [0, 0];
       const finish = track.at(-1)?.lonLat ?? start;
       instance.on('load', () => {
