@@ -23,6 +23,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import { EChart } from '../../charts/EChart';
+import { resample } from '../../charts/resample';
 import { locale, t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
 import { usePrefs } from '../../prefs';
@@ -213,8 +214,8 @@ export function PredictionsPage() {
 
 /**
  * A prediction over a range: faster is higher, a ring where it changed, today filled, times on the
- * right and dates under it; the pointer on a ring reads its day and time. Another race or range slides
- * into place (the series keep their ids).
+ * right and dates under it; the pointer on a ring reads its day and time. Another race or range morphs
+ * the line into place (see charts/resample).
  */
 function PredictionChart({
   points,
@@ -257,22 +258,24 @@ function PredictionChart({
       grid: { left: 8, right: 72, top: 16, bottom: 30 },
       tooltip: {
         trigger: 'item',
-        formatter: (p: { data: [number, number] | number | null; dataIndex: number; seriesId: string }) => {
+        formatter: (p: { data: [number, number] | number | null; seriesId: string }) => {
           const value = Array.isArray(p.data) ? p.data[1] : p.data;
-          const day = p.seriesId === 'pred' ? days[p.dataIndex] : today;
+          const day = Array.isArray(p.data) && p.seriesId !== 'today' ? days[p.data[0]] : today;
           if (value == null || !day) return '';
           return `${shortDate(day, true)}<br/><b>${raceTime(value)}</b>`;
         },
       },
       xAxis: {
-        type: 'category',
-        data: days,
-        boundaryGap: false,
+        // The days by their place, so the line can be drawn between them (see charts/resample).
+        type: 'value',
+        min: 0,
+        max: Math.max(1, last),
         axisLine: { show: false },
         axisTick: { show: false },
+        splitLine: { show: false },
         axisLabel: {
-          interval: (i: number) => labels.has(days[i] ?? ''),
-          formatter: (d: string) => labels.get(d) ?? '',
+          customValues: days.flatMap((d, i) => (labels.has(d) ? [i] : [])),
+          formatter: (i: number) => labels.get(days[Math.round(i)] ?? '') ?? '',
           color: c.fg,
           fontSize: 12,
         },
@@ -289,16 +292,26 @@ function PredictionChart({
       },
       series: [
         {
+          // The line morphs from one range to another; the rings are drawn afresh.
           id: 'pred',
           name: t(`progress.race.${race}`),
           type: 'line',
-          data: days.map((d) => byDay.get(d) ?? null),
-          connectNulls: true,
-          smooth: 0.5,
-          smoothMonotone: 'x',
-          symbol: 'circle',
-          symbolSize: 10,
+          data: resample(
+            days.map((d) => byDay.get(d) ?? null),
+            { smooth: true },
+          ),
+          symbol: 'none',
+          silent: true,
           lineStyle: { color: c.accent, width: 3 },
+        },
+        {
+          id: `rings:${days.length}`,
+          type: 'scatter',
+          data: days.flatMap((d, i) => {
+            const v = byDay.get(d);
+            return v == null ? [] : [[i, v]];
+          }),
+          symbolSize: 10,
           itemStyle: { color: c.bg, borderColor: c.accent, borderWidth: 2 },
         },
         {

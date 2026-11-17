@@ -33,6 +33,7 @@ import { Link } from 'react-router';
 
 import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
+import { resample } from '../../charts/resample';
 import { t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
 import { CardSkeleton, ChartSkeleton, Pulse } from '../../Skeleton';
@@ -208,26 +209,6 @@ export function FitnessPage() {
 
 type Day = { day: string; ctl: number; load: number };
 
-/** As many points as two years' days: every range's line has them all. */
-const SAMPLES = 730;
-
-/**
- * The line through the days' values at SAMPLES evenly spread places, as [place, value]. Every range has
- * the same points across the same width, so another range moves each one up or down to its new
- * height: a month's 30 days morphing straight into a year's 365 crossed and cut corners on the way.
- */
-function sampled(values: number[]): number[][] {
-  const last = values.length - 1;
-  if (last < 1) return values.map((v, i) => [i, v]);
-  return Array.from({ length: SAMPLES }, (_, k) => {
-    const x = (k * last) / (SAMPLES - 1);
-    const i = Math.min(last - 1, Math.floor(x));
-    const a = values[i] ?? 0;
-    const b = values[i + 1] ?? a;
-    return [x, a + (b - a) * (x - i)];
-  });
-}
-
 /**
  * The score as a filled line over the range, a ring on each day with load (bigger, harder) over a
  * month, and the picked day marked with its score in a badge. The pointer (or a tap) picks a day; so
@@ -298,7 +279,7 @@ function FitnessChart({
         {
           id: 'ctl',
           type: 'line',
-          data: sampled(days.map((d) => d.ctl)),
+          data: resample(days.map((d) => d.ctl)),
           symbol: 'none',
           silent: true,
           lineStyle: { color: c.accent, width: 2.5, join: 'round', cap: 'round' },

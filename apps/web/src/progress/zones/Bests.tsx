@@ -43,6 +43,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
+import { resample } from '../../charts/resample';
 import { locale, t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
 import { usePrefs } from '../../prefs';
@@ -453,17 +454,23 @@ function BestsChart({
       },
       series: [
         {
+          // The trend morphs from one distance to another (see charts/resample); the bests are drawn afresh.
           id: 'trend',
           type: 'line',
-          smooth: true,
           showSymbol: false,
           silent: true,
           clip: true,
           lineStyle: { color: c.fitness, width: 2.5 },
-          data: n > 1 ? chrono.map((_, i) => [i, clamp(line[i] ?? record)]) : [],
+          data:
+            n > 1
+              ? resample(
+                  chrono.map((_, i) => clamp(line[i] ?? record)),
+                  { smooth: true },
+                )
+              : [],
         },
         {
-          id: 'bests',
+          id: `bests:${bestKey}`,
           type: 'scatter',
           clip: true,
           symbolSize: 12,
@@ -484,7 +491,7 @@ function BestsChart({
         },
       ],
     };
-  }, [chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c, n]);
+  }, [bestKey, chrono, medals, offset, instant, year, record, worst, lower, line, label, pace, c, n]);
 
   // Clicking a point opens its activity, unless the pointer was dragging the chart.
   const onReady = useCallback(
