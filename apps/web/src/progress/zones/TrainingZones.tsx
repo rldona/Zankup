@@ -147,6 +147,9 @@ function ZoneRows({ kind, seconds, bounds }: { kind: ZoneKind; seconds: number[]
   );
 }
 
+/** The sports to filter the zones by: "Other" is left out, a mix with nothing to compare. */
+const ZONE_SPORTS = SPORTS.filter((s) => s !== 'other');
+
 export function ZonesPage() {
   const today = useToday();
   const [sport, setSport] = useState<string | null>(null);
@@ -190,7 +193,7 @@ export function ZonesPage() {
       </div>
       <div className="panel pz-main">
         <div className="chips wrap" role="radiogroup" aria-label={t('progress.filterSport')}>
-          {[null, ...SPORTS].map((s) => (
+          {[null, ...ZONE_SPORTS].map((s) => (
             <button
               key={s ?? 'all'}
               type="button"
