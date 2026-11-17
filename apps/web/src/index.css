@@ -4476,6 +4476,18 @@ textarea {
   border-radius: var(--radius);
 }
 
+/* Every card the same padding inside, 14 px above and below and 16 px at the sides: the week, the
+   Activities list's cards and the activity's figures (below) had their own, and the week's title the margins
+   of the page's headings (22 px above it). */
+.week,
+.card {
+  padding: 14px 16px;
+}
+
+.page .week .weekhead h2 {
+  margin: 0;
+}
+
 .hblock {
   margin-bottom: 0;
 }
@@ -5150,7 +5162,7 @@ textarea {
     background: var(--surface);
     border: 1px solid var(--card-line);
     border-radius: var(--radius);
-    padding: 14px 20px;
+    padding: 14px 16px;
   }
 
   .figs {

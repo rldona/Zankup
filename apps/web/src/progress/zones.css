@@ -117,7 +117,6 @@
   display: grid;
   /* Room between the sports, the headline, the zones and the ranges. */
   gap: 24px;
-  padding: 20px;
 }
 
 .pz-main .chips {
@@ -208,10 +207,6 @@
 .pz-ranges button {
   flex: 1;
   font-weight: 700;
-}
-
-.pz-glance {
-  padding: 20px;
 }
 
 .pz-glance p {
