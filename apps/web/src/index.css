@@ -5503,7 +5503,8 @@ button.danger svg.i {
   position: absolute;
   right: 0;
   top: 44px;
-  z-index: 5;
+  /* Over the bars that stay at the top of a page (Statistics' period, Health's header), at 5 and 6. */
+  z-index: 20;
   min-width: 220px;
   display: grid;
   padding: 8px 0;
