@@ -455,45 +455,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  cursor: pointer;
 }
 
 /* The flame and its weeks let the press through to the card's button below them. */
 .vseries .vflamebox {
   pointer-events: none;
-}
-
-/* Android's press ripple, from where the card was pressed. */
-.vripple {
-  position: absolute;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--fg) 14%, transparent);
-  transform: translate(-50%, -50%) scale(0);
-  pointer-events: none;
-  animation: vripple 450ms ease-out forwards;
-}
-
-@keyframes vripple {
-  70% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vripple {
-    animation-duration: 1ms;
-  }
-}
-
-.vseries:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 
 .vseries .ph svg.i {
@@ -738,10 +704,6 @@
   gap: 12px;
   color: var(--fg);
   text-decoration: none;
-}
-
-.vlogcard:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 
 .vlogcard .ph {

@@ -9,12 +9,6 @@
   text-decoration: none;
 }
 
-.pz-card:hover,
-.pk-card:hover,
-.pb-card:hover {
-  border-color: var(--muted);
-}
-
 .pz-card .ph h2,
 .pk-card .ph h2,
 .pb-card .ph h2 {
