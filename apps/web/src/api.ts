@@ -7,7 +7,10 @@ export const api = createApiClient();
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      // Fresh for two minutes: going back to a page, or to the browser's tab, within them asks the server
+      // nothing again (Progress alone is 18 requests). A finished sync refreshes everything that comes
+      // from the activities at once (see sync.ts), so a new activity does not wait for this.
+      staleTime: 2 * 60_000,
       // Long enough for what is kept offline (OS-211) to be restored on the next visit.
       gcTime: 7 * 24 * 60 * 60 * 1000,
       // Offline, show what is cached instead of waiting for a network that is not there.
