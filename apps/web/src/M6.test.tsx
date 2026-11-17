@@ -160,7 +160,12 @@ describe('phase 6: health', () => {
     expect(within(periods).getByRole('button', { name: '30 days' })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(within(periods).getByRole('button', { name: '90 days' }));
     await waitFor(() => expect(router.state.location.search).toBe('?days=90'));
-    expect(within(periods).getByRole('button', { name: '90 days' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() =>
+      expect(within(periods).getByRole('button', { name: '90 days' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    );
     await waitFor(() => expect(new Set(starts).size).toBe(2));
   });
 
