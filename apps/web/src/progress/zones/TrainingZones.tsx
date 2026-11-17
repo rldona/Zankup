@@ -67,7 +67,7 @@ export function ZonesCard() {
   const most = Math.max(1, ...seconds);
   const colours = zoneScale('hr', seconds.length);
   return (
-    <Link to="/progress/zones" className="panel pz-card">
+    <Link to="/progress/zones" className="panel pz-card tap">
       <CardTitle
         right={
           <span className="pz-more">

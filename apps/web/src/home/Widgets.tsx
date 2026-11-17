@@ -207,7 +207,7 @@ function DayActivity({ activity: a, format }: { activity: ActivitySummary; forma
   return (
     <Link
       to={`/activities/${a.id}`}
-      className="panel dayact"
+      className="panel dayact tap"
       style={{ '--sport': `var(--${sport})` } as CSSProperties}
       {...intent(a.id)}
     >

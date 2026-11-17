@@ -5,7 +5,7 @@ import {
   type MessageKey,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 
 import { api } from '../api';
@@ -138,6 +138,23 @@ function Back({ pathname }: { pathname: string }) {
  * the Coach, the notifications and Settings at its foot; from 1200 px the content centred at one width.
  * Safe areas respected.
  */
+/** Android's press ripple on a card that opens something (`.tap`): a circle from the pointer that grows until it covers it. */
+function ripple(event: PointerEvent<HTMLElement>) {
+  if (event.button !== 0) return;
+  const card = (event.target as HTMLElement).closest<HTMLElement>('.tap');
+  if (!card || !event.currentTarget.contains(card)) return;
+  const box = card.getBoundingClientRect();
+  const x = event.clientX - box.left;
+  const y = event.clientY - box.top;
+  const size = 2 * Math.hypot(Math.max(x, box.width - x), Math.max(y, box.height - y));
+  const wave = document.createElement('span');
+  wave.className = 'ripple';
+  wave.setAttribute('aria-hidden', 'true');
+  Object.assign(wave.style, { left: `${x}px`, top: `${y}px`, width: `${size}px`, height: `${size}px` });
+  wave.addEventListener('animationend', () => wave.remove());
+  card.append(wave);
+}
+
 export function Shell() {
   const { pathname } = useLocation();
   // Every screen starts at its top, not where the last one was left.
@@ -186,7 +203,7 @@ export function Shell() {
 
         <LatestActivity />
 
-        <main className="main" ref={main}>
+        <main className="main" ref={main} onPointerDown={ripple}>
           {!online && (
             <p className="offline" role="status">
               {t('offline.notice')}

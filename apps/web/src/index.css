@@ -887,10 +887,6 @@ a.stepbtn:hover {
   text-decoration: none;
 }
 
-.card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-}
-
 .card.on {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
@@ -4463,10 +4459,6 @@ textarea {
   text-decoration: none;
 }
 
-.panel.dayact:hover {
-  border-color: var(--sport);
-}
-
 .dayact .dname {
   font-size: 16px;
   font-weight: 600;
@@ -6525,15 +6517,15 @@ h1.greeting {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
-/* Progress's cards that open something (see TAPPABLE in routes/Progress.tsx): all with the same light
-   shade under the pointer, and Android's ripple from where they are pressed. */
-.progress :is(.fxcard, .morecard, .vlogcard, .vseries, .pz-card, .pk-card, .pb-card) {
+/* A card that opens something (Progress's, Home's activities, the Activities list): the same light
+   shade under the pointer, and Android's ripple from where it is pressed (routes/Shell.tsx). */
+.tap {
   position: relative;
   overflow: clip;
   cursor: pointer;
 }
 
-.progress :is(.fxcard, .morecard, .vlogcard, .vseries, .pz-card, .pk-card, .pb-card):hover {
+.tap:hover {
   border-color: var(--line);
   background: color-mix(in srgb, var(--surface-2) 60%, var(--surface));
 }

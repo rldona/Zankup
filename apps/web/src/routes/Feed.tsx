@@ -371,7 +371,7 @@ function Card({
   return (
     <NavLink
       to={{ pathname: `/activities/${activity.id}`, search }}
-      className={({ isActive }) => `card${isActive ? ' on' : ''}`}
+      className={({ isActive }) => `card tap${isActive ? ' on' : ''}`}
       style={style}
       {...intent(activity.id)}
     >

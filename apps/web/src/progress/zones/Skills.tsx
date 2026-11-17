@@ -201,7 +201,7 @@ export function SkillsCard() {
     );
   const best = strongest(skills.recent, skills.weight);
   return (
-    <Link to="/progress/skills" className="panel pk-card">
+    <Link to="/progress/skills" className="panel pk-card tap">
       <CardTitle right={<MaterialIcon name="chevron_right" />}>
         <MaterialIcon name="bolt" />
         {t('progress.skills')}

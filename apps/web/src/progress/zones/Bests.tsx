@@ -82,7 +82,7 @@ export function BestsCard() {
     );
   const shown = cardMedals(medals.data ?? [], (key) => effortShown(key, unit));
   return (
-    <Link to="/progress/bests" className="panel pb-card">
+    <Link to="/progress/bests" className="panel pb-card tap">
       <CardTitle right={<MaterialIcon name="chevron_right" />}>
         <MaterialIcon name="trophy" />
         {t('progress.bests')}

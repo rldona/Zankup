@@ -61,7 +61,7 @@ export function GoalsCard() {
     );
   const list = goals.data ?? [];
   return (
-    <Link to="/goals" className="panel morecard goalscard">
+    <Link to="/goals" className="panel morecard goalscard tap">
       <CardTitle right={<MaterialIcon name="chevron_right" />}>
         <MaterialIcon name="flag" />
         {t('progress.goals')}
