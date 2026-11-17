@@ -7,24 +7,21 @@
 import {
   activityBand,
   addDays,
-  calendarQuery,
   cumulative,
   formatHoursMinutes,
+  isoDay,
   monthLabels,
   SPORT_ICONS,
   weekAt,
   weekDays,
-  type CalendarDay,
   type EffortRange,
   type EffortStatus,
   type EffortWeek,
 } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
 import type { EChartsType } from 'echarts/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
 import { locale, t } from '../../i18n';
 import { MaterialIcon } from '../../MaterialIcon';
@@ -37,9 +34,11 @@ import {
   dayLetter,
   palette,
   statusPaint,
+  useCalendarDays,
   useEffortDays,
   useEffortWeeks,
   useToday,
+  type CalendarActivities,
 } from './data';
 import { ProgressLink } from './parts';
 
@@ -214,6 +213,11 @@ function WeekSoFar({
 
 export function EffortPage() {
   const { weeks, isPending } = useEffortWeeks(WEEKS);
+  // The weeks' activities at once: the week under the pointer reads its own from them.
+  const calendar = useCalendarDays(
+    weeks[0]?.monday ?? isoDay(new Date()),
+    addDays(weeks.at(-1)?.monday ?? isoDay(new Date()), 7),
+  );
   const [picked, setPicked] = useState<number | null>(null);
   // The last week the chart shows (none: the latest). Only the arrows move it.
   const [end, setEnd] = useState<number | null>(null);
@@ -291,11 +295,11 @@ export function EffortPage() {
           </div>
           <h2>{t(`progress.effortTitle.${week.status}`)}</h2>
           <p>{t(`progress.effortText.${week.status}`)}</p>
-          <DayBars monday={week.monday} />
+          <DayBars monday={week.monday} calendar={calendar.days} />
         </div>
         <div className="fxweekside">
           <WeeksChart weeks={weeks} index={index} first={first} onPick={setPicked} />
-          <WeekActivities monday={week.monday} />
+          <WeekActivities monday={week.monday} calendar={calendar.days} />
         </div>
       </div>
     );
@@ -311,16 +315,9 @@ export function EffortPage() {
 }
 
 /** The week's days as bars of their effort, a dash on a day without any. */
-function DayBars({ monday }: { monday: string }) {
-  const calendar = useQuery(calendarQuery(api, { from: monday, to: addDays(monday, 7) }));
-  const byDay = new Map(
-    ((calendar.data ?? []) as CalendarDay[]).map((d) => [
-      d.day,
-      d.activities.reduce((s, a) => s + (a.load ?? 0), 0),
-    ]),
-  );
+function DayBars({ monday, calendar }: { monday: string; calendar: Map<string, CalendarActivities> }) {
   const days = weekDays(monday);
-  const values = days.map((d) => byDay.get(d) ?? 0);
+  const values = days.map((d) => (calendar.get(d) ?? []).reduce((s, a) => s + (a.load ?? 0), 0));
   const max = Math.max(1, ...values);
   return (
     <ul className="fxbars">
@@ -469,9 +466,8 @@ function WeeksChart({
 }
 
 /** The week's activities, newest last: when, what, how long, and their effort in its band's colour. */
-function WeekActivities({ monday }: { monday: string }) {
-  const calendar = useQuery(calendarQuery(api, { from: monday, to: addDays(monday, 7) }));
-  const activities = ((calendar.data ?? []) as CalendarDay[]).flatMap((d) => d.activities);
+function WeekActivities({ monday, calendar }: { monday: string; calendar: Map<string, CalendarActivities> }) {
+  const activities = weekDays(monday).flatMap((d) => calendar.get(d) ?? []);
   if (!activities.length) return null;
   return (
     <section className="panel fxacts">

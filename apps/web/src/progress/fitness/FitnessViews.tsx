@@ -5,7 +5,6 @@
  * (today, or the one under the pointer) and that day's activities.
  */
 import {
-  calendarQuery,
   fitnessChange,
   fitnessQuery,
   fitnessScale,
@@ -15,7 +14,6 @@ import {
   rangePeriod,
   spreadDays,
   untilToday,
-  type CalendarDay,
   type FitnessRange,
 } from '@zankup/core';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -47,7 +45,9 @@ import {
   savedFitnessRange,
   saveFitnessRange,
   shortDate,
+  useCalendarDays,
   useToday,
+  type CalendarActivities,
 } from './data';
 import { CardLine, ChangePill, ProgressLink } from './parts';
 
@@ -145,6 +145,8 @@ export function FitnessPage() {
   const first = days[0];
   const change = day && first ? fitnessChange(first.ctl, day.ctl) : null;
   const [box, height] = useFillHeight();
+  // The range's activities at once: the day under the pointer reads its own from them.
+  const calendar = useCalendarDays(first?.day ?? today, addDays(today, 1));
 
   const choose = (r: FitnessRange) => {
     setRange(r);
@@ -199,7 +201,12 @@ export function FitnessPage() {
               onPick={setPicked}
               height={height}
             />
-            <DayActivities key={day.day} day={day.day} />
+            <DayActivities
+              key={day.day}
+              day={day.day}
+              activities={calendar.days.get(day.day) ?? []}
+              pending={calendar.pending}
+            />
           </>
         )}
       </div>
@@ -379,13 +386,18 @@ function FitnessChart({
 }
 
 /** The picked day's activities, each opening its page; more than one, how many until clicked. */
-function DayActivities({ day }: { day: string }) {
+function DayActivities({
+  day,
+  activities,
+  pending,
+}: {
+  day: string;
+  activities: CalendarActivities;
+  pending: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const calendar = useQuery(calendarQuery(api, { from: day, to: addDays(day, 1) }));
-  const activities =
-    (calendar.data as CalendarDay[] | undefined)?.find((d) => d.day === day)?.activities ?? [];
   const when = shortDate(day, true);
-  if (calendar.isPending) return <div className="fxday" aria-busy="true" />;
+  if (pending) return <div className="fxday" aria-busy="true" />;
   if (!activities.length)
     return (
       <div className="fxday">

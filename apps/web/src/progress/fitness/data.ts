@@ -5,6 +5,7 @@
  */
 import {
   addDays,
+  calendarQuery,
   commonTokens,
   effortWeeks,
   estimatesQuery,
@@ -15,17 +16,37 @@ import {
   volumeQuery,
   weekAt,
   weekDays,
+  type CalendarDay,
   type EffortStatus,
   type FitnessRange,
   type Point,
   type Sport,
   type ThemeName,
 } from '@zankup/core';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import { api } from '../../api';
 import { locale } from '../../i18n';
+
+/**
+ * Every day's activities from `from` up to (not including) `to`, fetched once for the whole range and
+ * read by day: the pointer moving over a chart picks a day or week from it, instead of asking the
+ * server for each one it passes. Another range keeps the last one on screen while it loads.
+ */
+export function useCalendarDays(from: string, to: string) {
+  const calendar = useQuery({
+    ...calendarQuery(api, { from, to }),
+    placeholderData: keepPreviousData,
+  });
+  const days = useMemo(
+    () => new Map(((calendar.data ?? []) as CalendarDay[]).map((d) => [d.day, d.activities])),
+    [calendar.data],
+  );
+  return { days, pending: calendar.isPending };
+}
+
+export type CalendarActivities = CalendarDay['activities'];
 
 export const palette = (theme: ThemeName) => ({ ...commonTokens, ...themes[theme] });
 
