@@ -3197,6 +3197,14 @@ button.primary {
   border-color: transparent;
 }
 
+/* A main button with an icon: the icon and its words centred on one line, not on the text's baseline. */
+button.primary:has(> svg.i) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 button.link {
   border: 0;
   background: none;
