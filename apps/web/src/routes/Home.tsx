@@ -11,7 +11,7 @@ import { Wordmark } from '../Wordmark';
 
 /**
  * Home (OS-903, OS-904), as the app's: this week, the last day with activities, the metrics and the last
- * seven days, in that order at every size (docs/prototypes/web). On a phone the header is the wordmark
+ * seven days, in that order (the last seven days at the end) at every size (docs/prototypes/web). On a phone the header is the wordmark
  * with the Coach and the notifications; from 600 px those two are in the rail.
  */
 export function Home() {
@@ -39,8 +39,8 @@ export function Home() {
           <MaterialIcon name="notifications" />
         </Link>
       </div>
-      {/* One column at every size: the week across the full width, then the last day, the last seven
-          days in one card, and the metrics in one row where there is room. */}
+      {/* One column at every size: the week across the full width, then the last day, the metrics in
+          one row where there is room, and the last seven days in one card at the end. */}
       <div className="homegrid">
         <div className="h-week">
           <WeekHeader footer={<UsualWeek />} />
@@ -48,11 +48,11 @@ export function Home() {
         <div className="h-day">
           <LastDay />
         </div>
-        <div className="h-last">
-          <LastSevenDays />
-        </div>
         <div className="h-metrics">
           <Metrics />
+        </div>
+        <div className="h-last">
+          <LastSevenDays />
         </div>
       </div>
     </section>

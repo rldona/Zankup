@@ -4234,7 +4234,7 @@ textarea {
 
 .homegrid {
   display: grid;
-  grid-template-areas: 'week' 'day' 'last' 'metrics';
+  grid-template-areas: 'week' 'day' 'metrics' 'last';
   gap: 24px 20px;
   align-items: start;
 }
