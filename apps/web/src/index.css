@@ -334,8 +334,8 @@ svg.i.m {
 /* Above an open activity: back to the list, and the previous and next ones. A phone has its own
    floating buttons over the map. */
 .detailnav {
-  position: sticky;
-  top: 0;
+  /* In its place at the top: it scrolls away with the page instead of following it. */
+  position: relative;
   z-index: 7;
   display: flex;
   align-items: center;
@@ -6000,11 +6000,9 @@ h1.greeting {
   }
 }
 
-/* The profile charts: two by two across the full width. */
-@media (min-width: 1200px) {
-  .page.detail .chartgrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* The profile charts: one under the other, across the full width, at every size. */
+.page.detail .chartgrid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* The Activities header's search bar, as the app's. */
