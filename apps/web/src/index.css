@@ -3878,7 +3878,32 @@ a.button {
 }
 
 .summary .suggested {
-  margin-top: 10px;
+  margin: 14px 0 0;
+}
+
+/* The summary's parts apart from each other: the words, the highlights, the suggested title and the
+   button, each with room, as were they sitting on one another. */
+.summary .coach-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.summary #summary-body .desc {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.summary .highlights {
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.summary .highlights li {
+  padding: 4px 12px;
+}
+
+.summary #summary-body > button.primary {
+  margin-top: 18px;
 }
 
 /* The gap under the header belongs to the body, so the card folded is as tall above as below. */
@@ -3887,7 +3912,7 @@ a.button {
 }
 
 .summary #summary-body {
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 .weekly h3 {
