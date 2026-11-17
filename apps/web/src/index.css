@@ -5296,11 +5296,17 @@ button.danger svg.i {
 
 /* Stats (OS-912), as the app's: the period over everything, the cards two by two on a large screen. */
 .periodbar {
+  /* Held at the top while the statistics scroll under it, on the page's background. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 20px;
-  margin-bottom: 16px;
+  margin: 0 calc(-1 * var(--gutter)) 16px;
+  padding: 10px var(--gutter);
+  background: var(--bg);
 }
 
 .periodbar .chips {
