@@ -14,6 +14,11 @@ body {
   color: var(--fg);
 }
 
+/* The app scrolls inside its columns: the document itself does not bounce past the screen's edge. */
+html {
+  overscroll-behavior: none;
+}
+
 a {
   color: var(--accent);
 }
@@ -248,6 +253,9 @@ svg.i.m {
 }
 
 .main {
+  /* Positioned, so what is placed absolutely inside (the visually hidden labels among it) stays in the
+     column's scroll instead of making the document taller than the screen. */
+  position: relative;
   overflow: auto;
   min-width: 0;
   display: flex;
@@ -305,6 +313,7 @@ svg.i.m {
 
 /* The list is the screen, centred at the width of the cards; an activity takes its place when opened. */
 .feedcol {
+  position: relative;
   overflow: auto;
   padding: 20px;
 }
@@ -316,6 +325,7 @@ svg.i.m {
 
 .detailcol {
   --detailnav-h: 56px;
+  position: relative;
   overflow: auto;
   min-width: 0;
   display: none;
@@ -6293,20 +6303,22 @@ h1.greeting {
   border-radius: 12px;
 }
 
-/* The Coach (docs/prototypes/web): on a desktop the weekly report on the left and the conversation on
-   the right, in a card the height of the screen, the suggestions centred in it and the question field
-   held at its foot. */
+/* The Coach (docs/prototypes/web) as wide as the Activities list: on a desktop the weekly report above
+   the conversation, in a card the height of the screen, the suggestions centred in it and the question
+   field held at its foot. */
+.page.coach {
+  max-width: calc(720px + 2 * var(--gutter));
+}
+
 @media (min-width: 1200px) {
   .coachgrid {
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     align-items: start;
   }
 
   .coachgrid > .weekly {
-    position: sticky;
-    top: 20px;
     margin: 0;
   }
 
