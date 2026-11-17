@@ -6515,6 +6515,8 @@ h1.greeting {
 }
 .progress .pgrid > * > .panel,
 .progress .ppair > .panel {
+  /* Its padding and border inside the cell's height, or it overflows onto the card below. */
+  box-sizing: border-box;
   height: 100%;
   margin: 0;
 }
