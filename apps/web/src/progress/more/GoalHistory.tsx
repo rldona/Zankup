@@ -21,6 +21,7 @@ import { useMemo, useState } from 'react';
 import { api } from '../../api';
 import { EChart } from '../../charts/EChart';
 import { locale, t } from '../../i18n';
+import { MaterialIcon } from '../../MaterialIcon';
 import { Bone, Pulse } from '../../Skeleton';
 import { useResolvedTheme } from '../../theme';
 import { goalValue, palette, type Format } from './data';
@@ -32,7 +33,12 @@ export function GoalHistory({ goal, format }: { goal: GoalOut; format: Format })
   const metric = goal.metric as GoalMetric;
   const [today] = useState(() => isoDay(new Date()));
   const range = chartPeriods(period, today);
-  const volume = useQuery(volumeQuery(api, { from: range.from, to: range.to }, range.unit));
+  // Folded at first: only the period's own chart shows until the history is opened.
+  const [open, setOpen] = useState(false);
+  const volume = useQuery({
+    ...volumeQuery(api, { from: range.from, to: range.to }, range.unit),
+    enabled: open,
+  });
   const buckets = useMemo(() => (volume.data ?? []) as Bucket[], [volume.data]);
   const year = period === 'year';
 
@@ -166,8 +172,13 @@ export function GoalHistory({ goal, format }: { goal: GoalOut; format: Format })
 
   return (
     <div className="goalhistory">
-      <h3>{heading}</h3>
-      {volume.isPending ? (
+      <h3>
+        <button type="button" className="goalhistoryhead" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {heading}
+          <MaterialIcon name={open ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} />
+        </button>
+      </h3>
+      {!open ? null : volume.isPending ? (
         <Pulse>
           <Bone width="70%" />
           <Bone height={150} radius={10} style={{ marginTop: 12 }} />

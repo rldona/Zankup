@@ -296,6 +296,25 @@
   font-size: 14px;
 }
 
+.goalhistoryhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.goalhistoryhead:hover:not(:disabled) {
+  background: none;
+  color: var(--accent);
+}
+
 .goalhistorytotals {
   margin: 0;
   font-size: 14px;
