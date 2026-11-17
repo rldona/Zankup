@@ -73,9 +73,10 @@ export function Feed() {
 
   const column = useRef<HTMLElement>(null);
   // The list is hidden while an activity is open, which resets its scroll: keep it and put it back.
+  // A list just opened has nothing to put back: where it starts is the Shell's (see useScrollMemory).
   const scrolled = useRef(0);
   useLayoutEffect(() => {
-    if (!detail && column.current) column.current.scrollTop = scrolled.current;
+    if (!detail && column.current && scrolled.current) column.current.scrollTop = scrolled.current;
   }, [detail]);
   const sentinel = useMoreOnScroll(column, () => {
     if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();

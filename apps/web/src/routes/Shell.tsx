@@ -5,8 +5,8 @@ import {
   type MessageKey,
 } from '@zankup/core';
 import { useQuery } from '@tanstack/react-query';
-import { useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from 'react';
+import { Link, Outlet, useLocation, useNavigationType } from 'react-router';
 
 import { api } from '../api';
 import { LatestActivity } from '../LatestActivity';
@@ -155,17 +155,84 @@ function ripple(event: PointerEvent<HTMLElement>) {
   card.append(wave);
 }
 
-export function Shell() {
-  const { pathname } = useLocation();
-  // Every screen starts at its top, not where the last one was left.
-  const main = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
+/** The parts of the page that scroll: the column, the Activities list and an open activity. */
+const SCROLLERS = ['', '.feedcol', '.detailcol'] as const;
+type Positions = Partial<Record<(typeof SCROLLERS)[number], number>>;
+/** Where each visited screen was left, by its history entry, so going back returns there. */
+const left = new Map<string, Positions>();
+
+function scrollerOf(main: HTMLElement, name: (typeof SCROLLERS)[number]) {
+  return name ? main.querySelector<HTMLElement>(name) : main;
+}
+
+/**
+ * A new screen opens at its top; going back to a screen, by the browser's back or by a back link to
+ * the screen just left, returns to where it was left, so leaving a list for one of its cards and
+ * coming back keeps the place. A screen still drawing its figures is not tall enough at once: the
+ * place is tried again each frame for a moment, until it is reached or the person scrolls.
+ */
+function useScrollMemory(main: RefObject<HTMLElement | null>) {
+  const location = useLocation();
+  const type = useNavigationType();
+  const { key } = location;
+  const path = location.pathname + location.search;
+  const here = useRef({ key, path });
+  const before = useRef<{ key: string; path: string } | null>(null);
+
+  useEffect(() => {
     const column = main.current;
     if (!column) return;
-    column.scrollTop = 0;
-    const detail = column.querySelector('.detailcol');
-    if (detail) detail.scrollTop = 0;
-  }, [pathname]);
+    const save = (event: Event) => {
+      const target = event.target as HTMLElement;
+      const name = SCROLLERS.find((n) => (n ? target.matches?.(n) : target === column));
+      if (name === undefined) return;
+      const at = here.current.key;
+      left.set(at, { ...left.get(at), [name]: target.scrollTop });
+    };
+    column.addEventListener('scroll', save, { capture: true, passive: true });
+    return () => column.removeEventListener('scroll', save, { capture: true });
+  }, [main]);
+
+  useLayoutEffect(() => {
+    if (here.current.key === key) return;
+    const back = type === 'POP' ? key : before.current?.path === path ? before.current.key : null;
+    const saved = back ? left.get(back) : undefined;
+    before.current = here.current;
+    here.current = { key, path };
+    const column = main.current;
+    if (!column) return;
+    const place = () => {
+      let reached = true;
+      for (const name of SCROLLERS) {
+        const box = scrollerOf(column, name);
+        // A new screen at its top; the Activities list keeps its own place while a card is open.
+        if (!box || (!saved && name === '.feedcol')) continue;
+        const top = saved?.[name] ?? 0;
+        box.scrollTop = top;
+        if (Math.abs(box.scrollTop - top) > 1) reached = false;
+      }
+      if (saved) left.set(key, saved);
+      return reached;
+    };
+    if (place() || !saved) return;
+    const until = performance.now() + 1500;
+    let frame = requestAnimationFrame(function again() {
+      if (!place() && performance.now() < until) frame = requestAnimationFrame(again);
+    });
+    const stop = () => cancelAnimationFrame(frame);
+    const events = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
+    events.forEach((e) => column.addEventListener(e, stop, { passive: true, once: true }));
+    return () => {
+      stop();
+      events.forEach((e) => column.removeEventListener(e, stop));
+    };
+  }, [key, path, type, main]);
+}
+
+export function Shell() {
+  const { pathname } = useLocation();
+  const main = useRef<HTMLElement>(null);
+  useScrollMemory(main);
   useServerTheme();
   useServerLanguage();
   const online = useOnline();
