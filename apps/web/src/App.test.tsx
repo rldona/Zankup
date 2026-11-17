@@ -464,14 +464,16 @@ describe('app skeleton', () => {
     // Settings marks its own icon in the rail; the tab bar keeps You marked, as on the app.
     await userEvent.click(within(rail).getByRole('link', { name: 'Settings' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/settings'));
-    expect(within(rail).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
+    await waitFor(() =>
+      expect(within(rail).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page'),
+    );
     expect(sidebar.querySelector('a.on')).toBeNull();
     expect(tabbar.querySelector('a.on')?.textContent).toBe('You');
 
     // The calendar is a section of the rail: marked there, while the tab bar keeps You.
     await userEvent.click(within(sidebar).getByRole('link', { name: 'Calendar' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/stats/calendar'));
-    expect(sidebar.querySelector('a.on')?.textContent).toBe('Calendar');
+    await waitFor(() => expect(sidebar.querySelector('a.on')?.textContent).toBe('Calendar'));
     expect(tabbar.querySelector('a.on')?.textContent).toBe('You');
   });
 
