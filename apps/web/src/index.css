@@ -3952,16 +3952,20 @@ a.button {
   margin-top: 12px;
 }
 
+.settingsmain .aiprivacy h3,
 .aiprivacy h3 {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   font-size: 14px;
 }
 
 .aiprivacy ul {
+  display: grid;
+  gap: 6px;
   margin: 0;
   padding-left: 18px;
   color: var(--muted);
   font-size: 14px;
+  line-height: 1.4;
 }
 
 /* A health figure's source (Garmin, Google Health, Health Connect) in its panel's top-right corner. */
@@ -5506,6 +5510,60 @@ button.danger svg.i {
 
 .settingsmain .panel > .note:not(:last-child) {
   margin-bottom: 10px;
+}
+
+/* Room between the texts in Settings, which sat on each other: the menu's titles and their lines, the
+   help's lines, the headings and what they head, the checkboxes, a row's name and its detail. */
+.panel.menu.settingslist a > span {
+  gap: 4px;
+}
+
+.panel.menu.settingslist a small {
+  line-height: 1.35;
+}
+
+.settingsmain .note,
+.settingsmain .warn {
+  line-height: 1.5;
+}
+
+.settingsmain .panel h3 {
+  margin: 18px 0 6px;
+  font-size: 15px;
+}
+
+.settingsmain .panel > h3:first-child {
+  margin-top: 0;
+}
+
+.settingsmain fieldset.checks {
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.settingsmain .checks legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-weight: 700;
+}
+
+.settingsmain .checks + :is(.note, .warn) {
+  margin-top: 12px;
+}
+
+.settingsmain .rows li > span:not(.sp) {
+  gap: 3px;
+}
+
+.settingsmain .rows li > span .note {
+  margin: 0;
+}
+
+.settingsmain .panel > .rows + button,
+.settingsmain .panel > .rows + .actions {
+  margin-top: 14px;
 }
 
 /* Signing out ends the sign-in card, apart from the passkeys above it. */
