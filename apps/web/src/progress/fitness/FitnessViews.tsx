@@ -211,7 +211,7 @@ type Day = { day: string; ctl: number; load: number };
 /**
  * The score as a filled line over the range, a ring on each day with load (bigger, harder) over a
  * month, and the picked day marked with its score in a badge. The pointer (or a tap) picks a day; so
- * do the arrow keys. Another range turns the line into the new one (the series keep their ids).
+ * do the arrow keys. Another range draws its line afresh, left to right.
  */
 function FitnessChart({
   days,
@@ -243,6 +243,9 @@ function FitnessChart({
     const marks = new Set(spreadDays(days.length, 5));
     const maxLoad = Math.max(0, ...days.map((d) => d.load));
     const label = (d: string) => (d === today ? t('home.today') : short ? shortDate(d) : monthName(d));
+    // Another range is other days: its line is drawn afresh, left to right. Morphing a month's 30
+    // points into a year's 365 drew straight cuts and crossings on the way.
+    const set = `${days[0]?.day ?? ''}:${days.length}`;
     return {
       animationDurationUpdate: 600,
       grid: { left: 36, right: 24, top: 46, bottom: 26 },
@@ -271,7 +274,7 @@ function FitnessChart({
       },
       series: [
         {
-          id: 'ctl',
+          id: `ctl:${set}`,
           type: 'line',
           data: days.map((d) => d.ctl),
           symbol: 'none',
@@ -281,7 +284,7 @@ function FitnessChart({
         },
         {
           // Each day's load as a ring over a month (none on a day without), sliding with the line.
-          id: 'loads',
+          id: `loads:${set}`,
           type: 'scatter',
           silent: true,
           data: showLoads ? days.map((d, i) => [i, d.ctl, d.load]) : [],
@@ -338,7 +341,7 @@ function FitnessChart({
   const point = ((): number[] | null => {
     try {
       return chart && !chart.isDisposed() && day
-        ? chart.convertToPixel({ seriesId: 'ctl' }, [index, day.ctl])
+        ? chart.convertToPixel({ gridIndex: 0 }, [index, day.ctl])
         : null;
     } catch {
       return null; // Not drawn yet.
