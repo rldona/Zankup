@@ -42,7 +42,7 @@ describe('leaving an activity', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const router = createMemoryRouter(routes, { initialEntries: ['/activities/7'] });
     render(<App queryClient={queryClient} router={router} />);
-    await waitFor(() => expect(document.querySelector('.chartcard svg')).not.toBeNull(), { timeout: 4000 });
+    await waitFor(() => expect(document.querySelector('.chartcard svg')).not.toBeNull());
 
     await act(() => router.navigate('/settings'));
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();

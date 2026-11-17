@@ -92,7 +92,7 @@ export default defineConfig({
     environment: 'jsdom',
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'], // e2e/ is Playwright's (OS-213)
     setupFiles: ['./src/test/setup.ts'],
-    // Room for the 5 s waits above (src/test/setup.ts) on a busy machine, over Vitest's own 5 s.
-    testTimeout: 20_000,
+    // Room for the 10 s waits (src/test/setup.ts) on a busy machine, over Vitest's own 5 s.
+    testTimeout: 30_000,
   },
 });

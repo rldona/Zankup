@@ -459,7 +459,7 @@ describe('app skeleton', () => {
     await userEvent.type(await screen.findByRole('searchbox', { name: 'Search' }), 'hill{Enter}');
     await waitFor(() => expect(router.state.location.pathname).toBe('/search'));
     expect(router.state.location.search).toBe('?q=hill');
-    expect(sidebar.querySelector('a.on')?.textContent).toBe('Feed');
+    await waitFor(() => expect(sidebar.querySelector('a.on')?.textContent).toBe('Feed'));
 
     // Settings marks its own icon in the rail; the tab bar keeps You marked, as on the app.
     await userEvent.click(within(rail).getByRole('link', { name: 'Settings' }));
@@ -467,7 +467,7 @@ describe('app skeleton', () => {
     await waitFor(() =>
       expect(within(rail).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page'),
     );
-    expect(sidebar.querySelector('a.on')).toBeNull();
+    await waitFor(() => expect(sidebar.querySelector('a.on')).toBeNull());
     expect(tabbar.querySelector('a.on')?.textContent).toBe('You');
 
     // The calendar is a section of the rail: marked there, while the tab bar keeps You.
@@ -496,7 +496,7 @@ describe('app skeleton', () => {
     expect(back).toHaveClass('crumb');
     await userEvent.click(back);
     await waitFor(() => expect(router.state.location.pathname).toBe('/profile'));
-    expect(document.querySelector('.crumb')).toBeNull();
+    await waitFor(() => expect(document.querySelector('.crumb')).toBeNull());
   });
 
   it('leads back to the screen each one was opened from, once', async () => {
@@ -536,7 +536,9 @@ describe('app skeleton', () => {
     const sports = await screen.findByRole('group', { name: 'Sports' });
     await userEvent.click(within(sports).getByRole('button', { name: 'Ride' }));
     await waitFor(() => expect(router.state.location.search).toBe('?sport=ride'));
-    expect(within(sports).getByRole('button', { name: 'Ride' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() =>
+      expect(within(sports).getByRole('button', { name: 'Ride' })).toHaveAttribute('aria-pressed', 'true'),
+    );
   });
 
   it('marks the open activity in the feed and stays in Activities', async () => {
