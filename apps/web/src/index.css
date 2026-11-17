@@ -8,6 +8,12 @@
     sans-serif;
 }
 
+/* The web's cards are less rounded than the app's (the themes' 14 px, set per theme in packages/core):
+   doubled, so it wins over every theme's own. */
+:root:root {
+  --radius: 10px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -3995,7 +4001,7 @@ svg.source.zankup {
  * soft corners and room under their label, and choices filled with the accent as on the phone.
  */
 .panel {
-  border-radius: 16px;
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 
@@ -4357,7 +4363,7 @@ textarea {
 }
 
 .week {
-  border-radius: 16px;
+  border-radius: var(--radius);
 }
 
 .hblock {
@@ -4851,7 +4857,7 @@ textarea {
 .mapblock {
   position: relative;
   margin: 0 0 16px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--line);
 }
