@@ -4255,6 +4255,11 @@ textarea {
   grid-area: week;
 }
 
+/* The grid's gap is the only space between the widgets: none of their own margin below them. */
+.homegrid > * > :last-child {
+  margin-bottom: 0;
+}
+
 .h-day {
   grid-area: day;
 }
@@ -6563,6 +6568,7 @@ h1.greeting {
   }
 }
 
+.progress .pgrid > .panel,
 .progress .pgrid > * > .panel,
 .progress .ppair > .panel {
   /* Its padding and border inside the cell's height, or it overflows onto the card below. */
