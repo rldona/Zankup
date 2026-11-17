@@ -281,6 +281,34 @@ test('search keeps its filters in the URL', async ({ page }, info) => {
   await expect(page.getByRole('link', { name: /Morning run/ })).toBeVisible();
 });
 
+test('a screen opens at its top, and going back returns to where it was left', async ({ page }, info) => {
+  await signIn(page, lang(info.project.name));
+  await page.goto('/progress');
+  const main = page.locator('main');
+  await expect(page.locator('main a.tap').first()).toBeVisible();
+  const top = () => main.evaluate((m) => m.scrollTop);
+  const target = await main.evaluate((m) => {
+    m.scrollTop = Math.min(400, m.scrollHeight - m.clientHeight);
+    return m.scrollTop;
+  });
+  expect(target).toBeGreaterThan(0);
+  // A card lower down, then the browser's back. Clicked in place: Playwright would scroll it in view.
+  const card = page.locator('main a.tap[href="/progress/zones"]');
+  const open = () => card.evaluate((a: HTMLElement) => a.click());
+  await open();
+  await expect(page).toHaveURL(/\/progress\/zones$/);
+  await expect.poll(top).toBe(0);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/progress$/);
+  await expect.poll(top).toBe(target);
+  // The same by the screen's own back link.
+  await open();
+  await expect(page).toHaveURL(/\/progress\/zones$/);
+  await page.locator('a.crumb').click();
+  await expect(page).toHaveURL(/\/progress$/);
+  await expect.poll(top).toBe(target);
+});
+
 test('a theme picked in Settings survives a reload with no flash', async ({ page }, info) => {
   const w = (key: string) => word(lang(info.project.name), key);
   await signIn(page, lang(info.project.name));
