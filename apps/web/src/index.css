@@ -319,6 +319,8 @@ svg.i.m {
 
 /* The list is the screen, centred at the width of the cards; an activity takes its place when opened. */
 .feedcol {
+  /* Its top padding, which the month headers rise over when they stick (see .mhead). */
+  --feed-top: 20px;
   position: relative;
   overflow: auto;
   padding: 20px;
@@ -555,6 +557,10 @@ a.stepbtn:hover {
   .feedcol,
   .page {
     padding: 14px var(--gutter);
+  }
+
+  .feedcol {
+    --feed-top: 14px;
   }
 
   .crumbrow + .page {
@@ -859,11 +865,18 @@ a.stepbtn:hover {
 }
 
 .mhead {
+  /* Held at the top of the list while its month scrolls under it; the next month's takes its place. */
+  position: sticky;
+  /* Up over the list's top padding, so no card shows above it; as tall again, so its words stay put. */
+  top: calc(-1 * var(--feed-top, 0px));
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin: 18px 2px 8px;
+  margin: calc(10px - var(--feed-top, 0px)) -2px 0;
+  padding: calc(10px + var(--feed-top, 0px)) 4px 8px;
+  background: var(--bg);
   font-size: 13px;
   font-weight: 400;
 }
