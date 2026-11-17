@@ -125,8 +125,9 @@ test("Home in the app's order at every size, with This week as the app's", async
     await top('home.last7'),
     await top('home.metrics'),
   ];
-  expect(week).toBeLessThan(last7);
-  expect(last7).toBeLessThan(metrics);
+  // The last seven days close the page, below the metrics.
+  expect(week).toBeLessThan(metrics);
+  expect(metrics).toBeLessThan(last7);
   // Monday's run with a dot for the ride, Tuesday's ride, then the days' numbers.
   const days = page.locator('.week .days');
   await expect(days.getByRole('link', { name: /Morning run, Hill ride/ }).locator('.second')).toBeVisible();
