@@ -208,10 +208,30 @@ export function FitnessPage() {
 
 type Day = { day: string; ctl: number; load: number };
 
+/** As many points as two years' days: every range's line has them all. */
+const SAMPLES = 730;
+
+/**
+ * The line through the days' values at SAMPLES evenly spread places, as [place, value]. Every range has
+ * the same points across the same width, so another range moves each one up or down to its new
+ * height: a month's 30 days morphing straight into a year's 365 crossed and cut corners on the way.
+ */
+function sampled(values: number[]): number[][] {
+  const last = values.length - 1;
+  if (last < 1) return values.map((v, i) => [i, v]);
+  return Array.from({ length: SAMPLES }, (_, k) => {
+    const x = (k * last) / (SAMPLES - 1);
+    const i = Math.min(last - 1, Math.floor(x));
+    const a = values[i] ?? 0;
+    const b = values[i + 1] ?? a;
+    return [x, a + (b - a) * (x - i)];
+  });
+}
+
 /**
  * The score as a filled line over the range, a ring on each day with load (bigger, harder) over a
  * month, and the picked day marked with its score in a badge. The pointer (or a tap) picks a day; so
- * do the arrow keys. Another range draws its line afresh, left to right.
+ * do the arrow keys. Another range morphs the line into the new one, each point up or down to its place.
  */
 function FitnessChart({
   days,
@@ -243,21 +263,23 @@ function FitnessChart({
     const marks = new Set(spreadDays(days.length, 5));
     const maxLoad = Math.max(0, ...days.map((d) => d.load));
     const label = (d: string) => (d === today ? t('home.today') : short ? shortDate(d) : monthName(d));
-    // Another range is other days: its line is drawn afresh, left to right. Morphing a month's 30
-    // points into a year's 365 drew straight cuts and crossings on the way.
-    const set = `${days[0]?.day ?? ''}:${days.length}`;
     return {
       animationDurationUpdate: 600,
       grid: { left: 36, right: 24, top: 46, bottom: 26 },
       xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: days.map((d) => d.day),
+        // The days by their place (0 is the range's first), so the line can sit between them.
+        type: 'value',
+        min: 0,
+        max: Math.max(1, days.length - 1),
+        splitLine: { show: false },
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          interval: (i: number) => marks.has(i),
-          formatter: (d: string) => label(d),
+          customValues: [...marks],
+          formatter: (i: number) => {
+            const d = days[Math.round(i)]?.day;
+            return d ? label(d) : '';
+          },
           color: c.muted,
           fontSize: 11,
           alignMinLabel: 'left',
@@ -274,9 +296,9 @@ function FitnessChart({
       },
       series: [
         {
-          id: `ctl:${set}`,
+          id: 'ctl',
           type: 'line',
-          data: days.map((d) => d.ctl),
+          data: sampled(days.map((d) => d.ctl)),
           symbol: 'none',
           silent: true,
           lineStyle: { color: c.accent, width: 2.5, join: 'round', cap: 'round' },
@@ -284,7 +306,7 @@ function FitnessChart({
         },
         {
           // Each day's load as a ring over a month (none on a day without), sliding with the line.
-          id: `loads:${set}`,
+          id: 'loads',
           type: 'scatter',
           silent: true,
           data: showLoads ? days.map((d, i) => [i, d.ctl, d.load]) : [],
