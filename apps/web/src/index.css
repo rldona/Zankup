@@ -6302,6 +6302,17 @@ h1.greeting {
 
 /* Health (docs/prototypes/web): the period as a segmented control in the header; last night beside
    today on a desktop, today's tiles two by three; the three trends in one row. */
+/* Health's header (the title, the period, sync and settings) held at the top while the figures
+   scroll under it, on the page's background. */
+.page.health > .titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 10px var(--gutter);
+  background: var(--bg);
+}
+
 .page.health .titlebar .periods {
   margin-right: 6px;
 }
