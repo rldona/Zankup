@@ -34,11 +34,11 @@ const SECTIONS: Item[] = [
 ];
 
 /**
- * The rail has room for one more than the app's tab bar: the training calendar, under Activities, as
- * another way to see them. On a phone it stays in the Activities header.
+ * The rail has room for one more than the app's tab bar: the training calendar, under Health, as
+ * another way to see the activities. On a phone it stays in the Activities header.
  */
 const CALENDAR: Item = { to: '/stats/calendar', icon: 'calendar_month', label: 'stats.calendar' };
-const RAIL: Item[] = [...SECTIONS.slice(0, 2), CALENDAR, ...SECTIONS.slice(2)];
+const RAIL: Item[] = [...SECTIONS.slice(0, 4), CALENDAR, ...SECTIONS.slice(4)];
 
 /**
  * The foot of the rail: what the app reaches from Home's header (the Coach, the notifications) and from
