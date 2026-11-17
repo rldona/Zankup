@@ -420,7 +420,7 @@ function WeeksChart({
   });
   const ready = useCallback((instance: EChartsType) => {
     const move = (event: { offsetX: number; offsetY: number }) => {
-      const value = instance.convertFromPixel({ xAxisIndex: 0 }, [event.offsetX, event.offsetY]);
+      const value = instance.convertFromPixel({ gridIndex: 0 }, [event.offsetX, event.offsetY]);
       const i = Math.round(Array.isArray(value) ? (value[0] ?? 0) : value);
       const { onPick: to, first: from, count } = pick.current;
       if (Number.isFinite(i)) to(from + Math.max(0, Math.min(count - 1, i)));

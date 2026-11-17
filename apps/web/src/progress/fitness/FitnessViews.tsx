@@ -302,7 +302,7 @@ function FitnessChart({
       setChart(instance);
       redraw((n) => n + 1);
       const move = (event: { offsetX: number; offsetY: number }) => {
-        const at = instance.convertFromPixel({ xAxisIndex: 0 }, [event.offsetX, event.offsetY]);
+        const at = instance.convertFromPixel({ gridIndex: 0 }, [event.offsetX, event.offsetY]);
         const i = Math.round(Array.isArray(at) ? (at[0] ?? 0) : at);
         if (Number.isFinite(i)) pick.current(Math.max(0, Math.min(count - 1, i)));
       };
