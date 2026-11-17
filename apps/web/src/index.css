@@ -3906,8 +3906,9 @@ a.button {
   margin-top: 18px;
 }
 
-/* The gap under the header belongs to the body, so the card folded is as tall above as below. */
-.summary .coach-head {
+/* The gap under the header belongs to the body, so the card folded is as tall above as below (the
+   card's own class too: the panels' headers have a margin of their own). */
+.page .panel.summary > .coach-head {
   margin-bottom: 0;
 }
 
