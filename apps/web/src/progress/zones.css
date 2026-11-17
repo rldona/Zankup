@@ -307,6 +307,8 @@
 
 .pk-watts:hover:not(:disabled),
 .pk-watts:focus-visible {
+  /* Only the figure turns green: the buttons' hover background would hide the ring under it. */
+  background: none;
   color: var(--accent);
 }
 
