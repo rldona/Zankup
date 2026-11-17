@@ -355,10 +355,11 @@
   border-left: 4px solid transparent;
 }
 
+/* The split picked: its background and the green edge, no bold (bold text widened the columns and
+   the whole table rippled as the pointer moved down it). */
 .analysislist tr.on {
   background: var(--surface-2);
   border-left-color: var(--accent);
-  font-weight: 800;
 }
 
 .analysislist th,
