@@ -307,6 +307,12 @@ button.fxday:hover:not(:disabled) {
   background: transparent;
   color: inherit;
 }
+/* On the card's colour, a hover tints it with its own ink: the buttons' dark hover hid the arrow. */
+.fxweek .iconbtn:hover:not(:disabled),
+.fxweek .iconbtn:focus-visible {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  color: inherit;
+}
 .fxweek .iconbtn:disabled {
   opacity: 0.35;
 }
