@@ -115,7 +115,9 @@
 /* --- Training zones' page ------------------------------------------------------------------------ */
 .pz-main {
   display: grid;
-  gap: 16px;
+  /* Room between the sports, the headline, the zones and the ranges. */
+  gap: 24px;
+  padding: 20px;
 }
 
 .pz-main .chips {
@@ -142,13 +144,13 @@
 .pz-head h2 {
   font-size: 24px;
   font-weight: 800;
-  margin: 0 0 2px;
+  margin: 0 0 6px;
 }
 
 .pz-change {
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 6px;
 }
 
 .pz-rows {
@@ -156,13 +158,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 14px;
+  gap: 20px;
 }
 
 .pz-rows li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .pz-rows li > b {
@@ -174,7 +176,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -203,9 +205,13 @@
   font-weight: 700;
 }
 
+.pz-glance {
+  padding: 20px;
+}
+
 .pz-glance p {
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .pz-glance .ph h2 {
