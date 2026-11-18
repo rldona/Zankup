@@ -2,10 +2,7 @@ package com.zankup.android.shell
 
 import android.content.Intent
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -371,7 +368,7 @@ fun AppShell(
                         )
                     }
                 }
-                composable<AppIconRoute> { Placeholder(stringResource(R.string.nav_app_icon), "OS-1171", back) }
+                composable<AppIconRoute> { AppIconScreen(back) }
                 composable<CoachRoute> {
                     com.zankup.android.coach.CoachScreen(
                         back,
@@ -422,31 +419,6 @@ private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavD
                     unselectedIconColor = colors.muted,
                     unselectedTextColor = colors.muted
                 )
-            )
-        }
-    }
-}
-
-/** A tab's or a screen's body until its block builds it: what it is, and which ticket brings it. */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-internal fun Placeholder(
-    title: String,
-    ticket: String,
-    onBack: (() -> Unit)?,
-    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
-    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {}
-) {
-    Scaffold(
-        containerColor = ZankupTheme.colors.page,
-        topBar = { com.zankup.android.designsystem.components.ZankupTopBar(title, onBack = onBack, actions = actions) }
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            content()
-            com.zankup.android.designsystem.components.EmptyState(
-                title = stringResource(R.string.coming_soon),
-                body = stringResource(R.string.coming_soon_body, ticket),
-                icon = ZIcon.Progress
             )
         }
     }

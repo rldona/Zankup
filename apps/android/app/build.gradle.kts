@@ -107,6 +107,7 @@ dependencies {
     implementation(project(":feature:coach"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:tools"))
+    implementation(project(":feature:widget"))
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.hilt.work)

@@ -35,7 +35,8 @@ constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val session: Session,
-    private val store: Store
+    private val store: Store,
+    private val hooks: Set<@JvmSuppressWildcards SyncHook>
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val api = session.backgroundApi() ?: return Result.success()
@@ -53,6 +54,7 @@ constructor(
                 store.putStreams(item.id.toLong(), ActivityStreams.serializer(), it.value)
             }
         }
+        hooks.forEach { runCatching { it.afterSync(api) } }
         return Result.success()
     }
 

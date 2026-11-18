@@ -41,6 +41,8 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var appearance: com.zankup.android.data.Appearance
 
+    @Inject lateinit var widget: com.zankup.android.widget.WidgetRefresh
+
     /** The link that opened the app (or reached it while open), handed to the navigation once signed in. */
     private var link by mutableStateOf<Intent?>(null)
 
@@ -56,7 +58,15 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 session.current.collect { state ->
-                    if (state is SessionState.SignedIn) runCatching { healthConnect.readAndSend(state.api) }
+                    when (state) {
+                        is SessionState.SignedIn -> {
+                            runCatching { healthConnect.readAndSend(state.api) }
+                            // The widget too: what it shows is fresh whenever the app is opened.
+                            runCatching { widget.refresh(state.api) }
+                        }
+                        SessionState.SignedOut -> runCatching { widget.clear() }
+                        else -> Unit
+                    }
                 }
             }
         }
