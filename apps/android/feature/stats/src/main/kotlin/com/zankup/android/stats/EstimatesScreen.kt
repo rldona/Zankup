@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.EstimateOut
@@ -25,7 +25,6 @@ import com.zankup.android.designsystem.components.EmptyState
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupTopBar
-import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.formatDuration
 import com.zankup.android.ui.LocalFormats
@@ -74,20 +73,20 @@ private fun EstimateCard(e: EstimateOut, onOpenActivity: (Long) -> Unit) {
             Modifier.fillMaxWidth().padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(name, style = HeadingStyle, color = ZankupTheme.colors.fg, modifier = Modifier.weight(1f))
             Text(
                 estimateValue(e.kind, e.value, f),
-                style = MaterialTheme.typography.headlineSmall.merge(Numbers.tabular)
+                style = StatValueStyle.copy(fontSize = 22.sp),
+                color = ZankupTheme.colors.fg
             )
         }
         if (e.history.size > 1) {
             LinesChart(
                 lines = listOf(ChartLine(name, e.history.map { it.value.toFloat() }, ZankupTheme.colors.accent)),
-                xLabels = e.history.map { dayLabel(it.day, f) },
+                xLabels = emptyList(),
                 format = { estimateValue(e.kind, it.toDouble(), f) },
                 description = name,
-                height = 64.dp,
-                axis = false
+                height = 48.dp
             )
         }
         FlowRow(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.Center) {

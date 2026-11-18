@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -69,7 +70,9 @@ fun LineChart(
     markLabel: (Float) -> String = xLabel,
     /** Clip the axis to the 2nd–98th percentile, so a stop does not flatten a pace. */
     clip: Boolean = false,
-    height: Dp = 168.dp
+    height: Dp = 168.dp,
+    /** Strava's look: a solid area in [color] with no line, over the elevation in grey, the grid dashed. */
+    filled: Boolean = false
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
@@ -163,11 +166,13 @@ fun LineChart(
                     }
                 val line = linePath(cols, left) { y(it) }
                 val area = areaPath(cols, left, bottom) { y(it) }
-                val fill = Brush.verticalGradient(
-                    listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.04f)),
-                    0f,
-                    bottom
-                )
+                val fill =
+                    if (filled) {
+                        SolidColor(color.copy(alpha = 0.75f))
+                    } else {
+                        Brush.verticalGradient(listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.04f)), 0f, bottom)
+                    }
+                val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
                 val ticks = axis?.ticks.orEmpty()
                 val tickLabels = ticks.map { measurer.measure(series.format(it.toFloat()), labelStyle) }
                 val marks =
@@ -177,10 +182,14 @@ fun LineChart(
                         .toList()
 
                 onDrawBehind {
-                    backPath?.let { drawPath(it, colors.fg.copy(alpha = 0.08f)) }
+                    backPath?.let {
+                        drawPath(it, if (filled) colors.muted.copy(alpha = 0.3f) else colors.fg.copy(alpha = 0.08f))
+                    }
                     ticks.forEachIndexed { i, tick ->
                         val ty = y(tick.toFloat())
-                        drawLine(colors.line, Offset(left, ty), Offset(size.width, ty), 1f)
+                        // Filled, only the baseline is solid.
+                        val effect = if (filled && ty < bottom - 1f) dash else null
+                        drawLine(colors.line, Offset(left, ty), Offset(size.width, ty), 1f, pathEffect = effect)
                         val label = tickLabels[i]
                         // Inside the chart: the top label must not climb onto what sits above it.
                         val top = (ty - label.size.height / 2f).coerceIn(0f, bottom - label.size.height)
@@ -197,11 +206,13 @@ fun LineChart(
                         }
                     }
                     drawPath(area, fill)
-                    drawPath(
-                        line,
-                        color,
-                        style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                    )
+                    if (!filled) {
+                        drawPath(
+                            line,
+                            color,
+                            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        )
+                    }
 
                     // The section: a band, read here so picking it redraws only this canvas.
                     section.range?.let { range ->

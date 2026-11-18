@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,10 +25,10 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.SyncStatus
-import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -37,12 +36,12 @@ import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.tools.ui.Announced
 import com.zankup.android.tools.ui.Badge
 import com.zankup.android.tools.ui.Bar
+import com.zankup.android.tools.ui.Heading
 import com.zankup.android.tools.ui.ListSkeleton
 import com.zankup.android.tools.ui.Muted
 import com.zankup.android.tools.ui.Tone
 import com.zankup.android.tools.ui.ToolsScaffold
 import com.zankup.android.tools.ui.mediumDateTime
-import com.zankup.android.tools.ui.warning
 import com.zankup.android.ui.LocalFormats
 
 /**
@@ -72,12 +71,12 @@ fun SyncScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: SyncMod
                     StartFailure.NotConfigured -> stringResource(R.string.tools_sync_not_configured)
                     is StartFailure.Other -> f.detail ?: stringResource(R.string.tools_error)
                 }
-                Announced(text, color = warning)
+                Announced(text)
             }
         }
         if (runs.loading) item("loading") { ListSkeleton(1) }
         if (latest != null) item("latest") { ZankupCard { RunProgress(latest) } }
-        item("history") { SectionHeader(stringResource(R.string.tools_sync_history)) }
+        item("history") { Heading(stringResource(R.string.tools_sync_history), Modifier.padding(top = 8.dp)) }
         item("history-help") { Muted(stringResource(R.string.tools_sync_history_help)) }
         item("history-start") {
             OutlinedButton(onClick = { model.start(true) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
@@ -94,10 +93,10 @@ fun SyncScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: SyncMod
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SectionHeader(stringResource(R.string.tools_sync_recent), Modifier.weight(1f))
+                    Heading(stringResource(R.string.tools_sync_recent), Modifier.weight(1f))
                     Muted(list.size.toString())
                     ZankupIcon(
-                        if (showRuns) ZIcon.Collapse else ZIcon.Expand,
+                        if (showRuns) ZIcon.ArrowUp else ZIcon.ArrowDown,
                         contentDescription = null,
                         tint = ZankupTheme.colors.muted
                     )
@@ -106,10 +105,7 @@ fun SyncScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: SyncMod
             if (showRuns) {
                 item("runs") {
                     ZankupCard {
-                        list.forEachIndexed { i, run ->
-                            RunRow(run)
-                            if (i < list.lastIndex) HorizontalDivider(color = ZankupTheme.colors.line)
-                        }
+                        list.forEach { run -> RunRow(run) }
                     }
                 }
             }
@@ -139,7 +135,8 @@ private fun RunProgress(run: SyncStatus) {
                 SyncStatus.Status.SUCCESS -> successText(run.newCount)
                 SyncStatus.Status.ERROR -> stringResource(R.string.tools_sync_error, run.error.orEmpty())
             },
-            color = ZankupTheme.colors.fg
+            color = ZankupTheme.colors.fg,
+            fontSize = 15.sp
         )
         runWindows(run)?.let { (window, windows) ->
             Bar(window.toFloat() / windows, stringResource(R.string.tools_sync_title))
@@ -180,7 +177,7 @@ private fun statusName(status: SyncStatus.Status) = stringResource(
 private fun RunRow(run: SyncStatus) {
     val locale = LocalFormats.current.locale
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {

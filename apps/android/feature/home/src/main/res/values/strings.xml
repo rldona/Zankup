@@ -22,7 +22,7 @@
     <string name="home_steps">Steps</string>
     <string name="home_heart_rate">Heart rate</string>
     <string name="home_hrv">HRV</string>
-    <string name="home_resting">Resting %d bpm</string>
+    <string name="home_resting">%d resting</string>
     <string name="home_average">Average %s</string>
     <string name="home_ms">%d ms</string>
     <string name="home_avg_power">Average power %d W</string>

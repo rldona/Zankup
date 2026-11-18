@@ -20,7 +20,14 @@ import com.zankup.android.designsystem.theme.ZankupTheme
 
 /** One chip, one size everywhere: the pressed one in the foreground colour, as the React Native app. */
 @Composable
-fun ZankupChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ZankupChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** The feed's sport chips: the chosen one in the accent, the rest outlined on the card colour. */
+    accent: Boolean = false
+) {
     val colors = ZankupTheme.colors
     Surface(
         modifier =
@@ -28,8 +35,18 @@ fun ZankupChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: 
             .heightIn(min = 36.dp)
             .selectable(selected = selected, onClick = onClick, role = Role.Tab),
         shape = CircleShape,
-        color = if (selected) colors.fg else colors.surface2,
-        contentColor = if (selected) colors.bg else colors.fg
+        color = when {
+            accent && selected -> colors.accent
+            accent -> colors.surface
+            selected -> colors.fg
+            else -> colors.surface2
+        },
+        contentColor = when {
+            accent && selected -> colors.accentFg
+            selected -> colors.bg
+            else -> colors.fg
+        },
+        border = if (accent && !selected) androidx.compose.foundation.BorderStroke(1.dp, colors.line) else null
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelLarge)
@@ -44,14 +61,17 @@ fun <T> ChipPicker(
     selected: T,
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    accent: Boolean = false
 ) {
     Row(
         modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
     ) {
         options.forEach { option ->
-            ZankupChip(label = label(option), selected = option == selected, onClick = { onSelect(option) })
+            ZankupChip(label = label(option), selected = option == selected, onClick = {
+                onSelect(option)
+            }, accent = accent)
         }
     }
 }

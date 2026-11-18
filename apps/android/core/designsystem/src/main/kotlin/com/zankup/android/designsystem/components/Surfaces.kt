@@ -9,19 +9,25 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.theme.ZankupTheme
 
 /**
- * A card: the surface on the page, 14 dp round, with a hairline in the themes that draw lines (High
- * contrast). Tappable when [onClick] is given, with Android's ripple.
+ * A card: the surface on the page, 16 dp round and 14 dp inside as the React Native app's cards, with a
+ * hairline in the themes that draw lines (High contrast). Tappable when [onClick] is given, with Android's
+ * ripple.
  */
 @Composable
 fun ZankupCard(
@@ -32,13 +38,13 @@ fun ZankupCard(
     val colors = ZankupTheme.colors
     val border = if (colors.line == colors.fg) BorderStroke(2.dp, colors.line) else null
     val inner: @Composable () -> Unit = {
-        Column(Modifier.padding(ZankupTheme.spacing.m), content = content)
+        Column(Modifier.padding(14.dp), content = content)
     }
     if (onClick != null) {
         Surface(
             onClick = onClick,
             modifier = modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = RoundedCornerShape(16.dp),
             color = colors.surface,
             contentColor = colors.fg,
             border = border,
@@ -47,7 +53,7 @@ fun ZankupCard(
     } else {
         Surface(
             modifier = modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = RoundedCornerShape(16.dp),
             color = colors.surface,
             contentColor = colors.fg,
             border = border,
@@ -80,21 +86,42 @@ fun ListRow(
     subtitle: String? = null,
     icon: ZIcon? = null,
     value: String? = null,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    /** A hairline under it, as the React Native app's menu rows (all but a card's last). */
+    divider: Boolean = false
 ) {
     val colors = ZankupTheme.colors
     val content: @Composable () -> Unit = {
         Row(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .padding(horizontal = ZankupTheme.spacing.m, vertical = ZankupTheme.spacing.sm),
+                .heightIn(min = 48.dp)
+                .then(
+                    if (divider) {
+                        Modifier.drawBehind {
+                            val y = size.height - 0.5.dp.toPx()
+                            drawLine(
+                                colors.line,
+                                Offset(16.dp.toPx(), y),
+                                Offset(size.width - 16.dp.toPx(), y),
+                                0.5.dp.toPx()
+                            )
+                        }
+                    } else {
+                        Modifier
+                    }
+                ).padding(horizontal = ZankupTheme.spacing.m, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.m)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (icon != null) ZankupIcon(icon, contentDescription = null, tint = colors.muted)
+            // As the React Native app's rows: the icon in the text colour, the title bold.
+            if (icon != null) ZankupIcon(icon, contentDescription = null, tint = colors.fg)
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, color = colors.fg)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                    color = colors.fg
+                )
                 if (subtitle != null) {
                     Text(
                         subtitle,
@@ -106,7 +133,7 @@ fun ListRow(
                 }
             }
             if (value != null) Text(value, style = MaterialTheme.typography.bodyMedium, color = colors.muted)
-            if (onClick != null) ZankupIcon(ZIcon.Chevron, contentDescription = null, tint = colors.muted)
+            if (onClick != null) ZankupIcon(ZIcon.Chevron, contentDescription = null, tint = colors.muted, size = 20.dp)
         }
     }
     if (onClick != null) {

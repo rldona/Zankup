@@ -40,10 +40,10 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Run(R.drawable.ic_directions_run),
     Ride(R.drawable.ic_directions_bike),
     Walk(R.drawable.ic_directions_walk),
-    Strength(R.drawable.ic_fitness_center),
+    Strength(R.drawable.ic_exercise),
     Row(R.drawable.ic_rowing),
     Swim(R.drawable.ic_pool),
-    Other(R.drawable.ic_exercise),
+    Other(R.drawable.ic_sports),
     Calendar(R.drawable.ic_calendar_month),
     SignOut(R.drawable.ic_logout),
     Lock(R.drawable.ic_lock),
@@ -88,7 +88,12 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     LocationOff(R.drawable.ic_location_off),
     HealthSafety(R.drawable.ic_health_and_safety),
     Database(R.drawable.ic_database),
-    Palette(R.drawable.ic_palette)
+    Palette(R.drawable.ic_palette),
+    Trophy(R.drawable.ic_trophy),
+    Assistant(R.drawable.ic_smart_toy),
+    Pencil(R.drawable.ic_edit),
+    ArrowUp(R.drawable.ic_keyboard_arrow_up),
+    ArrowDown(R.drawable.ic_keyboard_arrow_down)
 }
 
 @Composable

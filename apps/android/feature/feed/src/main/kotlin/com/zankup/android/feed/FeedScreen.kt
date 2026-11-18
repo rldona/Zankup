@@ -171,6 +171,7 @@ private fun SportChips(selected: Sport?, onSelect: (Sport?) -> Unit) {
         selected = selected,
         label = { sport -> sport?.let { stringResource(sportName(it)) } ?: all },
         onSelect = onSelect,
+        accent = true,
         modifier = Modifier.padding(
             start = ZankupTheme.spacing.gutter,
             end = ZankupTheme.spacing.gutter,

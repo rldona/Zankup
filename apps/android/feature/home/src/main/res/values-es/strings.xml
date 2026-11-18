@@ -23,7 +23,7 @@
     <string name="home_steps">Pasos</string>
     <string name="home_heart_rate">Frec. cardiaca</string>
     <string name="home_hrv">VFC</string>
-    <string name="home_resting">%d ppm en reposo</string>
+    <string name="home_resting">%d en reposo</string>
     <string name="home_average">Media de %s</string>
     <string name="home_ms">%d ms</string>
     <string name="home_avg_power">Potencia media de %d W</string>

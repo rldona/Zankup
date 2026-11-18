@@ -231,7 +231,7 @@ fun SkillsScreen(onBack: () -> Unit, model: SkillsModel = hiltViewModel()) {
                                 )
                             }
                             ZankupIcon(
-                                if (unfolded) ZIcon.Collapse else ZIcon.Expand,
+                                if (unfolded) ZIcon.ArrowUp else ZIcon.ArrowDown,
                                 null,
                                 tint = colors.fg,
                                 size = 26.dp

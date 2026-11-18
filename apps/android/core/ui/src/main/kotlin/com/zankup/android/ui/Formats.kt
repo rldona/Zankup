@@ -10,7 +10,6 @@ import com.zankup.android.domain.formatHoursMinutes
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
@@ -39,9 +38,11 @@ class Formats(val units: Units, val locale: Locale) {
     fun activityDate(startUtc: String, timezone: String?): String {
         val zone = timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
         val at = runCatching { Instant.parse(startUtc).atZone(zone) }.getOrNull() ?: return startUtc
-        val day = DateTimeFormatter.ofPattern("EEE d MMM", locale).format(at)
-        val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(at)
-        return "${day.replaceFirstChar { it.titlecase(locale) }} · $time"
+        // As the React Native app: "mié, 18 nov · 18:20" in Spanish, "Wed 18 Nov · 18:20" in English.
+        val pattern = if (locale.language == "en") "EEE d MMM" else "EEE, d MMM"
+        val day = DateTimeFormatter.ofPattern(pattern, locale).format(at).replace(".", "")
+        val time = DateTimeFormatter.ofPattern("HH:mm", locale).format(at)
+        return "$day · $time"
     }
 
     companion object {

@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -96,7 +95,7 @@ fun AssistantsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.gutter, vertical = spacing.xs),
+                .padding(horizontal = spacing.gutter, vertical = spacing.m),
             verticalArrangement = Arrangement.spacedBy(spacing.sm)
         ) {
             Text(
@@ -147,10 +146,10 @@ fun AssistantsScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (copied) ZankupIcon(ZIcon.Check, contentDescription = null, size = 18.dp)
+                        ZankupIcon(if (copied) ZIcon.Check else ZIcon.Copy, contentDescription = null, size = 18.dp)
                         Text(
                             stringResource(if (copied) R.string.coach_copied else R.string.coach_assistants_copy),
-                            Modifier.padding(start = if (copied) 8.dp else 0.dp)
+                            Modifier.padding(start = 8.dp)
                         )
                     }
                     Button(onClick = { uri.openUri(CLAUDE_CONNECTORS) }, modifier = Modifier.fillMaxWidth()) {
@@ -170,8 +169,9 @@ fun AssistantsScreen(
                     )
                     Text(
                         stringResource(R.string.coach_assistants_others_help),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.muted
+                        color = colors.muted,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
                     )
                     OutlinedButton(onClick = onTokens, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.coach_assistants_tokens))

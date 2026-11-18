@@ -18,14 +18,9 @@ private const val METRES_PER_FOOT = 0.3048
 private const val MIN_PACE_SPEED = 0.3
 
 /**
- * Languages that only group thousands from five digits on, as CLDR says and the web writes them:
- * "1234 m" but "12.345 m" in Spanish. Java's formats ignore that rule, so it is applied here.
- */
-private val GROUP_FROM_FIVE_DIGITS = setOf("es")
-
-/**
  * A number written for [locale], with between [minDecimals] and [maxDecimals] decimals: 1234.5 is
- * "1,234.5" in English and "1234,5" in Spanish.
+ * "1,234.5" in English and "1.234,5" in Spanish: thousands grouped from four digits, as the React Native
+ * app writes them ("2.150 pasos").
  *
  * Halves round away from zero, and the number is first read as the decimal it prints as (2.675, not the
  * 2.67499… the double holds), so the app writes the same digits as the web.
@@ -37,9 +32,6 @@ fun formatNumber(value: Double, locale: Locale, minDecimals: Int = 0, maxDecimal
         minimumFractionDigits = minDecimals
         maximumFractionDigits = maxDecimals
         roundingMode = RoundingMode.HALF_UP
-        if (locale.language in GROUP_FROM_FIVE_DIGITS && rounded.abs() < BigDecimal(10_000)) {
-            isGroupingUsed = false
-        }
     }
     return format.format(rounded)
 }

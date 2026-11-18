@@ -79,7 +79,7 @@ class FormatTest {
         assertEquals("404 ft", imperialEn.elevation(123.0))
         assertEquals("1,234 m", metricEn.elevation(1234.0))
         // Spanish groups thousands only from five digits on.
-        assertEquals("1234 m", metricEs.elevation(1234.0))
+        assertEquals("1.234 m", metricEs.elevation(1234.0))
         assertEquals("12.345 m", metricEs.elevation(12345.0))
     }
 
@@ -87,7 +87,7 @@ class FormatTest {
     fun numbersByLocale() {
         assertEquals("7", formatNumber(7.0, english))
         assertEquals("1,234.5", formatNumber(1234.5, english, maxDecimals = 1))
-        assertEquals("1234,5", formatNumber(1234.5, spanish, maxDecimals = 1))
+        assertEquals("1.234,5", formatNumber(1234.5, spanish, maxDecimals = 1))
         assertEquals("12.345,6", formatNumber(12345.6, spanish, maxDecimals = 1))
         // Halves away from zero, on the decimal the number prints as.
         assertEquals("-3,3", formatNumber(-3.25, spanish, maxDecimals = 1))

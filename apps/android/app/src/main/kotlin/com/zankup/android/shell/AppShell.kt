@@ -417,7 +417,13 @@ private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavD
                 modifier = Modifier.testTag("tab_" + tab.name.lowercase()),
                 selected = selected,
                 onClick = { goTab(nav, tab.route) },
-                icon = { ZankupIcon(tab.icon, contentDescription = null, filled = selected) },
+                icon = {
+                    if (tab == Tab.YOU) {
+                        com.zankup.android.you.YouTabIcon(selected)
+                    } else {
+                        ZankupIcon(tab.icon, contentDescription = null, filled = selected)
+                    }
+                },
                 label = { Text(stringResource(tab.label)) },
                 colors =
                 NavigationBarItemDefaults.colors(

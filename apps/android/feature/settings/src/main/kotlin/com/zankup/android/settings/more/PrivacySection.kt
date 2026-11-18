@@ -110,7 +110,8 @@ fun PrivacySection(model: PrivacyModel = hiltViewModel()) {
                 onSelect = { r ->
                     radius = r
                     draft = draft?.copy(radiusM = r.toDouble())
-                }
+                },
+                accent = true
             )
             Button(enabled = draft != null && !busy, onClick = {
                 val zone = draft ?: return@Button

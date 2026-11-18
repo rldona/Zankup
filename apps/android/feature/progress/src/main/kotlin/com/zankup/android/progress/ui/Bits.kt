@@ -70,16 +70,26 @@ internal fun ProgressCard(
     )
 }
 
-/** A card's title row: its icon in the accent, the title, a note on the right and the chevron. */
+/** A small muted line under a figure: dates, notes (13 sp, as the React Native app's). */
+internal val SmallText = TextStyle(fontSize = 13.sp, lineHeight = 18.sp)
+
+/** A card's title row: its icon in the accent, the title (16 sp bold), a note on the right and the chevron. */
 @Composable
-internal fun CardHeader(title: String, icon: ZIcon? = null, note: String? = null, chevron: Boolean = true) {
+internal fun CardHeader(
+    title: String,
+    icon: ZIcon? = null,
+    note: String? = null,
+    chevron: Boolean = true,
+    iconSize: Int = 26
+) {
     val colors = ZankupTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (icon != null) ZankupIcon(icon, contentDescription = null, tint = colors.accent, size = 26.dp)
+    val gap = if (iconSize < 26) 6 else 10
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap.dp)) {
+        if (icon != null) ZankupIcon(icon, contentDescription = null, tint = colors.accent, size = iconSize.dp)
         Text(
             title,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = colors.fg,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

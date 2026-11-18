@@ -135,7 +135,7 @@ private fun GearCard(g: GearOut, onEdit: () -> Unit) {
         contentColor = colors.fg,
         border = border
     ) {
-        Column(Modifier.padding(ZankupTheme.spacing.m), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     g.name,
@@ -221,7 +221,7 @@ private fun GearSheet(gear: GearOut?, model: GearModel, onDone: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
             Text(stringResource(R.string.tools_gear_kind_label), style = MaterialTheme.typography.titleSmall)
-            ChipPicker(KINDS, form.kind, { kindName(it) }, { form = form.copy(kind = it) })
+            ChipPicker(KINDS, form.kind, { kindName(it) }, { form = form.copy(kind = it) }, accent = true)
             if (gear?.retired != true) {
                 SwitchRow(stringResource(R.string.tools_gear_habitual), form.habitual) {
                     form = form.copy(habitual = it)
@@ -266,15 +266,7 @@ private fun GearSheet(gear: GearOut?, model: GearModel, onDone: () -> Unit) {
                     }
                 }
             }
-            failure?.let {
-                Announced((it as? ApiResult.Http)?.detail ?: stringResource(R.string.tools_error), color = warning)
-            }
-            if (deleteFailed) Announced(stringResource(R.string.tools_error), color = warning)
-            Button(
-                onClick = { save() },
-                enabled = !saving && form.name.isNotBlank() && numbersOk,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(stringResource(R.string.tools_save)) }
+            // As the React Native app's sheet: Retire and Delete with the fields, then Save and Cancel.
             if (gear != null) {
                 OutlinedButton(
                     onClick = { save(retired = !gear.retired) },
@@ -284,10 +276,19 @@ private fun GearSheet(gear: GearOut?, model: GearModel, onDone: () -> Unit) {
                     Text(stringResource(if (gear.retired) R.string.tools_gear_unretire else R.string.tools_gear_retire))
                 }
                 OutlinedButton(onClick = { asking = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.tools_gear_delete), color = warning)
+                    Text(stringResource(R.string.tools_gear_delete))
                 }
             }
-            TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+            failure?.let {
+                Announced((it as? ApiResult.Http)?.detail ?: stringResource(R.string.tools_error))
+            }
+            if (deleteFailed) Announced(stringResource(R.string.tools_error))
+            Button(
+                onClick = { save() },
+                enabled = !saving && form.name.isNotBlank() && numbersOk,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(stringResource(R.string.tools_save)) }
+            OutlinedButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.tools_cancel))
             }
         }

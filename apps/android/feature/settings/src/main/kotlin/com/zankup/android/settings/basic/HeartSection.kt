@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -168,7 +170,7 @@ private fun ZonesCard(settings: Preferences, model: HeartModel) {
     val ftp = estimateOf(estimates?.data, "ftp")
     SettingsCard(stringResource(R.string.set_zones)) {
         SettingsNote(stringResource(R.string.set_recompute_note))
-        SettingsLabel(stringResource(R.string.set_zone_model))
+        val zoneModel = stringResource(R.string.set_zone_model)
         ChipPicker(
             Preferences.ZoneModel.entries,
             settings.zoneModel,
@@ -181,7 +183,10 @@ private fun ZonesCard(settings: Preferences, model: HeartModel) {
                     }
                 )
             },
-            { save("zone_model" to it.value) }
+            { save("zone_model" to it.value) },
+            // The row's name for TalkBack, as the React Native app's radio group.
+            modifier = Modifier.semantics { contentDescription = zoneModel },
+            accent = true
         )
         ThresholdField(stringResource(R.string.set_lthr), settings.lthr, lthr?.let { "$it bpm" }, lthr) {
             save("lthr" to it)

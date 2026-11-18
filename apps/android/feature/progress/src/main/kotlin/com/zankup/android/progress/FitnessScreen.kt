@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +51,7 @@ import com.zankup.android.progress.ui.FitnessChart
 import com.zankup.android.progress.ui.InfoButton
 import com.zankup.android.progress.ui.Label
 import com.zankup.android.progress.ui.Muted
+import com.zankup.android.progress.ui.SmallText
 import com.zankup.android.progress.ui.SportTile
 import com.zankup.android.progress.ui.activitiesCount
 import com.zankup.android.progress.ui.date
@@ -254,7 +254,7 @@ private fun DayActivities(model: FitnessModel, day: LocalDate, onOpen: (Long) ->
             ZankupIcon(ZIcon.Timeline, contentDescription = null, tint = colors.muted, size = 30.dp)
             Column {
                 Text(stringResource(R.string.progress_no_activities), color = colors.muted, fontSize = 15.sp)
-                Muted(whenText, style = MaterialTheme.typography.bodySmall)
+                Muted(whenText, style = SmallText)
             }
         }
         activities.size > 1 && !expanded -> Row(
@@ -265,9 +265,9 @@ private fun DayActivities(model: FitnessModel, day: LocalDate, onOpen: (Long) ->
             ZankupIcon(ZIcon.Timeline, contentDescription = null, tint = colors.fg, size = 36.dp)
             Column(Modifier.weight(1f)) {
                 Text(activitiesCount(activities.size), color = colors.fg, fontSize = 15.sp)
-                Muted(whenText, style = MaterialTheme.typography.bodySmall)
+                Muted(whenText, style = SmallText)
             }
-            ZankupIcon(ZIcon.Expand, contentDescription = null, tint = colors.muted)
+            ZankupIcon(ZIcon.ArrowDown, contentDescription = null, tint = colors.muted)
         }
         else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             activities.forEach { a ->
@@ -279,7 +279,7 @@ private fun DayActivities(model: FitnessModel, day: LocalDate, onOpen: (Long) ->
                     SportTile(sportOf(a.sport), 36)
                     Column(Modifier.weight(1f)) {
                         Text(a.name ?: a.sport, color = colors.fg, fontSize = 15.sp, maxLines = 1)
-                        Muted(whenText, style = MaterialTheme.typography.bodySmall)
+                        Muted(whenText, style = SmallText)
                     }
                 }
             }

@@ -107,7 +107,7 @@ class GoalMathsTest {
         assertEquals("6 h", hoursMinutes(6 * 3600.0))
         assertEquals("28.97 km", volumeValue("distance", 28_970.0, false, Locale.ENGLISH))
         assertEquals("0 km", volumeValue("distance", 0.0, false, Locale.ENGLISH))
-        assertEquals("1421 m", volumeValue("ascent", 1421.0, false, Locale.forLanguageTag("es")))
+        assertEquals("1.421 m", volumeValue("ascent", 1421.0, false, Locale.forLanguageTag("es")))
     }
 }
 

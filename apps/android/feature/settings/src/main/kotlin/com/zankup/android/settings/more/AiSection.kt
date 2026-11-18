@@ -10,7 +10,9 @@ import android.os.PersistableBundle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
@@ -27,7 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,8 +48,10 @@ import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
 import com.zankup.android.settings.R
+import com.zankup.android.settings.basic.noteStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
@@ -98,12 +108,14 @@ private fun CoachForm(data: InstanceOut, aiModel: SettingOut, budget: SettingOut
     Note(stringResource(R.string.setm_instance_modelHelp))
     val ids = data.models.map { it.id }
     if (ids.isNotEmpty()) {
-        Note(stringResource(R.string.setm_instance_model))
+        val modelLabel = stringResource(R.string.setm_instance_model)
         ChipPicker(
             options = ids,
             selected = chosen,
             label = { MoreLogic.shortModelName(it) },
-            onSelect = { changes = changes + ("ai_model" to JsonPrimitive(it)) }
+            onSelect = { changes = changes + ("ai_model" to JsonPrimitive(it)) },
+            modifier = Modifier.semantics { contentDescription = modelLabel },
+            accent = true
         )
     }
     data.models.firstOrNull { it.id == chosen }?.let {
@@ -194,8 +206,19 @@ private fun McpCard(model: AiModel, onAssistants: () -> Unit) {
             Text(stringResource(R.string.setm_assistants_connect))
         }
         Note(stringResource(R.string.setm_mcp_help))
-        Note(stringResource(R.string.setm_mcp_url))
-        SelectionContainer { Mono(model.mcpUrl(created?.url)) }
+        // "URL: …", the address in monospace, as one muted line.
+        SelectionContainer {
+            Text(
+                buildAnnotatedString {
+                    append(stringResource(R.string.setm_mcp_url) + ": ")
+                    withStyle(SpanStyle(color = ZankupTheme.colors.fg, fontFamily = FontFamily.Monospace)) {
+                        append(model.mcpUrl(created?.url))
+                    }
+                },
+                style = noteStyle,
+                color = ZankupTheme.colors.muted
+            )
+        }
         OutlinedTextField(
             value = name,
             onValueChange = { name = it.take(120) },
@@ -272,11 +295,13 @@ private fun CreatedToken(token: String) {
                 copy(context, token)
                 copied = true
             }) {
-                if (copied) ZankupIcon(ZIcon.Check, contentDescription = null)
+                ZankupIcon(if (copied) ZIcon.Check else ZIcon.Copy, contentDescription = null, size = 18.dp)
+                Spacer(Modifier.width(8.dp))
                 Text(stringResource(if (copied) R.string.setm_common_copied else R.string.setm_common_copy))
             }
             OutlinedButton(modifier = Modifier.weight(1f), onClick = { share(context, token) }) {
-                ZankupIcon(ZIcon.Share, contentDescription = null)
+                ZankupIcon(ZIcon.Share, contentDescription = null, size = 18.dp)
+                Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.setm_mobile_share))
             }
         }

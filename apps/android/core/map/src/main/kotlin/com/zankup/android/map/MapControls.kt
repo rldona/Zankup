@@ -1,6 +1,7 @@
 package com.zankup.android.map
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.zankup.android.charts.ChartCursor
 import com.zankup.android.designsystem.components.ChipPicker
@@ -66,6 +69,8 @@ fun BoxScope.MapControls(
     cursor: ChartCursor,
     metrics: List<MapMetric>,
     chosen: MapMetric,
+    /** How much of the map's top a see-through header covers: the options button sits under it. */
+    top: Dp = 0.dp,
     onChoose: (MapMetric) -> Unit
 ) {
     var playing by remember { mutableStateOf(false) }
@@ -99,7 +104,9 @@ fun BoxScope.MapControls(
     FilledTonalIconButton(
         onClick = { playing = !playing },
         colors = buttons,
-        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+        modifier = Modifier.align(
+            Alignment.BottomStart
+        ).padding(12.dp).border(1.dp, ZankupTheme.colors.line, CircleShape)
     ) {
         ZankupIcon(
             if (playing) ZIcon.Pause else ZIcon.Play,
@@ -110,7 +117,11 @@ fun BoxScope.MapControls(
     FilledTonalIconButton(
         onClick = { options = true },
         colors = buttons,
-        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = top)
+            .padding(12.dp)
+            .border(1.dp, ZankupTheme.colors.line, CircleShape)
     ) {
         ZankupIcon(ZIcon.Options, contentDescription = stringResource(R.string.map_options))
     }

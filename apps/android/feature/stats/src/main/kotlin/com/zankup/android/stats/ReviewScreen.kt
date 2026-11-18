@@ -88,7 +88,8 @@ fun ReviewScreen(
                             if (it == ReviewPeriod.MONTH) R.string.stats_review_month else R.string.stats_review_year
                         )
                     },
-                    model::switchTo
+                    model::switchTo,
+                    accent = true
                 )
                 Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { model.shift(-1) }, modifier = Modifier.weight(1f)) {
@@ -292,7 +293,7 @@ private fun StandOut(key: String, a: ReviewActivity, f: Formats, onOpen: () -> U
         else -> R.string.stats_review_hilliest
     }
     ZankupCard(onClick = onOpen) {
-        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(title), style = HeadingStyle, color = ZankupTheme.colors.fg)
         Row(Modifier.padding(vertical = 4.dp)) {
             Text(
                 a.name ?: stringResource(sportName(sportOf(a.sport))),

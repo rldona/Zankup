@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.Totals
 import com.zankup.android.charts.Curve
@@ -36,7 +37,6 @@ import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
-import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Sport
 import com.zankup.android.domain.formatDuration
@@ -99,17 +99,18 @@ internal fun SummarySection(model: StatsModel, range: Period) {
                 ) {
                     Text(
                         row.label,
-                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = 14.sp,
                         color = colors.muted,
                         modifier = Modifier.weight(1f)
                     )
-                    Text(row.value, style = MaterialTheme.typography.titleMedium.merge(Numbers.tabular))
+                    Text(row.value, style = StatValueStyle, color = colors.fg)
                     val percent = cmp.percent
                     if (labels != null && percent != null && percent != 0) {
                         val tone = if (percent > 0) colors.formPositive else colors.formNegative
                         Text(
                             stringResource(R.string.stats_change, if (percent > 0) "+" else "", percent),
-                            style = MaterialTheme.typography.labelMedium,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = lerp(tone, colors.fg, 0.4f),
                             modifier = Modifier
                                 .clip(CircleShape)
@@ -125,7 +126,11 @@ internal fun SummarySection(model: StatsModel, range: Period) {
             }
         }
         if (labels != null) {
-            Legend(listOf(labels.first to beforeColour, labels.second to colors.accent), Modifier.padding(top = 6.dp))
+            Legend(
+                listOf(labels.first to beforeColour, labels.second to colors.accent),
+                Modifier.padding(top = 6.dp),
+                bars = true
+            )
         }
     }
 }
@@ -176,9 +181,15 @@ internal fun FitnessSection(model: StatsModel) {
                     domain = 0f..top,
                     bars = SignedBars(days.map { it.tsb.toFloat() }, colors.formPositive, colors.formNegative)
                 )
+                // In the RN app's order: the form's two colours, then fitness and fatigue.
                 Legend(
-                    listOf(ctl to colors.accent, atl to colors.zones.last(), tsb to colors.formPositive),
-                    Modifier.padding(top = 8.dp)
+                    listOf(
+                        tsb to colors.formPositive,
+                        "$tsb < 0" to colors.formNegative,
+                        ctl to colors.accent,
+                        atl to colors.zones.last()
+                    ),
+                    Modifier.padding(top = 18.dp)
                 )
             }
             else -> Muted(stringResource(R.string.stats_empty))
@@ -205,7 +216,8 @@ internal fun VolumeSection(model: StatsModel) {
             {
                 stringResource(if (it == VolumeMetric.TIME) R.string.stats_hours else R.string.stats_distance_unit)
             },
-            { metric = it }
+            { metric = it },
+            accent = true
         )
     }) {
         if (state.loading) {
@@ -224,7 +236,8 @@ internal fun VolumeSection(model: StatsModel) {
             } else {
                 "${formatNumber((total / scale).roundToInt().toDouble(), f.locale)} ${f.unit.distanceUnit}"
             },
-            style = MaterialTheme.typography.titleLarge.merge(Numbers.tabular),
+            style = StatValueStyle,
+            color = ZankupTheme.colors.fg,
             modifier = Modifier.align(Alignment.End)
         )
         val pattern = when (unit) {
@@ -245,7 +258,7 @@ internal fun VolumeSection(model: StatsModel) {
             sports.map {
                 stringResource(sportName(sportOf(it))) to colours.getValue(it)
             },
-            Modifier.padding(top = 8.dp)
+            Modifier.padding(top = 18.dp)
         )
     }
 }
@@ -263,7 +276,8 @@ internal fun EfficiencySection(model: StatsModel) {
     StatCard(title, right = {
         Text(
             "${if (change > 0) "+" else ""}${formatNumber(change, f.locale, 1, 1)} %",
-            style = MaterialTheme.typography.titleMedium.merge(Numbers.tabular)
+            style = StatValueStyle,
+            color = ZankupTheme.colors.fg
         )
     }) {
         LinesChart(
@@ -294,7 +308,8 @@ internal fun CurvesSection(model: StatsModel) {
             CurveKind.entries,
             kind,
             { stringResource(if (it == CurveKind.POWER) R.string.stats_power else R.string.stats_pace) },
-            model::setCurve
+            model::setCurve,
+            accent = true
         )
     }) {
         val durations = curveDurations(best, mine)
@@ -320,6 +335,14 @@ internal fun CurvesSection(model: StatsModel) {
                     ),
                     format = { show(it.toDouble()) },
                     durationLabel = { durationLabel(it.roundToInt()) }
+                )
+                val periodColour = if (kind == CurveKind.POWER) colors.sport.ride else colors.sport.run
+                Legend(
+                    listOf(
+                        stringResource(R.string.stats_all_time) to colors.muted,
+                        stringResource(R.string.stats_this_period) to periodColour
+                    ),
+                    Modifier.padding(top = 18.dp)
                 )
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     durations.filter { it in listOf(60, 300, 1200, 3600) }.forEach { d ->

@@ -2,11 +2,13 @@ package com.zankup.android.progress.more
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
@@ -26,6 +29,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -46,10 +50,10 @@ import com.zankup.android.api.model.HealthSourceStatus
 import com.zankup.android.api.model.SourceStatus
 import com.zankup.android.data.Store
 import com.zankup.android.designsystem.components.ErrorState
-import com.zankup.android.designsystem.components.ListRow
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
+import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Units
@@ -303,7 +307,7 @@ fun SourcesScreen(
             stringResource(R.string.more_sources_tools) to
                 listOf(
                     SourceItem(
-                        ZIcon.Coach,
+                        ZIcon.Assistant,
                         stringResource(R.string.more_assistants),
                         stringResource(R.string.more_sources_ai_note),
                         false,
@@ -340,18 +344,36 @@ fun SourcesScreen(
                 ZankupCard {
                     Text(title, color = colors.fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     items.forEachIndexed { i, item ->
-                        // The tick of a connected source reads as "Connected" beside the row.
-                        ListRow(
-                            item.label,
-                            subtitle = item.note,
-                            icon = item.icon,
-                            value = if (item.connected) "✓ $connected" else null,
-                            onClick = item.open
-                        )
+                        SourceLine(item, connected)
                         if (i < items.lastIndex) HorizontalDivider(color = colors.line)
                     }
                 }
             }
+        }
+    }
+}
+
+/** A source's row (ui.tsx MenuRow): icon, name and note, and a tick in the accent when connected. */
+@Composable
+private fun SourceLine(item: SourceItem, connected: String) {
+    val colors = ZankupTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = item.open)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        ZankupIcon(item.icon, null, tint = colors.fg)
+        Column(Modifier.weight(1f)) {
+            Text(item.label, color = colors.fg, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(item.note, color = colors.muted, fontSize = 13.sp)
+        }
+        if (item.connected) {
+            ZankupIcon(ZIcon.Check, connected, tint = colors.accent, size = 24.dp)
+        } else {
+            ZankupIcon(ZIcon.Chevron, null, tint = colors.muted, size = 20.dp)
         }
     }
 }

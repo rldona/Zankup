@@ -2,7 +2,6 @@ package com.zankup.android.progress.more
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupSheet
+import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Sport
 import com.zankup.android.progress.R
@@ -77,26 +78,6 @@ internal fun InfoAction(text: String) {
             title = { Text(label) },
             confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.more_close)) } }
         )
-    }
-}
-
-/** A chip with an icon (the sport chip that opens its sheet), filled as a chosen chip. */
-@Composable
-internal fun IconChip(icon: ZIcon, label: String, selected: Boolean, onClick: () -> Unit) {
-    val colors = ZankupTheme.colors
-    Row(
-        Modifier
-            .height(36.dp)
-            .clip(CircleShape)
-            .background(if (selected) colors.fg else colors.surface2)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        val tint = if (selected) colors.bg else colors.fg
-        ZankupIcon(icon, null, tint = tint, size = 18.dp)
-        Text(label, style = MaterialTheme.typography.labelLarge, color = tint)
     }
 }
 
@@ -169,7 +150,14 @@ internal fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T)
 
 /** A row of a picking sheet: icon, title (and note), a tick on the chosen one, all in the accent. */
 @Composable
-internal fun PickRow(icon: ZIcon?, title: String, on: Boolean, note: String? = null, onClick: () -> Unit) {
+internal fun PickRow(
+    icon: ZIcon?,
+    title: String,
+    on: Boolean,
+    note: String? = null,
+    noteColor: Color = ZankupTheme.colors.fg,
+    onClick: () -> Unit
+) {
     val colors = ZankupTheme.colors
     val tint = if (on) colors.accent else colors.fg
     Row(
@@ -183,29 +171,36 @@ internal fun PickRow(icon: ZIcon?, title: String, on: Boolean, note: String? = n
         if (icon != null) ZankupIcon(icon, null, tint = tint, size = 26.dp)
         Column(Modifier.weight(1f)) {
             Text(title, color = tint, fontSize = 15.sp)
-            if (note != null) Text(note, color = if (on) colors.accent else colors.muted, fontSize = 13.sp)
+            if (note != null) Text(note, color = if (on) colors.accent else noteColor, fontSize = 13.sp)
         }
-        if (on) ZankupIcon(ZIcon.Check, null, tint = colors.accent, size = 24.dp)
+        if (on) ZankupIcon(ZIcon.Check, null, tint = colors.accent, size = 26.dp)
     }
 }
 
 @Composable
-internal fun SheetTitle(text: String) {
+internal fun SheetTitle(text: String, bottom: Int = 8) {
     Text(
         text,
         color = ZankupTheme.colors.fg,
         fontSize = 17.sp,
         fontWeight = FontWeight.ExtraBold,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = bottom.dp)
     )
 }
 
 /**
  * "Filter by sport" (src/progress/SportSheet.tsx): every sport, or one, with a search over their names.
- * [allNote] is the note under "All sports".
+ * [allNote] is the note under "All sports". A goal's sheet (objective-new.tsx) has no search and a
+ * muted note.
  */
 @Composable
-internal fun SportSheet(sport: Sport?, allNote: String, onPick: (Sport?) -> Unit, onDismiss: () -> Unit) {
+internal fun SportSheet(
+    sport: Sport?,
+    allNote: String,
+    onPick: (Sport?) -> Unit,
+    onDismiss: () -> Unit,
+    search: Boolean = true
+) {
     var query by remember { mutableStateOf("") }
     val names = Sport.entries.associateWith { stringResource(sportName(it)) }
     val colors = ZankupTheme.colors
@@ -216,44 +211,54 @@ internal fun SportSheet(sport: Sport?, allNote: String, onPick: (Sport?) -> Unit
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
         ) {
-            SheetTitle(stringResource(R.string.more_filter_sport))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(CircleShape)
-                    .background(colors.surface2)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                ZankupIcon(ZIcon.Search, null, tint = colors.muted, size = 22.dp)
-                Box(Modifier.weight(1f)) {
-                    if (query.isEmpty()) {
-                        Text(
-                            stringResource(R.string.more_search),
-                            color = colors.muted,
-                            fontSize = 15.sp
-                        )
-                    }
-                    BasicTextField(
-                        query,
-                        { query = it },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.fg, fontSize = 15.sp),
-                        cursorBrush = SolidColor(colors.accent),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            SheetTitle(stringResource(R.string.more_filter_sport), bottom = if (search) 12 else 8)
+            if (search) {
+                SearchField(query) { query = it }
             }
             val q = query.trim().lowercase()
             if (q.isEmpty()) {
-                PickRow(ZIcon.Progress, stringResource(R.string.more_all_sports), sport == null, allNote) {
+                val note = if (search) colors.fg else colors.muted
+                PickRow(ZIcon.Progress, stringResource(R.string.more_all_sports), sport == null, allNote, note) {
                     onPick(null)
                 }
             }
             Sport.entries.filter { names.getValue(it).lowercase().contains(q) }.forEach { s ->
                 PickRow(sportIcon(s), names.getValue(s), s == sport) { onPick(s) }
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchField(query: String, onChange: (String) -> Unit) {
+    val colors = ZankupTheme.colors
+    Row(
+        Modifier
+            .padding(bottom = 6.dp)
+            .fillMaxWidth()
+            .clip(CircleShape)
+            .background(colors.surface2)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        ZankupIcon(ZIcon.Search, null, tint = colors.muted, size = 22.dp)
+        Box(Modifier.weight(1f)) {
+            if (query.isEmpty()) {
+                Text(
+                    stringResource(R.string.more_search),
+                    color = colors.muted,
+                    fontSize = 15.sp
+                )
+            }
+            BasicTextField(
+                query,
+                onChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.fg, fontSize = 15.sp),
+                cursorBrush = SolidColor(colors.accent),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -282,7 +287,11 @@ internal fun LevelBar(level: Double, color: Color, height: Dp) {
 internal fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(label, color = ZankupTheme.colors.fg, fontSize = 13.sp)
-        Text(value, color = ZankupTheme.colors.fg, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+        Text(
+            value,
+            color = ZankupTheme.colors.fg,
+            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold).merge(Numbers.tabular)
+        )
     }
 }
 

@@ -82,7 +82,7 @@ internal fun SourceIcon(source: HealthSource, color: Color = ZankupTheme.colors.
     when (source) {
         HealthSource.GARMIN -> PathMark(GARMIN, 24f, color, size)
         HealthSource.GOOGLE_HEALTH -> PathMark(GOOGLE_G, 512f, color, size)
-        HealthSource.HEALTH_CONNECT -> ZankupIcon(ZIcon.HealthConnect, null, tint = color, size = size)
+        HealthSource.HEALTH_CONNECT -> ZankupIcon(ZIcon.HealthSafety, null, tint = color, size = size)
     }
 }
 

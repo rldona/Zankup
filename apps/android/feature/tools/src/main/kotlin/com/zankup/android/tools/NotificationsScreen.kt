@@ -1,5 +1,6 @@
 package com.zankup.android.tools
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +26,6 @@ import com.zankup.android.api.model.EventOut
 import com.zankup.android.designsystem.components.EmptyState
 import com.zankup.android.designsystem.components.ErrorState
 import com.zankup.android.designsystem.components.ZIcon
-import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
@@ -60,10 +62,20 @@ fun NotificationsScreen(
                 EmptyState(stringResource(R.string.tools_notifications_empty), icon = ZIcon.Notifications)
             }
             else -> item("events") {
-                ZankupCard {
-                    list.forEachIndexed { i, e ->
-                        EventRow(e, onOpenActivity)
-                        if (i < list.lastIndex) HorizontalDivider(color = ZankupTheme.colors.line)
+                val colors = ZankupTheme.colors
+                // A card without padding above and below, as the React Native app's: the rows bring it.
+                Surface(
+                    Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    color = colors.surface,
+                    contentColor = colors.fg,
+                    border = if (colors.line == colors.fg) BorderStroke(2.dp, colors.line) else null
+                ) {
+                    Column(Modifier.padding(horizontal = 14.dp)) {
+                        list.forEachIndexed { i, e ->
+                            EventRow(e, onOpenActivity)
+                            if (i < list.lastIndex) HorizontalDivider(color = colors.line)
+                        }
                     }
                 }
             }
@@ -77,7 +89,7 @@ private fun EventRow(e: EventOut, onOpenActivity: (Long) -> Unit) {
     val formats = LocalFormats.current
     val activity = eventActivity(e.payload)
     val icon = when (e.kind) {
-        "record" -> ZIcon.Medal
+        "record" -> ZIcon.Trophy
         "estimate_up" -> ZIcon.TrendingUp
         "ramp" -> ZIcon.Warning
         else -> ZIcon.Notifications

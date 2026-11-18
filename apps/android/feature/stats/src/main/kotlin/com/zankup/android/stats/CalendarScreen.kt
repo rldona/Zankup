@@ -87,7 +87,8 @@ fun CalendarScreen(onBack: () -> Unit, onOpenActivity: (Long) -> Unit, model: Ca
                 Text(
                     DateTimeFormatter.ofPattern("LLLL yyyy", f.locale).format(month)
                         .replaceFirstChar { it.titlecase(f.locale) },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = HeadingStyle,
+                    color = ZankupTheme.colors.fg,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )

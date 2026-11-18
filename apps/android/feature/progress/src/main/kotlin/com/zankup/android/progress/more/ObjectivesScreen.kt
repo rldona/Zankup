@@ -178,7 +178,7 @@ private fun GoalBlock(goal: ZankupApiTrainingGoalOut, open: Boolean, model: Obje
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-            ZankupIcon(if (open) ZIcon.Collapse else ZIcon.Expand, null, tint = colors.fg, size = 26.dp)
+            ZankupIcon(if (open) ZIcon.ArrowUp else ZIcon.ArrowDown, null, tint = colors.fg, size = 26.dp)
         }
         if (open) GoalFold(goal, model)
         Spacer(Modifier.fillMaxWidth().height(6.dp).background(colors.bg))
@@ -187,7 +187,7 @@ private fun GoalBlock(goal: ZankupApiTrainingGoalOut, open: Boolean, model: Obje
     if (menu) {
         ZankupSheet(onDismiss = { menu = false }) {
             Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding().padding(bottom = 8.dp)) {
-                MenuLine(ZIcon.Edit, stringResource(R.string.more_edit_goal), colors.fg) {
+                MenuLine(ZIcon.Pencil, stringResource(R.string.more_edit_goal), colors.fg) {
                     menu = false
                     onEdit(goal.id.toLong())
                 }

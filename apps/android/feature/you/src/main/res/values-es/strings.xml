@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="you_title">Tú</string>
     <string name="you_edit">Editar perfil</string>
     <string name="you_stats">Estadísticas</string>
     <string name="you_estimates">Estimaciones</string>
