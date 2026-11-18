@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,7 +67,8 @@ fun CurveChart(
     val whereStyle = TextStyle(color = Color(0xFF16181D), fontSize = 14.sp)
     val durations = curves.flatMap { c -> c.points.map { it.first } }.distinct().sorted()
     var picked by remember(durations) { mutableIntStateOf(-1) }
-    val axisWidth = 54.dp
+    // Where the plot starts: just past the widest axis value, so the values and the chart sit centred.
+    val plotLeft = remember { mutableFloatStateOf(0f) }
     val bottomBand = 28.dp
     val lo = ln(durations.firstOrNull()?.coerceAtLeast(1f) ?: 1f)
     val hi = ln(durations.lastOrNull()?.coerceAtLeast(2f) ?: 2f)
@@ -76,8 +78,8 @@ fun CurveChart(
             .fillMaxWidth()
             .height(height)
             .pointerInput(durations) {
-                val left = axisWidth.toPx()
                 fun at(px: Float): Int {
+                    val left = plotLeft.floatValue
                     val share = ((px - left) / (size.width - left)).coerceIn(0f, 1f)
                     val target = lo + share * (hi - lo)
                     return durations.indices.minByOrNull { kotlin.math.abs(ln(durations[it]) - target) } ?: -1
@@ -96,13 +98,17 @@ fun CurveChart(
                     }
                 }
             }.drawWithCache {
-                val left = axisWidth.toPx()
-                val right = size.width - 1f
-                val bottom = size.height - bottomBand.toPx()
-                val width = right - left
                 val all = curves.flatMap { c -> c.points.map { it.second } }
                 // The axis hugs the values, as Strava's: the long durations fill the chart too.
                 val axis = tightAxis((all.minOrNull() ?: 0f).toDouble(), (all.maxOrNull() ?: 1f).toDouble())
+                val widest =
+                    (axis.ticks.map { axisFormat(it.toFloat()) } + listOfNotNull(unitLabel))
+                        .maxOfOrNull { measurer.measure(it, labelStyle).size.width } ?: 0
+                val left = widest + 10.dp.toPx()
+                plotLeft.floatValue = left
+                val right = size.width - 1f
+                val bottom = size.height - bottomBand.toPx()
+                val width = right - left
                 fun x(d: Float) = left + (ln(d.coerceAtLeast(1f)) - lo) / (hi - lo).coerceAtLeast(1e-6f) * width
                 fun y(v: Float): Float {
                     val share = ((v - axis.min) / (axis.max - axis.min).coerceAtLeast(1e-9)).toFloat()

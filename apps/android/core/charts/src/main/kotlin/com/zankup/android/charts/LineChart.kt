@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -96,7 +97,9 @@ fun LineChart(
     }
 
     val current by rememberUpdatedState(selecting)
-    val axisWidth = 54.dp
+    // Where the plot starts: just past the widest axis value, so the values and the chart sit centred
+    // in the card. Worked out while drawing; the finger reads it.
+    val plotLeft = remember { mutableFloatStateOf(0f) }
     val bottomBand = 28.dp
     val step = markStep(profile.total, unit)
 
@@ -106,8 +109,8 @@ fun LineChart(
             .height(height)
             .semantics { contentDescription = "${series.label}: ${series.summary}" }
             .pointerInput(profile) {
-                val left = axisWidth.toPx()
                 fun indexAt(px: Float): Int {
+                    val left = plotLeft.floatValue
                     val share = ((px - left) / (size.width - left)).coerceIn(0f, 1f)
                     return profile.indexAt(share * profile.total)
                 }
@@ -140,13 +143,17 @@ fun LineChart(
                     }
                 }
             }.drawWithCache {
-                val left = axisWidth.toPx()
+                val values = if (morph.value >= 1f) shown else blend(previous, shown, morph.value)
+                val axis = axisFor(values, series.fromZero, clip)
+                val widest =
+                    (axis?.ticks.orEmpty().map { series.format(it.toFloat()) } + listOfNotNull(unitLabel))
+                        .maxOfOrNull { measurer.measure(it, labelStyle).size.width } ?: 0
+                val left = widest + 10.dp.toPx()
+                plotLeft.floatValue = left
                 val right = size.width - 1f
                 val top = 0f
                 val bottom = size.height - bottomBand.toPx()
                 val plot = Size(right - left, bottom - top)
-                val values = if (morph.value >= 1f) shown else blend(previous, shown, morph.value)
-                val axis = axisFor(values, series.fromZero, clip)
                 val count = plot.width.toInt().coerceAtLeast(1)
                 val cols = columns(profile, values, count)
                 val back = series.backdrop?.let { columns(profile, it, count) }
