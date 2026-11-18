@@ -99,6 +99,19 @@ class ZankupApiTest {
     }
 
     @Test
+    fun writesEnumsInQueriesAsTheApiNamesThem() = runTest {
+        server.enqueue(json("[]"))
+        call {
+            api(
+                MemoryTokenStore()
+            ).service<com.zankup.android.api.endpoints.StatsApi>().getCurves(
+                com.zankup.android.api.endpoints.StatsApi.KindGetCurves.POWER
+            )
+        }
+        assertEquals("power", server.takeRequest().url.queryParameter("kind"))
+    }
+
+    @Test
     fun readsNdjsonLineByLine() = runTest {
         val lines = "{\"a\":1}\n\n{\"b\":2}\n".toResponseBody().ndjsonLines().toList()
         assertEquals(listOf("{\"a\":1}", "{\"b\":2}"), lines)

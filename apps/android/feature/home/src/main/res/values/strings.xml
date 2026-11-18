@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_coach">Coach</string>
+    <string name="home_notifications">Notifications</string>
+    <string name="home_week">This week</string>
+    <plurals name="home_streak">
+        <item quantity="one">%d week in a row</item>
+        <item quantity="other">%d weeks in a row</item>
+    </plurals>
+    <string name="home_stat_activities">Activities</string>
+    <string name="home_stat_distance">Distance</string>
+    <string name="home_stat_time">Time</string>
+    <string name="home_stat_ascent">Elevation</string>
+    <string name="home_vs_usual">Training time</string>
+    <string name="home_change">%1$s%2$d %%</string>
+    <string name="home_usual_week">Usual %s</string>
+    <string name="home_today">Today</string>
+    <string name="home_yesterday">Yesterday</string>
+    <string name="home_activity_of">Activity %1$d of %2$d</string>
+    <string name="home_empty">No activities yet</string>
+    <string name="home_empty_body">Sync or import some to see them here.</string>
+    <string name="home_steps">Steps</string>
+    <string name="home_heart_rate">Heart rate</string>
+    <string name="home_hrv">HRV</string>
+    <string name="home_resting">Resting %d bpm</string>
+    <string name="home_average">Average %s</string>
+    <string name="home_ms">%d ms</string>
+    <string name="home_avg_power">Average power %d W</string>
+    <string name="home_avg_hr">Average HR %d bpm</string>
+    <string name="home_metrics">Metrics</string>
+    <string name="home_vo2">VO₂ max (VDOT)</string>
+    <string name="home_vo2_note">From your runs</string>
+    <string name="home_ftp">FTP</string>
+    <string name="home_watts">W</string>
+    <string name="home_per_kg">%s W/kg</string>
+    <string name="home_steps_today">Steps today</string>
+    <string name="home_load">Training load</string>
+    <string name="home_fitness_fatigue">Fitness %1$d · Fatigue %2$d</string>
+    <string name="home_form_fresh">Fresh</string>
+    <string name="home_form_neutral">Neutral</string>
+    <string name="home_form_optimal">Productive</string>
+    <string name="home_form_overreaching">High risk</string>
+    <string name="home_last7">Last 7 days</string>
+    <string name="home_sport_count">%1$s · %2$d</string>
+</resources>

@@ -8,3 +8,6 @@
 # The models are only named in those signatures, which R8 does not count as a use: kept, or the
 # signature would point at a removed class and read as Object again.
 -keep,allowobfuscation class com.zankup.android.api.model.** { *; }
+# Enum query parameters are written from each constant's @SerialName (EnumQueries).
+-keep,allowobfuscation @interface kotlinx.serialization.SerialName
+-keepclassmembers enum com.zankup.android.api.** { <fields>; }

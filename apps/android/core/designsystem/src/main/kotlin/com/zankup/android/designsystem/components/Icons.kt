@@ -49,7 +49,20 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Lock(R.drawable.ic_lock),
     Play(R.drawable.ic_play_arrow, R.drawable.ic_play_arrow_fill),
     Pause(R.drawable.ic_pause, R.drawable.ic_pause_fill),
-    Options(R.drawable.ic_tune)
+    Options(R.drawable.ic_tune),
+    Edit(R.drawable.ic_edit_square),
+    Share(R.drawable.ic_share),
+    AddPhoto(R.drawable.ic_add_photo_alternate),
+    Medal(R.drawable.ic_emoji_events, R.drawable.ic_emoji_events_fill),
+    Delete(R.drawable.ic_delete),
+    Goal(R.drawable.ic_flag),
+    Bolt(R.drawable.ic_bolt),
+    Route(R.drawable.ic_route),
+    Expand(R.drawable.ic_expand_more),
+    Collapse(R.drawable.ic_expand_less),
+    Steps(R.drawable.ic_footprint),
+    Hrv(R.drawable.ic_monitor_heart),
+    Gauge(R.drawable.ic_speed)
 }
 
 @Composable

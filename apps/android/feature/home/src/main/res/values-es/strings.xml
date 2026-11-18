@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_coach">Coach</string>
+    <string name="home_notifications">Notificaciones</string>
+    <string name="home_week">Esta semana</string>
+    <plurals name="home_streak">
+        <item quantity="one">%d semana seguida</item>
+        <item quantity="many">%d semanas seguidas</item>
+        <item quantity="other">%d semanas seguidas</item>
+    </plurals>
+    <string name="home_stat_activities">Actividades</string>
+    <string name="home_stat_distance">Distancia</string>
+    <string name="home_stat_time">Tiempo</string>
+    <string name="home_stat_ascent">Desnivel</string>
+    <string name="home_vs_usual">Tiempo de entreno</string>
+    <string name="home_change">%1$s%2$d %%</string>
+    <string name="home_usual_week">Normal · %s</string>
+    <string name="home_today">Hoy</string>
+    <string name="home_yesterday">Ayer</string>
+    <string name="home_activity_of">Actividad %1$d de %2$d</string>
+    <string name="home_empty">Aún no hay actividades</string>
+    <string name="home_empty_body">Sincroniza o importa para verlas aquí.</string>
+    <string name="home_steps">Pasos</string>
+    <string name="home_heart_rate">Frec. cardiaca</string>
+    <string name="home_hrv">VFC</string>
+    <string name="home_resting">%d ppm en reposo</string>
+    <string name="home_average">Media de %s</string>
+    <string name="home_ms">%d ms</string>
+    <string name="home_avg_power">Potencia media de %d W</string>
+    <string name="home_avg_hr">FC media de %d ppm</string>
+    <string name="home_metrics">Métricas</string>
+    <string name="home_vo2">VO₂ máx. (VDOT)</string>
+    <string name="home_vo2_note">Estimado con tus carreras</string>
+    <string name="home_ftp">FTP</string>
+    <string name="home_watts">W</string>
+    <string name="home_per_kg">%s W/kg</string>
+    <string name="home_steps_today">Pasos hoy</string>
+    <string name="home_load">Carga de entreno</string>
+    <string name="home_fitness_fatigue">Forma física %1$d · Fatiga %2$d</string>
+    <string name="home_form_fresh">Fresco</string>
+    <string name="home_form_neutral">Neutro</string>
+    <string name="home_form_optimal">Productivo</string>
+    <string name="home_form_overreaching">Riesgo alto</string>
+    <string name="home_last7">Últimos 7 días</string>
+    <string name="home_sport_count">%1$s · %2$d</string>
+</resources>

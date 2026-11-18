@@ -36,3 +36,16 @@ lock
 play_arrow fill
 pause fill
 tune
+edit_square
+share
+add_photo_alternate
+emoji_events fill
+delete
+flag
+bolt
+route
+expand_more
+expand_less
+footprint
+monitor_heart
+speed

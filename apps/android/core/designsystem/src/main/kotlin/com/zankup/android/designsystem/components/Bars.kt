@@ -12,6 +12,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.zankup.android.designsystem.R
 import com.zankup.android.designsystem.theme.ZankupTheme
 
@@ -26,7 +27,9 @@ fun ZankupTopBar(
 ) {
     val colors = ZankupTheme.colors
     TopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        title = {
+            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
         modifier = modifier,
         navigationIcon = {
             if (onBack != null) {

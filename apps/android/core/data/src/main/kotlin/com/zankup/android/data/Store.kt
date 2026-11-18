@@ -119,4 +119,8 @@ object CacheKeys {
     fun week(day: String) = "week/$day"
 
     fun activity(id: Long) = "activities/$id"
+
+    fun context(id: Long) = "activities/$id/context"
+
+    const val SETTINGS = "settings"
 }

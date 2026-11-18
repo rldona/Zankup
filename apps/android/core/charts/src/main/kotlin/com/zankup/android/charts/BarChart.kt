@@ -126,16 +126,30 @@ fun BarChart(
                 val bottom = size.height - bottomBand.toPx()
                 val width = size.width - left
                 val values = if (from.size == to.size) from.zip(to) { a, b -> a + (b - a) * grow.value } else to
-                val top = (to.maxOrNull() ?: 0f).coerceAtLeast(average ?: 0f)
-                val axis = niceAxis(0.0, top.toDouble().coerceAtLeast(1.0))
+                // Upright, the axis starts at zero; inverted (a pace), it hugs the values with some room, so
+                // the slowest bar still shows and the fastest is the tallest.
+                val shown = to.filter { it > 0f }
+                val axis =
+                    if (inverted && shown.isNotEmpty()) {
+                        val lo = shown.min().coerceAtMost(average ?: Float.MAX_VALUE)
+                        val hi = shown.max().coerceAtLeast(average ?: 0f)
+                        val pad = ((hi - lo) * 0.3f).coerceAtLeast(lo * 0.05f)
+                        niceAxis((lo - pad).toDouble().coerceAtLeast(0.0), (hi + pad).toDouble())
+                    } else {
+                        niceAxis(0.0, (to.maxOrNull() ?: 0f).coerceAtLeast(average ?: 0f).toDouble().coerceAtLeast(1.0))
+                    }
                 val span = (axis.max - axis.min).toFloat()
+                fun share(v: Float): Float {
+                    val s = (v - axis.min.toFloat()) / span
+                    return (if (inverted) 1f - s else s).coerceIn(0f, 1f)
+                }
                 val tickLabels = axis.ticks.map { it to measurer.measure(format(it.toFloat()), labelStyle) }
                 val barLabels = bars.map { measurer.measure(it.label, labelStyle) }
                 val gap = 3.dp.toPx()
                 val radius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
                 onDrawBehind {
                     tickLabels.forEach { (tick, label) ->
-                        val ty = bottom - (tick.toFloat() / span) * bottom
+                        val ty = bottom - share(tick.toFloat()) * bottom
                         drawLine(colors.line, Offset(left, ty), Offset(size.width, ty), 1f)
                         drawText(
                             label,
@@ -152,14 +166,7 @@ fun BarChart(
                     bars.forEachIndexed { i, bar ->
                         val w = bar.weight / total * width
                         val v = values.getOrElse(i) { 0f }.coerceAtLeast(0f)
-                        val share = if (inverted &&
-                            v > 0f
-                        ) {
-                            (axis.max.toFloat() - v + axis.min.toFloat()) / span
-                        } else {
-                            v / span
-                        }
-                        val h = share.coerceIn(0f, 1f) * bottom
+                        val h = if (v > 0f) share(v) * bottom else 0f
                         val tint = bar.color ?: color
                         val picked = selected == null || selected == i
                         drawRoundRect(
@@ -175,7 +182,7 @@ fun BarChart(
                         x += w
                     }
                     average?.let {
-                        val ay = bottom - it / span * bottom
+                        val ay = bottom - share(it) * bottom
                         drawLine(
                             colors.fg,
                             Offset(left, ay),
