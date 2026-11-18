@@ -6,11 +6,13 @@ structure** of the React Native app, written down in [docs/android-screen-map.md
 The decision and the architecture are in [docs/architecture.md](../../docs/architecture.md#android-app-phase-11-native-kotlin--compose);
 the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 
-| Module              | What                                                                                                |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| `app`               | The application: the activity, its screens and, in debug builds, the component catalogue            |
-| `core:designsystem` | Themes, typography, shapes, spacing, icons, the brand and the shared components, with their texts   |
-| `core:network`      | The API client generated from `packages/core/src/api/openapi.json`, the session, results and NDJSON |
+| Module              | What                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `app`               | The application: the activity, its screens and, in debug builds, the component catalogue              |
+| `core:designsystem` | Themes, typography, shapes, spacing, icons, the brand and the shared components, with their texts     |
+| `core:network`      | The API client generated from `packages/core/src/api/openapi.json`, the session, results and NDJSON   |
+| `core:session`      | The session: the instance, the refresh token sealed in the Keystore behind the fingerprint, the lock  |
+| `feature:signin`    | Signing in (password and code, Google, passkey), "Forgot it?" and the first account of a new instance |
 
 ## Running it
 

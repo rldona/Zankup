@@ -11,11 +11,14 @@ android {
     compileSdk = 37
     defaultConfig {
         minSdk = 26
+        consumerProguardFiles("consumer-rules.pro")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // android.util.Log in unit tests: a no-op instead of an exception.
+    testOptions.unitTests.isReturnDefaultValues = true
 }
 
 /**
@@ -25,9 +28,12 @@ android {
 val openApiSpec = rootDir.resolve("../../packages/core/src/api/openapi.json")
 
 /**
- * The document as the generator reads it. Pydantic writes `"const": true` for a boolean that is always
- * true (`Challenge.mfa_required`), which openapi-generator turns into a one-value enum that does not
- * compile; the const is dropped and the field stays a plain boolean.
+ * The document as the generator reads it, with two changes the generator needs:
+ * - Pydantic writes `"const": true` for a boolean that is always true (`Challenge.mfa_required`), which
+ *   openapi-generator turns into a one-value enum that does not compile: the const is dropped.
+ * - Sign-in answers `Me` to the web and `AppTokens` to the app (`client: "android"`), as an `anyOf` the
+ *   generator merges into one class with both sets of required fields: the app only ever gets
+ *   `AppTokens`, so that is what it reads.
  */
 abstract class PrepareApiSpec : DefaultTask() {
     @get:InputFile
@@ -41,10 +47,17 @@ abstract class PrepareApiSpec : DefaultTask() {
     fun prepare() {
         @Suppress("UNCHECKED_CAST")
         fun clean(node: Any?): Any? = when (node) {
-            is Map<*, *> ->
-                (node as Map<String, Any?>)
-                    .filterNot { (key, _) -> key == "const" && node["type"] == "boolean" }
-                    .mapValues { (_, value) -> clean(value) }
+            is Map<*, *> -> {
+                val refs = (node["anyOf"] as? List<*>)?.mapNotNull { (it as? Map<*, *>)?.get("\$ref") as? String }
+                val tokens = refs?.firstOrNull { it.endsWith("/AppTokens") }
+                if (tokens != null && refs.any { it.endsWith("/Me") }) {
+                    mapOf("\$ref" to tokens)
+                } else {
+                    (node as Map<String, Any?>)
+                        .filterNot { (key, _) -> key == "const" && node["type"] == "boolean" }
+                        .mapValues { (_, value) -> clean(value) }
+                }
+            }
             is List<*> -> node.map(::clean)
             else -> node
         }

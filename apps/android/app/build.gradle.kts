@@ -3,6 +3,9 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 /**
@@ -26,6 +29,9 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // Its own link scheme beside the React Native app's `zankup://` until the cutover.
+        manifestPlaceholders["linkScheme"] = "zankup-next"
+        buildConfigField("String", "LINK_SCHEME", "\"zankup-next\"")
     }
 
     signingConfigs {
@@ -42,6 +48,10 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            manifestPlaceholders["linkScheme"] = "zankup-next-dev"
+            buildConfigField("String", "LINK_SCHEME", "\"zankup-next-dev\"")
+            // The owner's key here too, so passkeys and Google sign-in trust Zankup Next Dev as well.
+            signingConfigs.findByName("owner")?.let { signingConfig = it }
         }
         release {
             isMinifyEnabled = true
@@ -71,6 +81,14 @@ android {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
+    implementation(project(":core:session"))
+    implementation(project(":feature:signin"))
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.fragment)
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
+    ksp(libs.hilt.compiler)
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

@@ -29,3 +29,7 @@ fitness_center
 rowing
 pool
 exercise
+wand_stars
+calendar_month
+logout
+lock

@@ -22,7 +22,12 @@ sealed interface ApiResult<out T> {
     data object SignedOut : Failure
 
     /** The API answered with an error; [detail] is its message when it sent one (FastAPI's `detail`). */
-    data class Http(val code: Int, val detail: String?) : Failure
+    data class Http(
+        val code: Int,
+        val detail: String?,
+        /** Seconds to wait, from `Retry-After`, when the API says too many attempts (429). */
+        val retryAfter: String? = null
+    ) : Failure
 
     /** The answer could not be read (a bug, or an API newer than the app). */
     data class Unexpected(val cause: Throwable) : Failure
@@ -39,13 +44,19 @@ suspend fun <T : Any> call(request: suspend () -> Response<T>): ApiResult<T> = t
             @Suppress("UNCHECKED_CAST")
             ApiResult.Ok(Unit as T)
         response.code() == 401 -> ApiResult.SignedOut
-        else -> ApiResult.Http(response.code(), detail(response.errorBody()?.string()))
+        else -> ApiResult.Http(
+            response.code(),
+            detail(response.errorBody()?.string()),
+            response.headers()["Retry-After"]
+        )
     }
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
     ApiResult.Offline(e)
 } catch (e: Exception) {
+    // A bug or an API newer than the app: worth a line in logcat, never a crash.
+    android.util.Log.w("Zankup", "Unexpected answer", e)
     ApiResult.Unexpected(e)
 }
 
