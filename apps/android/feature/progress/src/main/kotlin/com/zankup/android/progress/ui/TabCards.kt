@@ -264,8 +264,16 @@ private fun LogCard(model: ProgressModel, onOpen: () -> Unit) {
 @Composable
 private fun LogLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 14.sp, color = ZankupTheme.colors.fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, fontSize = 14.sp, color = ZankupTheme.colors.fg, maxLines = 1)
+        // The label gives way to the time, which is never cut and keeps a gap from it.
+        Text(
+            label,
+            Modifier.weight(1f, fill = false).padding(end = 8.dp),
+            fontSize = 14.sp,
+            color = ZankupTheme.colors.fg,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(value, fontSize = 14.sp, color = ZankupTheme.colors.fg, maxLines = 1, softWrap = false)
     }
 }
 

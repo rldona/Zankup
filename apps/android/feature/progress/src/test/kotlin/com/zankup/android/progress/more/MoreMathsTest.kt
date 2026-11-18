@@ -101,9 +101,10 @@ class GoalMathsTest {
 
     @Test
     fun volumeValues() {
-        assertEquals("4h 17min", hoursMinutes(4 * 3600 + 17 * 60.0))
-        assertEquals("45min", hoursMinutes(45 * 60.0))
-        assertEquals("0h 0min", hoursMinutes(0.0))
+        assertEquals("4 h 17 min", hoursMinutes(4 * 3600 + 17 * 60.0))
+        assertEquals("45 min", hoursMinutes(45 * 60.0))
+        assertEquals("0 min", hoursMinutes(0.0))
+        assertEquals("6 h", hoursMinutes(6 * 3600.0))
         assertEquals("28.97 km", volumeValue("distance", 28_970.0, false, Locale.ENGLISH))
         assertEquals("0 km", volumeValue("distance", 0.0, false, Locale.ENGLISH))
         assertEquals("1421 m", volumeValue("ascent", 1421.0, false, Locale.forLanguageTag("es")))
@@ -151,9 +152,9 @@ class ZoneMathsTest {
 
     @Test
     fun changeTexts() {
-        assertEquals("27s", changeText(27.0))
-        assertEquals("3min 46s", changeText(226.0))
-        assertEquals("1h 2min", changeText(3720.0))
+        assertEquals("27 s", changeText(27.0))
+        assertEquals("3 min 46 s", changeText(226.0))
+        assertEquals("1 h 2 min", changeText(3720.0))
     }
 
     @Test
