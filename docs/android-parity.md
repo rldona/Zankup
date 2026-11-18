@@ -25,6 +25,16 @@ The first native builds held the splash until the fingerprint was given, so Andr
 part of the start (0.4–7.6 s). The app now draws the splash's look itself and asks for the fingerprint
 over it.
 
+## Look and feel (18 Nov 2026)
+
+Every area was compared with the React Native app, screen by screen, on the S26 and in the code: the
+sport icons and names, numbers grouped from four digits, the activity card, chips, cards (14 dp inside,
+16 dp round), list rows, Home, You (the photo on its tab), the activity's screen (the header over the map,
+the route by pace or speed, the coach, fitness, matches, effort, goals, results, the analysis, splits,
+charts and zones), Progress, Stats, Health, Settings, the Coach and the tools. Kept native on purpose:
+Material's tab bar, sheets, dialogs, the date picker and switches. Still to do: the strength body map,
+the share image, and the pace chart's vertical scale.
+
 ## Screens
 
 | Area | Screens | Status | Differences that stay |
