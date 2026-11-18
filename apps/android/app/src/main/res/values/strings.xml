@@ -54,4 +54,6 @@
     <string name="sign_out">Sign out</string>
     <string name="locked">Zankup is locked. Use your fingerprint to open it.</string>
     <string name="unlock">Unlock</string>
+    <string name="push_channel">Notifications</string>
+    <string name="push_channel_description">New activities, records, Garmin problems and the weekly report.</string>
 </resources>

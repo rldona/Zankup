@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -30,6 +31,8 @@ import androidx.navigation.toRoute
 import com.zankup.android.BuildConfig
 import com.zankup.android.R
 import com.zankup.android.api.endpoints.AiApi
+import com.zankup.android.data.Reachability
+import com.zankup.android.designsystem.components.OfflineNotice
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -77,6 +80,7 @@ import com.zankup.android.navigation.ZonesRoute
 import com.zankup.android.network.ApiResult
 import com.zankup.android.network.ZankupApi
 import com.zankup.android.network.call
+import com.zankup.android.push.Push
 import com.zankup.android.session.Session
 import kotlin.reflect.KClass
 
@@ -91,23 +95,34 @@ private enum class Tab(val route: Any, val routeClass: KClass<*>, val icon: ZIco
 
 /** The signed-in app: the tab bar over the tabs, and every other screen stacked over them (OS-1112). */
 @Composable
-fun AppShell(api: ZankupApi, session: Session, link: Intent?, onLinkHandled: () -> Unit) {
+fun AppShell(api: ZankupApi, session: Session, reachability: Reachability, link: Intent?, onLinkHandled: () -> Unit) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTab = Tab.entries.any { tab -> destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true }
     val coach by produceState(false, api) {
-        value = (call { api.service<AiApi>().getAiStatus() } as? ApiResult.Ok)?.value?.available == true
+        val status = call { api.service<AiApi>().getAiStatus() }
+        reachability.note(status)
+        value = (status as? ApiResult.Ok)?.value?.available == true
     }
+    val unreachable by reachability.unreachable.collectAsStateWithLifecycle()
     LaunchedEffect(link) {
         if (link != null) {
-            nav.handleDeepLink(link)
+            // A notification carries the web path it is about; a link, the app's own address.
+            val path = link.getStringExtra(Push.EXTRA_URL)
+            if (path != null) nav.navigate(Links.routeForWebPath(path)) else nav.handleDeepLink(link)
             onLinkHandled()
         }
     }
+    AskForNotifications()
     Scaffold(
         containerColor = ZankupTheme.colors.page,
-        bottomBar = { if (onTab) TabBar(nav, destination) }
+        bottomBar = {
+            Column {
+                if (unreachable) OfflineNotice()
+                if (onTab) TabBar(nav, destination)
+            }
+        }
     ) { padding ->
         NavHost(
             nav,

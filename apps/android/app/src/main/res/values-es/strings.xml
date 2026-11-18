@@ -53,4 +53,6 @@
     <string name="sign_out">Cerrar sesión</string>
     <string name="locked">Zankup está bloqueado. Usa tu huella para abrirlo.</string>
     <string name="unlock">Desbloquear</string>
+    <string name="push_channel">Notificaciones</string>
+    <string name="push_channel_description">Actividades nuevas, récords, avisos de Garmin y el resumen semanal.</string>
 </resources>

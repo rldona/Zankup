@@ -6,13 +6,15 @@ structure** of the React Native app, written down in [docs/android-screen-map.md
 The decision and the architecture are in [docs/architecture.md](../../docs/architecture.md#android-app-phase-11-native-kotlin--compose);
 the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 
-| Module              | What                                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------------- |
-| `app`               | The application: the activity, its screens and, in debug builds, the component catalogue              |
-| `core:designsystem` | Themes, typography, shapes, spacing, icons, the brand and the shared components, with their texts     |
-| `core:network`      | The API client generated from `packages/core/src/api/openapi.json`, the session, results and NDJSON   |
-| `core:session`      | The session: the instance, the refresh token sealed in the Keystore behind the fingerprint, the lock  |
-| `feature:signin`    | Signing in (password and code, Google, passkey), "Forgot it?" and the first account of a new instance |
+| Module              | What                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `app`               | The application: the activity, its screens and, in debug builds, the component catalogue                     |
+| `core:designsystem` | Themes, typography, shapes, spacing, icons, the brand and the shared components, with their texts            |
+| `core:network`      | The API client generated from `packages/core/src/api/openapi.json`, the session, results and NDJSON          |
+| `core:domain`       | Plain Kotlin: formatting by units and locale, zones, splits, grade-adjusted pace, effort, axes, power levels |
+| `core:data`         | The phone's copy of the API in Room, the offline state and the background sync                               |
+| `core:session`      | The session: the instance, the refresh token sealed in the Keystore behind the fingerprint, the lock         |
+| `feature:signin`    | Signing in (password and code, Google, passkey), "Forgot it?" and the first account of a new instance        |
 
 ## Running it
 
@@ -27,6 +29,10 @@ make android-release   # "Zankup Next" (com.zankup.next), signed with the owner'
 With several devices connected (a phone and an emulator), choose one with `ANDROID_SERIAL=<serial>`
 (`adb devices` lists them). Both apps sit beside the React Native ones (`com.zankup.app` and
 `com.zankup.app.dev`) until the cutover (OS-1191), when the release becomes `com.zankup.app`.
+
+Notifications need the instance's Firebase project with an Android app `com.zankup.next` (and
+`com.zankup.next.debug`): put its `google-services.json` in `app/` (never committed). Without it the app
+builds and simply receives none; the API sends through FCM with `FCM_SERVICE_ACCOUNT`.
 
 Release builds are signed with `~/.config/zankup/android/signing.properties` (or the file `ZANKUP_SIGNING`
 points at), the same key as the React Native app; without it they keep the debug key.
