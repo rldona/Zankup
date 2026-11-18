@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="figure_distance">Distance</string>
+    <string name="figure_pace">Pace</string>
+    <string name="figure_speed">Speed</string>
+    <string name="figure_time">Time</string>
+    <string name="figure_hr">Heart rate</string>
+    <string name="goal_reached">Goal reached</string>
+    <string name="sport_run">Run</string>
+    <string name="sport_ride">Ride</string>
+    <string name="sport_strength">Strength</string>
+    <string name="sport_walk">Walk</string>
+    <string name="sport_row">Row</string>
+    <string name="sport_swim">Swim</string>
+    <string name="sport_other">Activity</string>
+    <string name="sport_all">All</string>
+</resources>

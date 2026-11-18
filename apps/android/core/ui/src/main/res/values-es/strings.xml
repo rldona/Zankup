@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="figure_distance">Distancia</string>
+    <string name="figure_pace">Ritmo</string>
+    <string name="figure_speed">Velocidad</string>
+    <string name="figure_time">Tiempo</string>
+    <string name="figure_hr">Frecuencia cardiaca</string>
+    <string name="goal_reached">Objetivo cumplido</string>
+    <string name="sport_run">Carrera</string>
+    <string name="sport_ride">Ciclismo</string>
+    <string name="sport_strength">Fuerza</string>
+    <string name="sport_walk">Caminata</string>
+    <string name="sport_row">Remo</string>
+    <string name="sport_swim">Natación</string>
+    <string name="sport_other">Actividad</string>
+    <string name="sport_all">Todo</string>
+</resources>

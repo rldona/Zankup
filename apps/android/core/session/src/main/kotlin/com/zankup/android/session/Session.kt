@@ -101,6 +101,8 @@ constructor(
 
     /** Opening the app: decides between signed out, locked and in, asking for the fingerprint if needed. */
     suspend fun unlock(prompter: Prompter): SessionState = mutex.withLock {
+        // Another call (the activity recreated while the prompt was up) already opened it: no second prompt.
+        state.value.takeIf { it is SessionState.SignedIn }?.let { return@withLock it }
         val instance = savedInstance()
         val sealed = prefs.sealed()
         if (instance == null || sealed == null) return@withLock set(SessionState.SignedOut)
