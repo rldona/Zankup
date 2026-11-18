@@ -132,10 +132,16 @@ fun LineChart(
                         }
                         mark = now
                     }
+                    val showing = cursor.index >= 0
                     // Only a sideways move is the chart's: a vertical one is left to the page's scroll.
                     val drag =
                         awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-                            ?: return@awaitEachGesture run { if (!current) cursor.index = start }
+                    if (drag == null) {
+                        // A tap (not a scroll): it shows the bubble there, or hides the one already shown.
+                        val tapped = currentEvent.changes.none { it.pressed }
+                        if (tapped && !current) cursor.index = if (showing) -1 else start
+                        return@awaitEachGesture
+                    }
                     follow(drag.position.x)
                     horizontalDrag(drag.id) { change ->
                         follow(change.position.x)

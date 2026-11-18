@@ -437,10 +437,12 @@ private fun ChartCard(
     ZankupCard(Modifier.padding(horizontal = 16.dp)) {
         // Room under the title for the bubble, which rises over it while the chart is touched.
         CardTitle(chart.series.label, Modifier.padding(bottom = 40.dp))
+        // Each chart its own bubble, not tied to the other charts nor to the map.
+        val own = remember(chart.kind) { ChartCursor() }
         LineChart(
             drawn.profile,
             chart.series,
-            cursor,
+            own,
             section,
             selecting = selecting,
             unit = if (drawn.profile.byTime) 60f else unit,

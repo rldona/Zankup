@@ -86,10 +86,22 @@ fun CurveChart(
                 }
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    val before = picked
                     picked = at(down.position.x)
                     val drag =
                         awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-                            ?: return@awaitEachGesture
+                    if (drag == null) {
+                        // A tap hides the bubble already shown; a scroll of the page leaves it as it was.
+                        val tapped = currentEvent.changes.none { it.pressed }
+                        picked = if (!tapped) {
+                            before
+                        } else if (before >= 0) {
+                            -1
+                        } else {
+                            picked
+                        }
+                        return@awaitEachGesture
+                    }
                     horizontalDrag(drag.id) { change ->
                         val now = at(change.position.x)
                         if (now != picked) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
