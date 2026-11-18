@@ -12,6 +12,8 @@ the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 | `core:designsystem` | Themes, typography, shapes, spacing, icons, the brand and the shared components, with their texts            |
 | `core:network`      | The API client generated from `packages/core/src/api/openapi.json`, the session, results and NDJSON          |
 | `core:domain`       | Plain Kotlin: formatting by units and locale, zones, splits, grade-adjusted pace, effort, axes, power levels |
+| `core:charts`       | The charts in Compose `Canvas`: series with a shared cursor and section, bars, zones, the power curve        |
+| `core:map`          | The activity's map with MapLibre: the route coloured by a metric, the cursor's dot, the section, the replay  |
 | `core:data`         | The phone's copy of the API in Room, the offline state and the background sync                               |
 | `core:session`      | The session: the instance, the refresh token sealed in the Keystore behind the fingerprint, the lock         |
 | `feature:signin`    | Signing in (password and code, Google, passkey), "Forgot it?" and the first account of a new instance        |

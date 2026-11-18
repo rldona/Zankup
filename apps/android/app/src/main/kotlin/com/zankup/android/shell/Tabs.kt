@@ -3,14 +3,24 @@ package com.zankup.android.shell
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.R
+import com.zankup.android.api.endpoints.ActivitiesApi
+import com.zankup.android.api.model.ActivityPage
+import com.zankup.android.data.CacheKeys
+import com.zankup.android.data.Store
 import com.zankup.android.designsystem.components.ListRow
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.navigation.ActivityRoute
 import com.zankup.android.navigation.BestsRoute
 import com.zankup.android.navigation.CalendarRoute
 import com.zankup.android.navigation.CoachRoute
@@ -32,7 +42,10 @@ import com.zankup.android.navigation.SyncRoute
 import com.zankup.android.navigation.TrainingLogRoute
 import com.zankup.android.navigation.WeightRoute
 import com.zankup.android.navigation.ZonesRoute
+import com.zankup.android.network.call
 import com.zankup.android.session.Session
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 // The five tabs as the navigation needs them: their headers as the React Native app has them, and links
@@ -58,9 +71,21 @@ internal fun HomeTab(coach: Boolean, go: (Any) -> Unit) {
     )
 }
 
+/** The feed's first page as it is kept, until the feed itself (OS-1131): opens each activity. */
+@HiltViewModel
+class LatestModel
+@Inject
+constructor(store: Store) : ViewModel() {
+    val latest = store.query(CacheKeys.FEED_FIRST, ActivityPage.serializer()) { api ->
+        call { api.service<ActivitiesApi>().listActivities() }
+    }
+}
+
 /** Activities: Sync and Calendar on the right; the search bar comes with the feed (OS-1131). */
 @Composable
-internal fun ActivitiesTab(go: (Any) -> Unit) {
+internal fun ActivitiesTab(go: (Any) -> Unit, model: LatestModel = hiltViewModel()) {
+    val page by model.latest.state.collectAsStateWithLifecycle(initialValue = null)
+    LaunchedEffect(Unit) { model.latest.refresh() }
     Placeholder(
         title = stringResource(R.string.nav_activities),
         ticket = "OS-1131",
@@ -73,7 +98,15 @@ internal fun ActivitiesTab(go: (Any) -> Unit) {
                 ZankupIcon(ZIcon.Calendar, contentDescription = stringResource(R.string.nav_calendar))
             }
         }
-    )
+    ) {
+        page?.data?.items?.take(10)?.forEach { item ->
+            ListRow(
+                title = item.name ?: item.sport,
+                subtitle = item.startUtc.take(10),
+                onClick = { go(ActivityRoute(item.id.toLong())) }
+            )
+        }
+    }
 }
 
 @Composable

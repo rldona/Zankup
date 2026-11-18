@@ -140,7 +140,7 @@ fun AppShell(api: ZankupApi, session: Session, reachability: Reachability, link:
 
             val scheme = BuildConfig.LINK_SCHEME
             composable<ActivityRoute>(deepLinks = listOf(navDeepLink<ActivityRoute>(basePath = "$scheme://activity"))) {
-                Placeholder(stringResource(R.string.nav_activity), "OS-1134", back)
+                ActivityPreview(it.toRoute<ActivityRoute>().id, back)
             }
             composable<AnalysisRoute> { Placeholder(stringResource(R.string.nav_analysis), "OS-1134", back) }
             composable<MatchesRoute> { Placeholder(stringResource(R.string.nav_matches), "OS-1134", back) }

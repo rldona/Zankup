@@ -55,4 +55,13 @@
     <string name="unlock">Desbloquear</string>
     <string name="push_channel">Notificaciones</string>
     <string name="push_channel_description">Actividades nuevas, récords, avisos de Garmin y el resumen semanal.</string>
+    <string name="preview_section">Sección</string>
+    <string name="latest_activities">Últimas actividades</string>
+    <string name="series_pace">Ritmo</string>
+    <string name="series_speed">Velocidad</string>
+    <string name="series_hr">Frecuencia cardiaca</string>
+    <string name="series_power">Potencia</string>
+    <string name="series_cadence">Cadencia</string>
+    <string name="series_elevation">Altitud</string>
+    <string name="series_route">Ruta</string>
 </resources>
