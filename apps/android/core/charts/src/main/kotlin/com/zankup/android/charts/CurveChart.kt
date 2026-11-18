@@ -66,7 +66,7 @@ fun CurveChart(
     val whereStyle = TextStyle(color = Color(0xFF16181D), fontSize = 14.sp)
     val durations = curves.flatMap { c -> c.points.map { it.first } }.distinct().sorted()
     var picked by remember(durations) { mutableIntStateOf(-1) }
-    val axisWidth = 44.dp
+    val axisWidth = 54.dp
     val bottomBand = 28.dp
     val lo = ln(durations.firstOrNull()?.coerceAtLeast(1f) ?: 1f)
     val hi = ln(durations.lastOrNull()?.coerceAtLeast(2f) ?: 2f)
@@ -130,10 +130,19 @@ fun CurveChart(
                     ticks.forEach { (tick, label) ->
                         val ty = y(tick.toFloat())
                         drawLine(grid, Offset(left, ty), Offset(right, ty), 1.5f)
-                        drawText(label, topLeft = Offset(left - label.size.width - 8f, ty - label.size.height / 2f))
+                        drawText(
+                            label,
+                            topLeft = Offset(
+                                left - label.size.width - 10.dp.toPx(),
+                                ty - label.size.height / 2f
+                            )
+                        )
                     }
                     unitText?.let {
-                        drawText(it, topLeft = Offset(left - it.size.width - 8f, bottom - it.size.height / 2f))
+                        drawText(
+                            it,
+                            topLeft = Offset(left - it.size.width - 10.dp.toPx(), bottom - it.size.height / 2f)
+                        )
                     }
                     markLabels.forEach { (d, label) ->
                         val mx = x(d)

@@ -96,7 +96,7 @@ fun LineChart(
     }
 
     val current by rememberUpdatedState(selecting)
-    val axisWidth = 44.dp
+    val axisWidth = 54.dp
     val bottomBand = 28.dp
     val step = markStep(profile.total, unit)
 
@@ -189,10 +189,19 @@ fun LineChart(
                         val ty = y(tick.toFloat())
                         drawLine(grid, Offset(left, ty), Offset(right, ty), 1.5f)
                         val label = tickLabels[i]
-                        drawText(label, topLeft = Offset(left - label.size.width - 8f, ty - label.size.height / 2f))
+                        drawText(
+                            label,
+                            topLeft = Offset(
+                                left - label.size.width - 10.dp.toPx(),
+                                ty - label.size.height / 2f
+                            )
+                        )
                     }
                     unitText?.let {
-                        drawText(it, topLeft = Offset(left - it.size.width - 8f, bottom - it.size.height / 2f))
+                        drawText(
+                            it,
+                            topLeft = Offset(left - it.size.width - 10.dp.toPx(), bottom - it.size.height / 2f)
+                        )
                     }
                     var free = left
                     marks.forEach { (at, label) ->
