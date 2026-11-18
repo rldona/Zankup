@@ -1,22 +1,13 @@
 name: Android (native)
 
 # The native app (phase 11, apps/android): ktlint, Android Lint, unit and screenshot tests and the release
-# build. It runs when the app changes, or what it is built from outside its folder: the API's OpenAPI
-# document (the generated client) and the brand assets. The APK is not kept: CI has no signing key.
+# build. It runs on every pull request and push to main so its check can be required on main: when nothing
+# the app is built from changed (apps/android, the API's OpenAPI document, the brand assets, this file) it
+# says so and passes in seconds. The APK is not kept: CI has no signing key.
 on:
   pull_request:
-    paths:
-      - 'apps/android/**'
-      - 'packages/core/src/api/openapi.json'
-      - 'docs/brand/assets/**'
-      - '.github/workflows/android-native.yml'
   push:
     branches: [main]
-    paths:
-      - 'apps/android/**'
-      - 'packages/core/src/api/openapi.json'
-      - 'docs/brand/assets/**'
-      - '.github/workflows/android-native.yml'
 
 permissions:
   contents: read
@@ -35,19 +26,39 @@ jobs:
         working-directory: apps/android
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Did the app change?
+        id: changes
+        working-directory: .
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        # A new branch pushed (no "before") or an unknown base: build, to be safe.
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "android=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE...$HEAD" -- apps/android packages/core/src/api/openapi.json docs/brand/assets .github/workflows/android-native.yml)
+          if [ -n "$changed" ]; then echo "android=true" >> "$GITHUB_OUTPUT"; else echo "android=false" >> "$GITHUB_OUTPUT"; fi
+          echo "Changed for the app:"; echo "${changed:-nothing}"
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        if: steps.changes.outputs.android == 'true'
         with:
           distribution: temurin
           java-version: '21'
           cache: gradle
       - name: Lint (ktlint and Android Lint)
+        if: steps.changes.outputs.android == 'true'
         run: ./gradlew ktlintCheck lintDebug --no-daemon
       - name: Unit and screenshot tests
-        run: ./gradlew testDebugUnitTest verifyRoborazziDebug --no-daemon
+        if: steps.changes.outputs.android == 'true'
+        run: ./gradlew testDebugUnitTest :core:domain:test verifyRoborazziDebug --no-daemon
       - name: Release build (R8)
+        if: steps.changes.outputs.android == 'true'
         run: ./gradlew assembleRelease --no-daemon
       - name: Keep the screenshot differences when they fail
-        if: failure()
+        if: failure() && steps.changes.outputs.android == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: roborazzi
