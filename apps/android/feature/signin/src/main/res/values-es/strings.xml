@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="signin_instance">Servidor</string>
+    <string name="signin_instance_title">Conecta con tu Zankup</string>
+    <string name="signin_instance_help">La dirección de tu Zankup: api.zankup.com, tu propio dominio o tu dirección de Railway.</string>
+    <string name="signin_instance_invalid">Ningún Zankup ha respondido en esa dirección.</string>
+    <string name="signin_instance_is">Conectado a %1$s</string>
+    <string name="signin_continue">Continuar</string>
+    <string name="signin_change_instance">Usar otro servidor</string>
+
+    <string name="signin_welcome">Hola de nuevo</string>
+    <string name="signin_email">Correo electrónico</string>
+    <string name="signin_password">Contraseña</string>
+    <string name="signin_show_password">Mostrar la contraseña</string>
+    <string name="signin_hide_password">Ocultar la contraseña</string>
+    <string name="signin_submit">Entrar</string>
+    <string name="signin_or">o</string>
+    <string name="signin_google">Continuar con Google</string>
+    <string name="signin_passkey">Entrar con una llave de acceso</string>
+    <string name="signin_forgot">¿La has olvidado?</string>
+
+    <string name="signin_code_title">Verificación en dos pasos</string>
+    <string name="signin_code_sub">Escribe el código de 6 cifras de tu app de autenticación.</string>
+    <string name="signin_code_boxes">Código de 6 cifras</string>
+    <string name="signin_verify">Verificar</string>
+    <string name="signin_back">Atrás</string>
+
+    <string name="signin_forgot_title">Restablece tu contraseña</string>
+    <string name="signin_forgot_sub">Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.</string>
+    <string name="signin_forgot_send">Enviar el enlace</string>
+    <string name="signin_forgot_sent">Si ese correo tiene cuenta, el enlace va de camino.</string>
+    <string name="signin_forgot_web">El enlace abre la web, donde eliges la contraseña nueva. Después vuelve aquí y entra.</string>
+
+    <string name="signin_error_invalid_email">Escribe un correo válido.</string>
+    <string name="signin_error_no_password">Escribe la contraseña.</string>
+    <string name="signin_error_incomplete">Escribe las 6 cifras.</string>
+    <string name="signin_error_wrong">El correo, la contraseña o el código no son correctos.</string>
+    <string name="signin_error_no_totp">Esta cuenta aún no tiene la verificación en dos pasos. Actívala con python -m zankup.admin enable-totp.</string>
+    <string name="signin_error_too_many">Demasiados intentos. Prueba de nuevo en %1$s s.</string>
+    <string name="signin_error_expired">Ha pasado demasiado tiempo. Escribe de nuevo la contraseña.</string>
+    <string name="signin_error_passkey">No se ha podido usar esa llave de acceso.</string>
+    <string name="signin_error_network">No se ha podido llegar al servidor. Revisa tu conexión.</string>
+    <string name="signin_google_failed">El acceso con Google no ha podido empezar en este móvil.</string>
+    <string name="signin_google_rejected">Esta cuenta de Google no está vinculada a este Zankup. Entra de otra forma y vincúlala en Tú → Ajustes → Cuenta.</string>
+
+    <string name="setup_title">Crea tu cuenta</string>
+    <string name="setup_sub">Esta instancia aún no tiene cuenta. Será solo tuya.</string>
+    <string name="setup_code">Código de configuración</string>
+    <string name="setup_code_help">Está en los registros del servidor (Railway → Deployments → Logs): «Sign-up is open… setup code: XXXX-XXXX-XXXX».</string>
+    <string name="setup_name">Tu nombre</string>
+    <string name="setup_password_help">Al menos 12 caracteres.</string>
+    <string name="setup_accept">Entiendo que mis datos se quedan en esta instancia, que solo gestiono yo, y que Zankup no tiene ningún servicio central.</string>
+    <string name="setup_totp_title">Verificación en dos pasos</string>
+    <string name="setup_totp_sub">Añade esta clave a tu app de autenticación (Google Authenticator, 1Password, Aegis…): ábrela desde aquí si está en este móvil, o escribe la clave. Después escribe el código de 6 cifras que muestre.</string>
+    <string name="setup_open_authenticator">Abrir la app de autenticación</string>
+    <string name="setup_no_authenticator">Ninguna app de este móvil abre la clave: escríbela en tu app de autenticación.</string>
+    <string name="setup_type_key">O escribe esta clave en la app:</string>
+    <string name="setup_turn_on">Activar</string>
+    <string name="setup_codes_title">Códigos de recuperación</string>
+    <string name="setup_codes_sub">Si pierdes el móvil, cada uno de estos códigos sustituye una vez al de 6 cifras. Guárdalos en un sitio seguro: no se volverán a mostrar.</string>
+    <string name="setup_copy">Copiar</string>
+    <string name="setup_share">Compartir los códigos</string>
+    <string name="setup_load_history">Cargar mi historial de Garmin</string>
+    <string name="setup_go">Ir a Zankup</string>
+    <string name="setup_error_code">Ese código de configuración no es correcto. Cópialo de nuevo de los registros del servidor.</string>
+    <string name="setup_error_name">Escribe tu nombre.</string>
+    <string name="setup_error_accept">Acepta cómo se tratan tus datos para continuar.</string>
+    <string name="setup_error_short">La contraseña debe tener al menos 12 caracteres.</string>
+    <string name="setup_error_expired">Ha pasado demasiado tiempo. Empieza de nuevo con el código de configuración.</string>
+
+    <string name="signin_not_kept">No se ha dado la huella, así que esta sesión no se guardará: la próxima vez Zankup te pedirá entrar.</string>
+</resources>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="signin_instance">Server</string>
+    <string name="signin_instance_title">Connect to your Zankup</string>
+    <string name="signin_instance_help">The address of your Zankup: api.zankup.com, your own domain or your Railway address.</string>
+    <string name="signin_instance_invalid">No Zankup answered at that address.</string>
+    <string name="signin_instance_is">Connected to %1$s</string>
+    <string name="signin_continue">Continue</string>
+    <string name="signin_change_instance">Use another server</string>
+
+    <string name="signin_welcome">Welcome back</string>
+    <string name="signin_email">E-mail</string>
+    <string name="signin_password">Password</string>
+    <string name="signin_show_password">Show password</string>
+    <string name="signin_hide_password">Hide password</string>
+    <string name="signin_submit">Sign in</string>
+    <string name="signin_or">or</string>
+    <string name="signin_google">Continue with Google</string>
+    <string name="signin_passkey">Sign in with a passkey</string>
+    <string name="signin_forgot">Forgot it?</string>
+
+    <string name="signin_code_title">Two-step verification</string>
+    <string name="signin_code_sub">Enter the 6-digit code from your authenticator app.</string>
+    <string name="signin_code_boxes">6-digit code</string>
+    <string name="signin_verify">Verify</string>
+    <string name="signin_back">Back</string>
+
+    <string name="signin_forgot_title">Reset your password</string>
+    <string name="signin_forgot_sub">Enter your e-mail and we will send you a link to choose a new password.</string>
+    <string name="signin_forgot_send">Send the link</string>
+    <string name="signin_forgot_sent">If that e-mail has an account, the link is on its way.</string>
+    <string name="signin_forgot_web">The link opens the web app, where you choose the new password. Then come back here and sign in.</string>
+
+    <string name="signin_error_invalid_email">Enter a valid e-mail.</string>
+    <string name="signin_error_no_password">Enter the password.</string>
+    <string name="signin_error_incomplete">Enter all 6 digits.</string>
+    <string name="signin_error_wrong">Incorrect e-mail, password or code.</string>
+    <string name="signin_error_no_totp">Two-step verification is not set up for this account yet. Set it up with python -m zankup.admin enable-totp.</string>
+    <string name="signin_error_too_many">Too many attempts. Try again in %1$s s.</string>
+    <string name="signin_error_expired">That took too long. Enter your password again.</string>
+    <string name="signin_error_passkey">That passkey could not be used.</string>
+    <string name="signin_error_network">The server could not be reached. Check your connection.</string>
+    <string name="signin_google_failed">Google sign-in could not start on this phone.</string>
+    <string name="signin_google_rejected">This Google account is not linked to this Zankup. Sign in another way and link it in You → Settings → Account.</string>
+
+    <string name="setup_title">Create your account</string>
+    <string name="setup_sub">This instance has no account yet. It will be yours alone.</string>
+    <string name="setup_code">Setup code</string>
+    <string name="setup_code_help">It is in the server logs (Railway → Deployments → Logs): "Sign-up is open… setup code: XXXX-XXXX-XXXX".</string>
+    <string name="setup_name">Your name</string>
+    <string name="setup_password_help">At least 12 characters.</string>
+    <string name="setup_accept">I understand that my data stays on this instance, which only I run, and that Zankup has no central service.</string>
+    <string name="setup_totp_title">Two-step verification</string>
+    <string name="setup_totp_sub">Add this key to your authenticator app (Google Authenticator, 1Password, Aegis…): open it from here if it is on this phone, or type the key. Then enter the 6-digit code it shows.</string>
+    <string name="setup_open_authenticator">Open the authenticator app</string>
+    <string name="setup_no_authenticator">No app on this phone opens the key: type it into your authenticator app instead.</string>
+    <string name="setup_type_key">Or type this key into the app:</string>
+    <string name="setup_turn_on">Turn on</string>
+    <string name="setup_codes_title">Recovery codes</string>
+    <string name="setup_codes_sub">If you lose your phone, each of these codes replaces the 6-digit code once. Keep them somewhere safe: they will not be shown again.</string>
+    <string name="setup_copy">Copy</string>
+    <string name="setup_share">Share the codes</string>
+    <string name="setup_load_history">Load my Garmin history</string>
+    <string name="setup_go">Go to Zankup</string>
+    <string name="setup_error_code">That setup code is not right. Copy it again from the server logs.</string>
+    <string name="setup_error_name">Enter your name.</string>
+    <string name="setup_error_accept">Accept how your data is handled to continue.</string>
+    <string name="setup_error_short">The password must have at least 12 characters.</string>
+    <string name="setup_error_expired">That took too long. Start again with the setup code.</string>
+
+    <string name="signin_not_kept">The fingerprint was not given, so this session will not be kept: next time Zankup asks you to sign in.</string>
+</resources>

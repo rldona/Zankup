@@ -41,13 +41,8 @@ class CatalogueScreenshotTest(private val choice: ThemeChoice, private val dark:
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0} dark={1}")
         fun themes() = ThemeChoice.entries.flatMap { choice ->
-            if (choice ==
-                ThemeChoice.SYSTEM
-            ) {
-                listOf(arrayOf<Any>(choice, false), arrayOf<Any>(choice, true))
-            } else {
-                listOf(arrayOf<Any>(choice, false))
-            }
+            val darkModes = if (choice == ThemeChoice.SYSTEM) listOf(false, true) else listOf(false)
+            darkModes.map { dark -> arrayOf<Any>(choice, dark) }
         }
     }
 }

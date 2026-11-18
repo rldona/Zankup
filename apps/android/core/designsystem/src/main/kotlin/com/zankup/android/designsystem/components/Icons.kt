@@ -28,7 +28,8 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Sync(R.drawable.ic_sync),
     Notifications(R.drawable.ic_notifications, R.drawable.ic_notifications_fill),
     Settings(R.drawable.ic_settings),
-    Coach(R.drawable.ic_chat),
+    Coach(R.drawable.ic_wand_stars),
+    Chat(R.drawable.ic_chat),
     Error(R.drawable.ic_error),
     Offline(R.drawable.ic_cloud_off),
     Refresh(R.drawable.ic_refresh),
@@ -42,7 +43,10 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Strength(R.drawable.ic_fitness_center),
     Row(R.drawable.ic_rowing),
     Swim(R.drawable.ic_pool),
-    Other(R.drawable.ic_exercise)
+    Other(R.drawable.ic_exercise),
+    Calendar(R.drawable.ic_calendar_month),
+    SignOut(R.drawable.ic_logout),
+    Lock(R.drawable.ic_lock)
 }
 
 @Composable
