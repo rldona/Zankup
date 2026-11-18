@@ -14,4 +14,22 @@
     <string name="sport_swim">Swim</string>
     <string name="sport_other">Other</string>
     <string name="sport_all">All</string>
+    <!-- The body map (strength), from the shared catalogues. -->
+    <string name="muscle_chest">Chest</string>
+    <string name="muscle_shoulders">Shoulders</string>
+    <string name="muscle_biceps">Biceps</string>
+    <string name="muscle_forearms">Forearms</string>
+    <string name="muscle_abs">Abs</string>
+    <string name="muscle_obliques">Obliques</string>
+    <string name="muscle_quads">Quadriceps</string>
+    <string name="muscle_traps">Trapezius</string>
+    <string name="muscle_lats">Back</string>
+    <string name="muscle_triceps">Triceps</string>
+    <string name="muscle_lower_back">Lower back</string>
+    <string name="muscle_glutes">Glutes</string>
+    <string name="muscle_hamstrings">Hamstrings</string>
+    <string name="muscle_calves">Calves</string>
+    <string name="strength_muscles">Muscles worked</string>
+    <string name="strength_front">Front</string>
+    <string name="strength_back">Back</string>
 </resources>

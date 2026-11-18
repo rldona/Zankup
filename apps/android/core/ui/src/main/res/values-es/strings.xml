@@ -14,4 +14,22 @@
     <string name="sport_swim">Natación</string>
     <string name="sport_other">Otro</string>
     <string name="sport_all">Todas</string>
+    <!-- The body map (strength), from the shared catalogues. -->
+    <string name="muscle_chest">Pecho</string>
+    <string name="muscle_shoulders">Hombros</string>
+    <string name="muscle_biceps">Bíceps</string>
+    <string name="muscle_forearms">Antebrazos</string>
+    <string name="muscle_abs">Abdominales</string>
+    <string name="muscle_obliques">Oblicuos</string>
+    <string name="muscle_quads">Cuádriceps</string>
+    <string name="muscle_traps">Trapecio</string>
+    <string name="muscle_lats">Espalda</string>
+    <string name="muscle_triceps">Tríceps</string>
+    <string name="muscle_lower_back">Lumbares</string>
+    <string name="muscle_glutes">Glúteos</string>
+    <string name="muscle_hamstrings">Isquiotibiales</string>
+    <string name="muscle_calves">Gemelos</string>
+    <string name="strength_muscles">Músculos trabajados</string>
+    <string name="strength_front">Delante</string>
+    <string name="strength_back">Detrás</string>
 </resources>

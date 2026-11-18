@@ -72,6 +72,9 @@ import com.zankup.android.map.MapMetric
 import com.zankup.android.map.RouteMap
 import com.zankup.android.ui.LocalFormats
 import com.zankup.android.ui.SportTile
+import com.zankup.android.ui.body.MuscleCover
+import com.zankup.android.ui.body.musclesFor
+import com.zankup.android.ui.body.musclesWorked
 import com.zankup.android.ui.family
 import com.zankup.android.ui.sportName
 import com.zankup.android.ui.sportOf
@@ -157,7 +160,14 @@ fun ActivityScreen(
 
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val header = top + HEADER
-    val hasMap = drawn != null && drawn.route.hasGps
+    val routeMap = drawn != null && drawn.route.hasGps
+    // A strength workout without a route has its body map for a cover, as a route has its map: the
+    // watch's exercises, else the kind of workout chosen for it.
+    val muscles = remember(a?.sets, a?.workoutType) {
+        a?.let { musclesFor(musclesWorked(it.sets), it.workoutType) }.orEmpty()
+    }
+    val muscleCover = a != null && !a.hasGps && !routeMap && muscles.isNotEmpty()
+    val hasMap = routeMap || muscleCover
     val list = rememberLazyListState()
     val density = LocalDensity.current
     // The header fills in over the last 48 dp before the map leaves it.
@@ -187,11 +197,14 @@ fun ActivityScreen(
                     contentPadding = PaddingValues(top = if (hasMap) 0.dp else header, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (hasMap) {
+                    if (muscleCover) {
+                        item("cover") { MuscleCover(muscles, top = header, height = MAP + header) }
+                    }
+                    if (routeMap) {
                         item("map") {
                             Box(Modifier.fillMaxWidth().height(MAP + header)) {
                                 RouteMap(
-                                    drawn.route,
+                                    drawn!!.route,
                                     cursor,
                                     section,
                                     Modifier.fillMaxWidth().height(MAP + header),

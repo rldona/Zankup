@@ -89,10 +89,20 @@ fun ActivityCard(activity: ActivitySummary, onOpen: () -> Unit, modifier: Modifi
                         activity.avgHr?.let { Figure(stringResource(R.string.figure_hr), "$it bpm") }
                     }
                 }
-                activity.route?.let {
+                val muscles = remember(activity.exercises, activity.workoutType) {
+                    com.zankup.android.ui.body.musclesFor(
+                        com.zankup.android.ui.body.musclesFromExercises(activity.exercises),
+                        activity.workoutType
+                    )
+                }
+                val route = activity.route
+                if (route != null) {
                     Box(Modifier.size(88.dp, 64.dp).clip(RoundedCornerShape(8.dp)).background(colors.surface2)) {
-                        RouteThumbnail(it, tint, Modifier.fillMaxSize())
+                        RouteThumbnail(route, tint, Modifier.fillMaxSize())
                     }
+                } else if (muscles.isNotEmpty()) {
+                    // A strength workout without a route shows its muscles, as the React Native app.
+                    com.zankup.android.ui.body.BodyThumb(muscles)
                 }
             }
             if (!activity.goalsReached.isNullOrEmpty()) {
