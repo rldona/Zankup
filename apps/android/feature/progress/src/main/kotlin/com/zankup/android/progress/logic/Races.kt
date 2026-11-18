@@ -42,13 +42,13 @@ fun racePace(seconds: Double, metres: Double, imperial: Boolean): String {
     return "${s / 60}:${pad(s % 60)}"
 }
 
-/** A change in time, short: 2s · 27s · 3min 46s · 1h 2min. */
+/** A change in time, short: 2 s · 27 s · 3 min 46 s · 1 h 2 min. */
 fun changeText(seconds: Double): String {
     val s = abs(seconds).roundToLong()
-    if (s < 60) return "${s}s"
+    if (s < 60) return "$s s"
     val m = s / 60
-    if (m < 60) return "${m}min ${s % 60}s"
-    return "${m / 60}h ${m % 60}min"
+    if (m < 60) return "$m min ${s % 60} s"
+    return "${m / 60} h ${m % 60} min"
 }
 
 /** The prediction on a day: the last change on or before it (the first one if it is older). */

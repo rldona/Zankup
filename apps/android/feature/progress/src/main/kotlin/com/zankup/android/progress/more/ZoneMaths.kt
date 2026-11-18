@@ -101,13 +101,13 @@ internal fun glance(seconds: List<Double>, previous: List<Double>): Glance? {
     return Glance(zone, (abs(most) * 100).roundToInt(), most > 0, band)
 }
 
-/** A change in time, short: 2s · 27s · 3min 46s · 1h 2min. */
+/** A change in time, short: 2 s · 27 s · 3 min 46 s · 1 h 2 min. */
 internal fun changeText(seconds: Double): String {
     val s = abs(seconds).roundToLong()
-    if (s < 60) return "${s}s"
+    if (s < 60) return "$s s"
     val m = s / 60
-    if (m < 60) return "${m}min ${s % 60}s"
-    return "${m / 60}h ${m % 60}min"
+    if (m < 60) return "$m min ${s % 60} s"
+    return "${m / 60} h ${m % 60} min"
 }
 
 /** Zone colours as Strava's: heart rate in reds, pace in blues, power in purples, light (Z1) to dark. */

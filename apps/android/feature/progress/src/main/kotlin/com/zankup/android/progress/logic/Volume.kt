@@ -99,11 +99,10 @@ fun percentChange(current: Double, previous: Double): Int? {
 /** JavaScript's Math.round: halves go up, also below zero. */
 internal fun Double.roundHalfUp(): Int = floor(this + 0.5).toInt()
 
-/** "4h 17min", "30min" or "0h 0min", as Strava writes totals and the time axis. */
+/** "4 h 17 min", "30 min" or "6 h": totals and the time axis. */
 fun hoursMinutes(seconds: Double): String {
-    val minutes = (seconds / 60).roundToLong()
-    val h = minutes / 60
-    return if (h > 0 || minutes == 0L) "${h}h ${minutes % 60}min" else "${minutes}min"
+    // As the rest of the app writes a long time (1 h 41 min, 30 min); a whole number of hours as "6 h".
+    return com.zankup.android.domain.formatHoursMinutes(seconds).removeSuffix(" 0 min")
 }
 
 private val TIME_STEPS = listOf(15, 30, 60, 90, 120, 180, 240, 300, 360, 480, 600, 720, 900, 1200, 1800, 2400)

@@ -100,11 +100,10 @@ internal fun fromInput(metric: String, a: String, b: String, imperial: Boolean):
     }
 }
 
-/** A long time as Progress writes it: 4h 17min, 45min (packages/core hoursMinutes). */
+/** A long time as Progress writes it: 4 h 17 min, 45 min, 6 h. */
 internal fun hoursMinutes(seconds: Double): String {
-    val minutes = (seconds / 60).roundToLong()
-    val h = minutes / 60
-    return if (h > 0 || minutes == 0L) "${h}h ${minutes % 60}min" else "${minutes}min"
+    // As the rest of the app writes a long time (1 h 41 min, 30 min); a whole number of hours as "6 h".
+    return com.zankup.android.domain.formatHoursMinutes(seconds).removeSuffix(" 0 min")
 }
 
 /** A total in the person's units: 4h 17min · 28,97 km · 1421 m · 22 (packages/core volumeFormat). */
