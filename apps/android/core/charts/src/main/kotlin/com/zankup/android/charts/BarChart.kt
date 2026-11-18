@@ -125,7 +125,6 @@ fun BarChart(
                 val left = axisWidth.toPx()
                 val bottom = size.height - bottomBand.toPx()
                 val width = size.width - left
-                val values = if (from.size == to.size) from.zip(to) { a, b -> a + (b - a) * grow.value } else to
                 // Upright, the axis starts at zero; inverted (a pace), it hugs the values with some room, so
                 // the slowest bar still shows and the fastest is the tallest.
                 val shown = to.filter { it > 0f }
@@ -165,8 +164,13 @@ fun BarChart(
                     var x = left
                     bars.forEachIndexed { i, bar ->
                         val w = bar.weight / total * width
-                        val v = values.getOrElse(i) { 0f }.coerceAtLeast(0f)
-                        val h = if (v > 0f) share(v) * bottom else 0f
+
+                        // The height slides, not the value: a bar grows from nothing to its own height,
+                        // also on an inverted (pace) axis, where a value of zero would sit at the top.
+                        fun heightOf(v: Float) = if (v > 0f) share(v) * bottom else 0f
+                        val target = heightOf(to.getOrElse(i) { 0f })
+                        val start = if (from.size == to.size) heightOf(from.getOrElse(i) { 0f }) else 0f
+                        val h = start + (target - start) * grow.value
                         val tint = bar.color ?: color
                         val picked = selected == null || selected == i
                         drawRoundRect(

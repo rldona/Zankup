@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -232,13 +233,16 @@ internal fun SplitsChart(
                 }
             onDrawBehind {
                 var x = left
-                speeds.forEachIndexed { i, v ->
-                    val w = (weights[i] * unitWidth).toFloat()
-                    val bh = barHeight(v)
-                    val r = minOf(8.dp.toPx(), w / 2)
-                    val colour = if (i in fast) PACE_SCALE[3] else PACE_SCALE[2]
-                    drawRoundRect(colour, Offset(x, h - bh), Size(w, bh + r), CornerRadius(r, r))
-                    x += w + gap
+                // Rounded on top only, as the React Native app's: each bar runs past the base, cut there.
+                clipRect(bottom = h) {
+                    speeds.forEachIndexed { i, v ->
+                        val w = (weights[i] * unitWidth).toFloat()
+                        val bh = barHeight(v)
+                        val r = minOf(8.dp.toPx(), w / 2)
+                        val colour = if (i in fast) PACE_SCALE[3] else PACE_SCALE[2]
+                        drawRoundRect(colour, Offset(x, h - bh), Size(w, bh + r), CornerRadius(r, r))
+                        x += w + gap
+                    }
                 }
                 area?.let { drawPath(it, Color(0xFF3A3A3A).copy(alpha = 0.6f)) }
                 if (mean > 0) {
