@@ -26,8 +26,8 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
- * The only activity. A FragmentActivity because Android's biometric prompt needs one. The splash stays
- * until the session is decided: the fingerprint is asked for over it, as the React Native app does.
+ * The only activity. A FragmentActivity because Android's biometric prompt needs one. The fingerprint is
+ * asked for over the splash's look, as the React Native app does.
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -47,7 +47,9 @@ class MainActivity : FragmentActivity() {
     private var link by mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen().setKeepOnScreenCondition { session.current.value == SessionState.Starting }
+        // Not kept on screen while the session is decided: Root draws the same look, so the first frame
+        // (what Android counts as the start) comes at once and the fingerprint is asked for over it.
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         link = intent.takeIf { it.opensSomething() }

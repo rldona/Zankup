@@ -2,6 +2,7 @@ package com.zankup.android.shell
 
 import android.content.Intent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,7 +50,14 @@ fun Root(
 ) {
     val state by session.current.collectAsStateWithLifecycle()
     when (val current = state) {
-        SessionState.Starting -> Box(Modifier.fillMaxSize().background(ZankupTheme.colors.page))
+        // The system splash's look while the session is decided (and the fingerprint asked for over it),
+        // drawn by the app so its first frame is not held back behind the prompt.
+        SessionState.Starting -> Box(
+            Modifier.fillMaxSize().background(colorResource(R.color.splash_background)),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(painterResource(R.drawable.ic_splash), contentDescription = null, modifier = Modifier.size(240.dp))
+        }
         SessionState.SignedOut -> SignInScreen()
         SessionState.Locked -> LockScreen(session)
         is SessionState.SignedIn -> AppShell(current.api, session, reachability, settings, link, onLinkHandled)

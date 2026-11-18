@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -136,7 +137,7 @@ fun ActivityScreen(
             a == null -> Loading(Modifier.padding(padding))
             else ->
                 LazyColumn(
-                    Modifier.padding(padding),
+                    Modifier.padding(padding).testTag("activity"),
                     verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
                 ) {
                     if (drawn != null && drawn.route.hasGps) {
