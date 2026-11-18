@@ -86,7 +86,8 @@ internal fun Tile(
                     Modifier.padding(end = 22.dp),
                     color = colors.muted,
                     fontSize = if (upper) 12.sp else 13.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    // The day's figures read as RN's small capitals, the night's as its bolder labels.
+                    fontWeight = if (upper) FontWeight.Normal else FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

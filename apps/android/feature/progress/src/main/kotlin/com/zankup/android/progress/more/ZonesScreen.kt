@@ -46,7 +46,6 @@ import com.zankup.android.data.Query
 import com.zankup.android.data.Store
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
-import com.zankup.android.designsystem.components.ZankupChip
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.Numbers
@@ -55,6 +54,7 @@ import com.zankup.android.domain.Sport
 import com.zankup.android.domain.Units
 import com.zankup.android.network.call
 import com.zankup.android.progress.R
+import com.zankup.android.progress.ui.ProgressChip
 import com.zankup.android.ui.LocalFormats
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -150,7 +150,7 @@ fun ZonesScreen(onBack: () -> Unit, onHeartSettings: () -> Unit, model: ZonesMod
     Scaffold(containerColor = colors.page, topBar = {
         ZankupTopBar(stringResource(R.string.more_zones), onBack = onBack) {
             IconButton(onClick = onHeartSettings) {
-                ZankupIcon(ZIcon.Edit, stringResource(R.string.more_edit_zones))
+                ZankupIcon(ZIcon.Pencil, stringResource(R.string.more_edit_zones))
             }
             InfoAction(stringResource(R.string.more_zones_info))
         }
@@ -163,9 +163,10 @@ fun ZonesScreen(onBack: () -> Unit, onHeartSettings: () -> Unit, model: ZonesMod
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconChip(sportIcon(sport), sportLabel(sport), selected = true) { picking = true }
+                // Progress's chips (src/progress/Chip.tsx): an accent outline when on.
+                ProgressChip(sportLabel(sport), on = true, onClick = { picking = true }, icon = sportIcon(sport))
                 kinds.forEach { k ->
-                    ZankupChip(stringResource(kindLabel(k)), selected = k == kind, onClick = { chosen = k })
+                    ProgressChip(stringResource(kindLabel(k)), on = k == kind, onClick = { chosen = k })
                 }
             }
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

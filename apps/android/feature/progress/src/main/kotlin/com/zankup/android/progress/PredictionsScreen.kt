@@ -54,6 +54,7 @@ import com.zankup.android.progress.ui.PredictionChart
 import com.zankup.android.progress.ui.ProgressChip
 import com.zankup.android.progress.ui.RaceBadge
 import com.zankup.android.progress.ui.RaceChange
+import com.zankup.android.progress.ui.SmallText
 import com.zankup.android.progress.ui.date
 import com.zankup.android.progress.ui.histories
 import com.zankup.android.progress.ui.imperial
@@ -193,12 +194,13 @@ private fun OverTime(
                 BigFigure(raceTime(now), size = 24)
                 Muted(
                     "${racePace(now, race.metres, imperial)} ${if (imperial) "/mi" else "/km"}",
-                    Modifier.align(Alignment.Bottom)
+                    Modifier.align(Alignment.Bottom),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp)
                 )
             }
             Muted(
                 "${longDate(from)} - ${stringResource(R.string.progress_today)}",
-                style = MaterialTheme.typography.bodySmall
+                style = SmallText
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -211,7 +213,7 @@ private fun OverTime(
                         else -> R.string.progress_pred_last_1m
                     }
                 ),
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }

@@ -141,7 +141,7 @@ fun ObjectiveEditScreen(
             ) {
                 ZankupIcon(sportIconOf(sport), null, tint = colors.fg)
                 Text(goalSport(sport), color = colors.fg, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                ZankupIcon(ZIcon.Expand, null, tint = colors.fg)
+                ZankupIcon(ZIcon.ArrowDown, null, tint = colors.fg)
             }
 
             Heading(stringResource(R.string.more_which_period), top = 8)
@@ -249,7 +249,8 @@ fun ObjectiveEditScreen(
                 sport = it?.key
                 picking = false
             },
-            onDismiss = { picking = false }
+            onDismiss = { picking = false },
+            search = false
         )
     }
 }

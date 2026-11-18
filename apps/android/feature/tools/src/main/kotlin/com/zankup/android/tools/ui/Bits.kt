@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +73,7 @@ internal fun ToolsScaffold(
             contentPadding = PaddingValues(
                 start = padding.calculateStartPadding(direction) + spacing.gutter,
                 end = padding.calculateEndPadding(direction) + spacing.gutter,
-                top = padding.calculateTopPadding() + spacing.xs,
+                top = padding.calculateTopPadding() + spacing.m,
                 bottom = padding.calculateBottomPadding() + spacing.l
             ),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -81,10 +82,27 @@ internal fun ToolsScaffold(
     }
 }
 
-/** A muted line. */
+/** A muted line, 13 sp as the React Native app's `Muted`. */
 @Composable
 internal fun Muted(text: String, modifier: Modifier = Modifier, color: Color = ZankupTheme.colors.muted) {
-    Text(text, modifier, style = MaterialTheme.typography.bodyMedium, color = color)
+    Text(
+        text,
+        modifier,
+        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp),
+        color = color
+    )
+}
+
+/** A heading on the page or in a card, as the React Native app's `Heading`: 17 sp, bold. */
+@Composable
+internal fun Heading(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier.semantics { heading() },
+        color = ZankupTheme.colors.fg,
+        fontSize = 17.sp,
+        fontWeight = FontWeight.Bold
+    )
 }
 
 /** A line TalkBack reads out as it appears: an error, a run's state. */

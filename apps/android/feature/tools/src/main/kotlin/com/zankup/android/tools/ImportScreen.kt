@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,13 +25,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.Comparison
 import com.zankup.android.api.model.ImportOut
 import com.zankup.android.api.model.MetricComparison
 import com.zankup.android.designsystem.components.ChipPicker
-import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -40,6 +39,7 @@ import com.zankup.android.domain.formatNumber
 import com.zankup.android.tools.ui.Announced
 import com.zankup.android.tools.ui.Badge
 import com.zankup.android.tools.ui.Bar
+import com.zankup.android.tools.ui.Heading
 import com.zankup.android.tools.ui.InfoButton
 import com.zankup.android.tools.ui.ListSkeleton
 import com.zankup.android.tools.ui.Muted
@@ -89,7 +89,7 @@ fun ImportScreen(
     ToolsScaffold(stringResource(R.string.tools_import_title), onBack, modifier) {
         item("help") {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(R.string.tools_import_help), color = ZankupTheme.colors.fg)
+                Text(stringResource(R.string.tools_import_help), color = ZankupTheme.colors.fg, fontSize = 15.sp)
                 Muted("• " + stringResource(R.string.tools_import_strava))
                 Muted("• " + stringResource(R.string.tools_import_garmin))
                 Muted("• " + stringResource(R.string.tools_import_files))
@@ -108,7 +108,8 @@ fun ImportScreen(
                     Text(
                         stringResource(R.string.tools_import_uploading, p.name) +
                             " · ${megabytes(p.sent, locale)} / ${megabytes(p.size, locale)}",
-                        color = ZankupTheme.colors.fg
+                        color = ZankupTheme.colors.fg,
+                        fontSize = 15.sp
                     )
                     Bar(
                         if (p.size > 0) p.sent.toFloat() / p.size else 0f,
@@ -119,9 +120,9 @@ fun ImportScreen(
             }
         }
         if (failed) {
-            item("failed") { Announced(stringResource(R.string.tools_import_upload_error), color = warning) }
+            item("failed") { Announced(stringResource(R.string.tools_import_upload_error)) }
         }
-        item("history") { SectionHeader(stringResource(R.string.tools_import_history)) }
+        item("history") { Heading(stringResource(R.string.tools_import_history), Modifier.padding(top = 8.dp)) }
         val list = imports.data
         when {
             imports.loading -> item("loading") { ListSkeleton(2) }
@@ -158,7 +159,7 @@ private fun kindName(kind: String) = when (kind) {
 private fun ImportRow(i: ImportOut, locale: java.util.Locale) {
     var open by rememberSaveable(i.id) { mutableStateOf(false) }
     ZankupCard {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     i.filename,
@@ -227,16 +228,12 @@ private fun CompareWithStrava(data: Comparison, onOpenActivity: (Long) -> Unit) 
     val current = data.metrics.firstOrNull { it.metric == metric }
     fun number(v: Double?, digits: Int) = v?.let { formatNumber(it, locale, 0, digits) } ?: "–"
     ZankupCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.tools_compare_title),
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Heading(stringResource(R.string.tools_compare_title), Modifier.weight(1f))
                 InfoButton(stringResource(R.string.tools_compare_help))
             }
-            ChipPicker(COMPARED, metric, { metricName(it) }, { metric = it })
+            ChipPicker(COMPARED, metric, { metricName(it) }, { metric = it }, accent = true)
             if (current != null && current.count >= MIN_COMPARED) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Stat(stringResource(R.string.tools_compare_count), current.count.toString(), Modifier.weight(1f))
@@ -268,10 +265,22 @@ private fun CompareWithStrava(data: Comparison, onOpenActivity: (Long) -> Unit) 
     }
 }
 
+/** A figure under its label, as the React Native app's `Stat` with the label first (11 sp, capitals). */
 @Composable
 private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Muted(label)
-        Text(value, style = Numbers.tabular, fontWeight = FontWeight.Bold, color = ZankupTheme.colors.fg)
+    Column(modifier.padding(vertical = 4.dp)) {
+        Text(
+            label.uppercase(LocalFormats.current.locale),
+            Modifier.padding(bottom = 2.dp),
+            fontSize = 11.sp,
+            color = ZankupTheme.colors.muted
+        )
+        Text(
+            value,
+            style = Numbers.tabular,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = ZankupTheme.colors.fg
+        )
     }
 }

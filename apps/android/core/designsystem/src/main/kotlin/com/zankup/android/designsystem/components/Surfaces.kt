@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,8 +25,9 @@ import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.theme.ZankupTheme
 
 /**
- * A card: the surface on the page, 14 dp round, with a hairline in the themes that draw lines (High
- * contrast). Tappable when [onClick] is given, with Android's ripple.
+ * A card: the surface on the page, 16 dp round and 14 dp inside as the React Native app's cards, with a
+ * hairline in the themes that draw lines (High contrast). Tappable when [onClick] is given, with Android's
+ * ripple.
  */
 @Composable
 fun ZankupCard(
@@ -36,13 +38,13 @@ fun ZankupCard(
     val colors = ZankupTheme.colors
     val border = if (colors.line == colors.fg) BorderStroke(2.dp, colors.line) else null
     val inner: @Composable () -> Unit = {
-        Column(Modifier.padding(ZankupTheme.spacing.m), content = content)
+        Column(Modifier.padding(14.dp), content = content)
     }
     if (onClick != null) {
         Surface(
             onClick = onClick,
             modifier = modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = RoundedCornerShape(16.dp),
             color = colors.surface,
             contentColor = colors.fg,
             border = border,
@@ -51,7 +53,7 @@ fun ZankupCard(
     } else {
         Surface(
             modifier = modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = RoundedCornerShape(16.dp),
             color = colors.surface,
             contentColor = colors.fg,
             border = border,

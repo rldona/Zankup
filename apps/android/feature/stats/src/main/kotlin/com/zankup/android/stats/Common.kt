@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,9 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -41,6 +44,7 @@ import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Units
 import com.zankup.android.domain.formatDuration
 import com.zankup.android.ui.Formats
+import com.zankup.android.ui.LocalFormats
 import com.zankup.android.ui.family
 import com.zankup.android.ui.sportOf
 import java.time.LocalDate
@@ -61,7 +65,12 @@ internal fun StatCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.xs)
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+            Text(
+                title,
+                style = HeadingStyle,
+                color = ZankupTheme.colors.fg,
+                modifier = Modifier.weight(1f, fill = false)
+            )
             if (info != null) InfoButton(info)
             Box(Modifier.weight(1f))
             right?.invoke(this)
@@ -70,13 +79,19 @@ internal fun StatCard(
     }
 }
 
-/** The (i) that opens a short explanation. */
+/** A card's title, as the RN app's Heading: 17 sp, bold. */
+internal val HeadingStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+
+/** A figure's value, as the RN app's statValue: 17 sp, bold, tabular. */
+internal val StatValueStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold).merge(Numbers.tabular)
+
+/** The (i) that opens a short explanation (in a dialog, Android's way). */
 @Composable
 internal fun InfoButton(text: String) {
     var open by remember { mutableStateOf(false) }
     val label = stringResource(R.string.stats_more_info)
     IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = label }) {
-        ZankupIcon(ZIcon.Info, contentDescription = null, tint = ZankupTheme.colors.muted)
+        ZankupIcon(ZIcon.Info, contentDescription = null, tint = ZankupTheme.colors.fg, size = 22.dp)
     }
     if (open) {
         AlertDialog(
@@ -129,20 +144,26 @@ internal fun Stepper(
     }
 }
 
-/** A figure: its value over its name. */
+/** A figure: its value over its name in small capitals, as the RN app's Stat. */
 @Composable
 internal fun Stat(label: String, value: String, modifier: Modifier = Modifier, below: String? = null) {
-    Column(modifier) {
-        Text(value, style = MaterialTheme.typography.titleLarge.merge(Numbers.tabular))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = ZankupTheme.colors.muted)
-        if (below != null) Text(below, style = MaterialTheme.typography.labelSmall, color = ZankupTheme.colors.muted)
+    val locale = LocalFormats.current.locale
+    Column(modifier.widthIn(min = 72.dp).padding(vertical = 4.dp)) {
+        Text(value, style = StatValueStyle, color = ZankupTheme.colors.fg)
+        Text(
+            label.uppercase(locale),
+            modifier = Modifier.padding(top = 2.dp),
+            fontSize = 11.sp,
+            color = ZankupTheme.colors.muted
+        )
+        if (below != null) Text(below, fontSize = 11.sp, color = ZankupTheme.colors.muted)
     }
 }
 
 /** A muted sentence (empty sections, notes, the engine's progress). */
 @Composable
 internal fun Muted(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = MaterialTheme.typography.bodyMedium, color = ZankupTheme.colors.muted, modifier = modifier)
+    Text(text, fontSize = 13.sp, color = ZankupTheme.colors.muted, modifier = modifier)
 }
 
 /** Text in the accent that opens something. */

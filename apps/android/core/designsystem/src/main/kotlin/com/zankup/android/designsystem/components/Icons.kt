@@ -88,7 +88,12 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     LocationOff(R.drawable.ic_location_off),
     HealthSafety(R.drawable.ic_health_and_safety),
     Database(R.drawable.ic_database),
-    Palette(R.drawable.ic_palette)
+    Palette(R.drawable.ic_palette),
+    Trophy(R.drawable.ic_trophy),
+    Assistant(R.drawable.ic_smart_toy),
+    Pencil(R.drawable.ic_edit),
+    ArrowUp(R.drawable.ic_keyboard_arrow_up),
+    ArrowDown(R.drawable.ic_keyboard_arrow_down)
 }
 
 @Composable

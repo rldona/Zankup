@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,8 +48,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.CalendarActivity
-import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.ZIcon
+import com.zankup.android.designsystem.components.ZankupChip
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupSheet
 import com.zankup.android.designsystem.components.ZankupTopBar
@@ -170,18 +171,24 @@ fun TrainingLogScreen(
                 CentredTitle(stringResource(R.string.progress_filters))
                 Text(
                     stringResource(R.string.progress_activity_type),
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = colors.fg
                 )
                 val all = stringResource(R.string.progress_all)
-                ChipPicker(
+                ChoiceChips(
                     options = listOf<Sport?>(null) + Sport.entries,
                     selected = sport?.let(::sportOf),
                     label = { s -> if (s == null) all else stringResource(sportName(s)) },
                     onSelect = { sport = it?.key }
                 )
-                Text(stringResource(R.string.progress_data), fontWeight = FontWeight.SemiBold, color = colors.fg)
-                ChipPicker(
+                Text(
+                    stringResource(R.string.progress_data),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.fg
+                )
+                ChoiceChips(
                     options = LogMetric.entries,
                     selected = metric,
                     label = { m ->
@@ -211,6 +218,16 @@ fun TrainingLogScreen(
                 dayList = null
                 onOpenActivity(id)
             }
+        }
+    }
+}
+
+/** The filters' choices, wrapping as the React Native app's: the chosen one filled with the accent. */
+@Composable
+private fun <T> ChoiceChips(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEach { o ->
+            ZankupChip(label(o), selected = o == selected, onClick = { onSelect(o) }, accent = true)
         }
     }
 }

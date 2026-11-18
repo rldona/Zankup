@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +73,7 @@ import com.zankup.android.progress.ui.OutlineButton
 import com.zankup.android.progress.ui.ProgressChip
 import com.zankup.android.progress.ui.RadioRow
 import com.zankup.android.progress.ui.SheetTitle
+import com.zankup.android.progress.ui.SmallText
 import com.zankup.android.progress.ui.SportSheet
 import com.zankup.android.progress.ui.VolumeChart
 import com.zankup.android.progress.ui.date
@@ -214,12 +214,12 @@ fun ProgressDetailScreen(
                 ) {
                     Column(Modifier.weight(1f, fill = false)) {
                         BigFigure(format.value(metric, total, 1))
-                        Muted("${longDate(span.current.from)} - $end", style = MaterialTheme.typography.bodySmall)
+                        Muted("${longDate(span.current.from)} - $end", style = SmallText)
                     }
                     if (pct != null) {
                         Column(horizontalAlignment = Alignment.End) {
                             ChangeText(pct)
-                            Muted(versus(range), style = MaterialTheme.typography.bodySmall)
+                            Muted(versus(range), style = SmallText)
                         }
                     }
                 }
@@ -242,7 +242,7 @@ fun ProgressDetailScreen(
                     ) {
                         Column {
                             Figure(format.value(metric, bucketValue(bucket, metric, chosen), 1))
-                            Muted(periodOf(bucket), style = MaterialTheme.typography.bodySmall)
+                            Muted(periodOf(bucket), style = SmallText)
                         }
                         ZankupIcon(ZIcon.Chevron, stringResource(R.string.progress_week_detail), tint = colors.muted)
                     }
@@ -303,7 +303,7 @@ fun ProgressDetailScreen(
                         )
                     }
                 } else {
-                    ZankupIcon(ZIcon.Expand, contentDescription = null, tint = colors.fg, size = 22.dp)
+                    ZankupIcon(ZIcon.ArrowDown, contentDescription = null, tint = colors.fg, size = 22.dp)
                 }
             }
 
@@ -421,7 +421,7 @@ private fun SpanLine(color: androidx.compose.ui.graphics.Color, range: DayRange)
         Dot(color)
         Muted(
             "${date(range.from, "dd/MM/yy")} - ${date(range.to.minusDays(1), "dd/MM/yy")}",
-            style = MaterialTheme.typography.bodySmall
+            style = SmallText
         )
     }
 }

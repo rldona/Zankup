@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -30,15 +31,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -194,8 +198,8 @@ constructor(private val store: Store, private val source: ApiSource) : ViewModel
 // ============================================================================================
 
 /**
- * The scrolling body of a section, under [SettingsSectionScreen]'s top bar: 16 dp around and between
- * cards. Every section (and every slot) draws its content with it.
+ * The scrolling body of a section, under [SettingsSectionScreen]'s top bar: 16 dp around, 12 dp between
+ * cards, as the React Native app's screens. Every section (and every slot) draws its content with it.
  */
 @Composable
 fun SettingsBody(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -204,25 +208,34 @@ fun SettingsBody(modifier: Modifier = Modifier, content: @Composable ColumnScope
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(ZankupTheme.spacing.m),
-        verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.m),
+        verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm),
         content = content
     )
 }
 
-/** A card with an optional title, its content 10 dp apart. */
+/** A card's heading, as the React Native app's `Heading`: 17 sp, bold. */
+val headingStyle: TextStyle
+    @Composable get() = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+
+/** A muted note, as the React Native app's `Muted`: 13 sp. */
+val noteStyle: TextStyle
+    @Composable get() = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp)
+
+/** A card with an optional title, its content 8 dp apart (the React Native app's `Card`). */
 @Composable
 fun SettingsCard(title: String?, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     ZankupCard(modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (title != null) {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = ZankupTheme.colors.fg)
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (title != null) Text(title, style = headingStyle, color = ZankupTheme.colors.fg)
             content()
         }
     }
 }
 
-/** A card of rows (`ListRow`s) edge to edge, with a hairline between them. */
+/**
+ * A card of rows (`ListRow`s) edge to edge, a hairline between them inset from the sides, as the React
+ * Native app's menu rows.
+ */
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, rows: List<@Composable () -> Unit>) {
     val colors = ZankupTheme.colors
@@ -235,7 +248,9 @@ fun SettingsGroup(modifier: Modifier = Modifier, rows: List<@Composable () -> Un
     ) {
         Column {
             rows.forEachIndexed { i, row ->
-                if (i > 0) HorizontalDivider(color = colors.line)
+                if (i > 0) {
+                    HorizontalDivider(Modifier.padding(horizontal = ZankupTheme.spacing.m), 0.5.dp, colors.line)
+                }
                 row()
             }
         }
@@ -247,16 +262,16 @@ fun SettingsGroup(modifier: Modifier = Modifier, rows: List<@Composable () -> Un
 fun SettingsNote(text: String, modifier: Modifier = Modifier, live: Boolean = false) {
     Text(
         text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = noteStyle,
         color = ZankupTheme.colors.muted,
         modifier = if (live) modifier.semantics { liveRegion = LiveRegionMode.Polite } else modifier
     )
 }
 
-/** A small heading inside a card ("Units", "Appearance"). */
+/** A heading inside a card ("Units", "Appearance"), 8 dp more above it than the card's gap. */
 @Composable
 fun SettingsLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall, color = ZankupTheme.colors.fg)
+    Text(text, style = headingStyle, color = ZankupTheme.colors.fg, modifier = Modifier.padding(top = 8.dp))
 }
 
 /** A label with a switch; the whole row toggles it. */
@@ -329,19 +344,30 @@ fun HourStepper(label: String, utc: Int, onChange: (Int) -> Unit) {
     }
 }
 
-/** A small pill: green when good, red when not. */
+/**
+ * A small round label, as the React Native app's `Badge`: the accent when [good], zone 5's red with white
+ * when not (false), plain when null.
+ */
 @Composable
-fun SettingsBadge(text: String, good: Boolean) {
+fun SettingsBadge(text: String, good: Boolean?) {
     val colors = ZankupTheme.colors
     Surface(
-        shape = MaterialTheme.shapes.small,
-        color = if (good) colors.accentSoft else colors.formNegative.copy(alpha = 0.16f),
-        contentColor = if (good) colors.accent else colors.formNegative
+        shape = CircleShape,
+        color = when (good) {
+            true -> colors.accent
+            false -> colors.zones[4]
+            null -> colors.surface2
+        },
+        contentColor = when (good) {
+            true -> colors.accentFg
+            false -> Color.White
+            null -> colors.fg
+        }
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }
 }

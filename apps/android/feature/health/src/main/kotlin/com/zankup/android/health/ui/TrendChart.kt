@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,10 +39,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,7 +168,9 @@ internal fun TrendChart(
     val right = axes.size > 1
     val muted = TextStyle(color = colors.muted, fontSize = 10.sp, fontFeatureSettings = "tnum")
     val strong = TextStyle(color = colors.fg, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    val plain = TextStyle(color = colors.fg, fontSize = 12.sp)
+    val nameStyle = SpanStyle(color = colors.muted)
+    val figure = SpanStyle(color = colors.fg, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
+    val plain = TextStyle(fontSize = 12.sp)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(legendGap)) {
         Spacer(
             Modifier
@@ -221,6 +225,8 @@ internal fun TrendChart(
                     val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
                     onDrawBehind {
                         val t = grow.value
+                        // Bars dim a little while a day is picked, as the React Native app's.
+                        val barAlpha = if (picked.intValue in 0 until count) 0.9f else 1f
                         for (i in leftTicks.indices) {
                             val py = top + inner - i.toFloat() / steps * inner
                             drawLine(
@@ -263,7 +269,8 @@ internal fun TrendChart(
                                             drawRect(
                                                 s.color,
                                                 Offset(axisW + i * slot + (slot - bar) / 2, minOf(a, b)),
-                                                Size(bar, h)
+                                                Size(bar, h),
+                                                alpha = barAlpha
                                             )
                                         }
                                     }
@@ -319,8 +326,14 @@ internal fun TrendChart(
                             }
                         }.filter { it.third != null }.take(8)
                         val head = measurer.measure(days[at], strong)
-                        val rows = items.map { (label, color, v) ->
-                            color to measurer.measure("$label  ${format(v!!)}", plain)
+                        // The label muted and the figure in bold, as the React Native app's readout.
+                        val rows = items.map { (name, color, v) ->
+                            val text = buildAnnotatedString {
+                                withStyle(nameStyle) { append(name) }
+                                append("  ")
+                                withStyle(figure) { append(format(v!!)) }
+                            }
+                            color to measurer.measure(text, plain)
                         }
                         val pad = 8.dp.toPx()
                         val dot = 7.dp.toPx()
@@ -357,7 +370,8 @@ internal fun TrendChart(
             }
             if (entries.isNotEmpty()) {
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     entries.forEach { (label, color) ->
@@ -365,8 +379,8 @@ internal fun TrendChart(
                             Spacer(Modifier.size(8.dp).clip(CircleShape).background(color))
                             Text(
                                 label,
-                                Modifier.padding(start = 6.dp),
-                                style = MaterialTheme.typography.bodySmall,
+                                Modifier.padding(start = 4.dp),
+                                fontSize = 12.sp,
                                 color = colors.muted
                             )
                         }

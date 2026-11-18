@@ -145,7 +145,8 @@ internal fun GeneralSection(model: GeneralModel = hiltViewModel()) {
                         }
                     )
                 },
-                model::setLanguage
+                model::setLanguage,
+                accent = true
             )
             if (needsRestart(language, showing, Build.VERSION.SDK_INT)) {
                 SettingsNote(stringResource(R.string.set_restart_language), live = true)
@@ -160,7 +161,8 @@ internal fun GeneralSection(model: GeneralModel = hiltViewModel()) {
                         if (it == Preferences.Units.IMPERIAL) R.string.set_imperial else R.string.set_metric
                     )
                 },
-                { scope.launch { model.setUnits(it) } }
+                { scope.launch { model.setUnits(it) } },
+                accent = true
             )
             SettingsLabel(stringResource(R.string.set_appearance))
             SettingsNote(stringResource(R.string.set_theme_help))

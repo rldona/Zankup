@@ -143,15 +143,30 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                                 color = colors.fg
                             )
                             val on = fullDay(LocalDate.parse(latest.day))
-                            Muted(stringResource(R.string.health_weight_latest_on, on))
+                            Text(
+                                stringResource(R.string.health_weight_latest_on, on),
+                                fontSize = 13.sp,
+                                color = colors.muted
+                            )
                         }
-                        if (moved != null) Muted(stringResource(R.string.health_weight_change, signedWeight(moved)))
+                        if (moved != null) {
+                            Text(
+                                stringResource(R.string.health_weight_change, signedWeight(moved)),
+                                fontSize = 14.sp,
+                                color = colors.muted
+                            )
+                        }
                     }
                 }
             } else if (weight.data != null) {
                 item("empty") {
                     ZankupCard(side) {
-                        Text(stringResource(R.string.health_weight_empty), color = colors.fg)
+                        Text(
+                            stringResource(R.string.health_weight_empty),
+                            color = colors.fg,
+                            fontSize = 15.sp,
+                            lineHeight = 22.sp
+                        )
                         Button(onClick = { editing = Editing(today, "") }, Modifier.padding(top = spacing.sm)) {
                             Text(stringResource(R.string.health_weight_add))
                         }
@@ -213,17 +228,34 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                                     ).padding(vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(fullDay(w.day), Modifier.weight(1f), color = colors.fg)
+                                Text(fullDay(w.day), Modifier.weight(1f), color = colors.fg, fontSize = 15.sp)
                                 w.stepKg?.takeIf { it != 0.0 }?.let {
-                                    Muted(signedWeight(it), Modifier.padding(end = 12.dp))
+                                    Text(
+                                        signedWeight(it),
+                                        Modifier.padding(end = 12.dp),
+                                        fontSize = 13.sp,
+                                        color = colors.muted
+                                    )
                                 }
-                                Text(weightText(w.weightKg), fontWeight = FontWeight.Bold, color = colors.fg)
+                                Text(
+                                    weightText(w.weightKg),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.fg
+                                )
                             }
                             if (i < rows.lastIndex) HorizontalDivider(color = colors.line)
                         }
                     }
                 }
-                item("note") { Muted(stringResource(R.string.health_weight_profile_note), side) }
+                item("note") {
+                    Text(
+                        stringResource(R.string.health_weight_profile_note),
+                        side,
+                        fontSize = 13.sp,
+                        color = colors.muted
+                    )
+                }
             }
         }
     }

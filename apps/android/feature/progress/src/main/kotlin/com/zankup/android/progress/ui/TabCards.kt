@@ -252,7 +252,7 @@ private fun LogCard(model: ProgressModel, onOpen: () -> Unit) {
     val thisLabel = stringResource(R.string.progress_this_week)
     ProgressCard(Modifier.fillMaxHeight(), onClick = onOpen, description = "$title: $thisLabel ${time(thisWeek)}") {
         Stack(gap = 12) {
-            CardHeader(title, icon = ZIcon.Calendar)
+            CardHeader(title, icon = ZIcon.Calendar, iconSize = 22)
             LogLine(thisLabel, time(thisWeek))
             Dots(thisWeek, today)
             Dots(lastWeek, today)
@@ -631,7 +631,7 @@ internal fun BestsCard(model: ProgressModel, onOpen: () -> Unit) {
     val shown = cardMedals(medals.data.orEmpty(), { it.key }, imperial)
     val title = stringResource(R.string.progress_bests)
     ProgressCard(onClick = onOpen, description = title) {
-        CardHeader(title, icon = ZIcon.Award)
+        CardHeader(title, icon = ZIcon.Trophy)
         if (shown.isEmpty()) {
             Muted(stringResource(R.string.progress_no_recent_bests), Modifier.padding(top = 12.dp))
             return@ProgressCard
@@ -662,7 +662,7 @@ internal fun BestsCard(model: ProgressModel, onOpen: () -> Unit) {
                         stringResource(
                             if (m.scope.value == "all") R.string.progress_all_time_best else R.string.progress_year_best
                         ),
-                        style = MaterialTheme.typography.bodySmall
+                        style = SmallText
                     )
                 }
             }

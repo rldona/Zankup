@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -46,6 +48,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.LinkAnnotation
@@ -135,11 +138,14 @@ private fun Off(info: AiStatus, onSettings: () -> Unit) {
     ) {
         Text(
             stringResource(if (info.available) R.string.coach_off else R.string.coach_unavailable),
-            style = MaterialTheme.typography.bodyLarge,
-            color = ZankupTheme.colors.fg
+            color = ZankupTheme.colors.fg,
+            fontSize = 15.sp
         )
         if (info.available) {
-            Button(onClick = onSettings) { Text(stringResource(R.string.coach_settings)) }
+            // A plain (outlined) button, as the React Native app's.
+            OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.coach_settings))
+            }
         }
     }
 }
@@ -181,8 +187,8 @@ private fun ChatPane(info: AiStatus, model: CoachViewModel, onOpenActivity: (Lon
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             state = listState,
-            contentPadding = PaddingValues(top = spacing.xs, bottom = spacing.m),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            contentPadding = PaddingValues(top = spacing.m, bottom = spacing.m),
+            verticalArrangement = Arrangement.spacedBy(spacing.sm)
         ) {
             if (info.weekly && chat.turns.isEmpty()) item("weekly") { WeeklyCard(model, side) }
             if (budgetSpent) item("budget") { Notice(stringResource(R.string.coach_budget), side) }
@@ -195,19 +201,21 @@ private fun ChatPane(info: AiStatus, model: CoachViewModel, onOpenActivity: (Lon
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                SUGGESTIONS.forEach { id ->
-                    item("suggestion-$id") {
-                        val question = stringResource(id)
-                        Text(
-                            question,
-                            color = colors.fg,
-                            modifier = side
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, colors.line, RoundedCornerShape(12.dp))
-                                .clickable(role = Role.Button) { model.ask(question) }
-                                .padding(12.dp)
-                        )
+                item("suggestions") {
+                    Column(side, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SUGGESTIONS.forEach { id ->
+                            val question = stringResource(id)
+                            Text(
+                                question,
+                                color = colors.fg,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(1.dp, colors.line, RoundedCornerShape(12.dp))
+                                    .clickable(role = Role.Button) { model.ask(question) }
+                                    .padding(12.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -299,7 +307,7 @@ private fun Input(busy: Boolean, onSend: (String) -> Unit, onStop: () -> Unit) {
                 }
             }
         },
-        textStyle = MaterialTheme.typography.bodyLarge,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedBorderColor = colors.accent.copy(alpha = 0.6f),
@@ -362,13 +370,18 @@ private fun WeeklyCard(model: CoachViewModel, modifier: Modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 stringResource(R.string.coach_weekly_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.fg
+                Modifier.semantics { heading() },
+                color = colors.fg,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
             )
             if (latest == null) {
                 Muted(stringResource(R.string.coach_weekly_none))
             } else {
-                Muted(stringResource(R.string.coach_weekly_week, weekDay(latest.weekStart)))
+                Muted(
+                    stringResource(R.string.coach_weekly_week, weekDay(latest.weekStart)),
+                    Modifier.offset(y = (-4).dp)
+                )
                 when (latest.status) {
                     "pending" -> Muted(stringResource(R.string.coach_weekly_pending))
                     "failed" -> Notice(stringResource(R.string.coach_weekly_failed))
@@ -397,7 +410,7 @@ private fun WeeklyCard(model: CoachViewModel, modifier: Modifier) {
 private fun Report(report: WeeklyOut, full: Boolean, onToggle: () -> Unit) {
     val colors = ZankupTheme.colors
     report.headline?.let {
-        Text(it, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colors.fg)
+        Text(it, color = colors.fg, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
     val highlights = report.highlights.orEmpty()
     if (highlights.isNotEmpty()) {
@@ -421,10 +434,10 @@ private fun Report(report: WeeklyOut, full: Boolean, onToggle: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(stringResource(R.string.coach_weekly_recommendation), color = colors.fg, fontWeight = FontWeight.Bold)
-            Text(it, color = colors.fg)
+            Text(it, color = colors.fg, fontSize = 15.sp)
         }
     }
-    if (full) report.summary?.let { Text(it, color = colors.fg) }
+    if (full) report.summary?.let { Text(it, color = colors.fg, fontSize = 15.sp) }
     val more = stringResource(R.string.coach_weekly_more)
     val less = stringResource(R.string.coach_weekly_less)
     Row(
@@ -448,7 +461,7 @@ private fun Report(report: WeeklyOut, full: Boolean, onToggle: () -> Unit) {
     ) {
         Text(if (full) less else more, color = colors.accent, fontWeight = FontWeight.SemiBold)
         ZankupIcon(
-            if (full) ZIcon.Collapse else ZIcon.Expand,
+            if (full) ZIcon.ArrowUp else ZIcon.ArrowDown,
             contentDescription = null,
             tint = colors.accent,
             size = 20.dp
@@ -460,7 +473,12 @@ private fun Report(report: WeeklyOut, full: Boolean, onToggle: () -> Unit) {
 
 @Composable
 private fun Muted(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier, style = MaterialTheme.typography.bodyMedium, color = ZankupTheme.colors.muted)
+    Text(
+        text,
+        modifier,
+        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp),
+        color = ZankupTheme.colors.muted
+    )
 }
 
 /** Something to know (a failure, the budget): a muted line TalkBack reads out. */

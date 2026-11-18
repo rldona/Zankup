@@ -75,3 +75,8 @@ health_and_safety
 database
 palette
 sports
+trophy
+smart_toy
+edit
+keyboard_arrow_up
+keyboard_arrow_down

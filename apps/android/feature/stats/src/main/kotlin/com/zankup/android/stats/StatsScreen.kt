@@ -137,7 +137,8 @@ private fun PeriodToolbar(period: StatsPeriod, onMode: (StatsMode) -> Unit, onPe
                     }
                 )
             },
-            onMode
+            onMode,
+            accent = true
         )
         when (period.mode) {
             StatsMode.YEAR -> Stepper(

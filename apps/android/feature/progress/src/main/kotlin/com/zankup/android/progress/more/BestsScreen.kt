@@ -71,7 +71,6 @@ import com.zankup.android.data.Query
 import com.zankup.android.data.Store
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
-import com.zankup.android.designsystem.components.ZankupChip
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupSheet
 import com.zankup.android.designsystem.components.ZankupTopBar
@@ -81,6 +80,7 @@ import com.zankup.android.domain.Sport
 import com.zankup.android.domain.Units
 import com.zankup.android.network.call
 import com.zankup.android.progress.R
+import com.zankup.android.progress.ui.ProgressChip
 import com.zankup.android.ui.LocalFormats
 import com.zankup.android.ui.sportName
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -266,8 +266,14 @@ fun BestsScreen(key: String, onBack: () -> Unit, onOpenActivity: (Long) -> Unit,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val sport = if (run) Sport.RUN else Sport.RIDE
-                IconChip(sportIcon(sport), stringResource(sportName(sport)), selected = true) { panel = Panel.SPORT }
-                keys.forEach { k -> ZankupChip(bestName(k), selected = k == picked, onClick = { picked = k }) }
+                // Progress's chips (src/progress/Chip.tsx): an accent outline when on.
+                ProgressChip(
+                    stringResource(sportName(sport)),
+                    on = true,
+                    onClick = { panel = Panel.SPORT },
+                    icon = sportIcon(sport)
+                )
+                keys.forEach { k -> ProgressChip(bestName(k), on = k == picked, onClick = { picked = k }) }
             }
 
             if (tab == Tab.ANALYSIS && top.isNotEmpty()) {
@@ -337,7 +343,7 @@ fun BestsScreen(key: String, onBack: () -> Unit, onOpenActivity: (Long) -> Unit,
                                 fontWeight = FontWeight.Bold
                             )
                             ZankupIcon(
-                                ZIcon.Expand,
+                                ZIcon.ArrowDown,
                                 null,
                                 tint = colors.fg,
                                 size = 22.dp,

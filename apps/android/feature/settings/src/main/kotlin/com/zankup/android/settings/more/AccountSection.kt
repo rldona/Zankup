@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -32,6 +31,7 @@ import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
 import com.zankup.android.session.BiometricLevel
 import com.zankup.android.settings.R
+import com.zankup.android.settings.basic.SettingsLabel
 import kotlinx.coroutines.launch
 
 /**
@@ -56,7 +56,8 @@ fun AccountSection(onSignedOut: () -> Unit, model: AccountModel = hiltViewModel(
         Security(model)
         Garmin(model)
         Sessions(model)
-        Button(enabled = !signingOut, modifier = Modifier.fillMaxWidth(), onClick = {
+        // A plain (outlined) button, as the React Native app's.
+        OutlinedButton(enabled = !signingOut, modifier = Modifier.fillMaxWidth(), onClick = {
             signingOut = true
             scope.launch {
                 model.signOut()
@@ -86,11 +87,7 @@ private fun SignInMethods(me: Me, model: AccountModel) {
                 if (me.totpEnabled) stringResource(R.string.setm_profile_on) else "—"
         )
         if (providers?.data?.google == true) {
-            Text(
-                stringResource(R.string.setm_profile_google),
-                style = MaterialTheme.typography.titleSmall,
-                color = ZankupTheme.colors.fg
-            )
+            SettingsLabel(stringResource(R.string.setm_profile_google))
             if (me.googleLinked == true) {
                 Note(stringResource(R.string.setm_profile_googleLinked))
                 OutlinedButton(enabled = !busy, onClick = {
@@ -257,7 +254,8 @@ private fun SyncInterval(model: AccountModel) {
         onSelect = { minutes ->
             failure = null
             scope.launch { (model.setInterval(minutes) as? ApiResult.Failure)?.let { failure = it } }
-        }
+        },
+        accent = true
     )
     if (setting.source == SettingOut.Source.ENV) {
         Note(stringResource(R.string.setm_instance_fromServer))

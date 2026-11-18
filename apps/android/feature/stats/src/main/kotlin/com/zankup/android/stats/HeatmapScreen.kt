@@ -28,7 +28,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.designsystem.components.ChipPicker
@@ -89,7 +92,11 @@ fun HeatmapScreen(onBack: () -> Unit, model: HeatmapModel = hiltViewModel()) {
                 }
                 Text(
                     stringResource(R.string.stats_heatmap_title),
-                    style = MaterialTheme.typography.titleLarge.copy(shadow = Shadow(colors.bg, blurRadius = 12f)),
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        shadow = Shadow(colors.bg, blurRadius = 12f)
+                    ),
                     color = colors.fg,
                     maxLines = 1,
                     modifier = Modifier.weight(1f).semantics { heading() }
@@ -100,7 +107,8 @@ fun HeatmapScreen(onBack: () -> Unit, model: HeatmapModel = hiltViewModel()) {
                 HEATMAP_SPORTS.firstOrNull { it?.key == sportKey },
                 { s -> if (s == null) stringResource(R.string.stats_all) else stringResource(sportName(s)) },
                 { model.setSport(it?.key) },
-                Modifier.padding(top = 12.dp)
+                Modifier.padding(top = 12.dp),
+                accent = true
             )
         }
         if (count > 0) {
@@ -118,7 +126,8 @@ fun HeatmapScreen(onBack: () -> Unit, model: HeatmapModel = hiltViewModel()) {
             ) {
                 Text(
                     text,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.fg,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                 )
             }

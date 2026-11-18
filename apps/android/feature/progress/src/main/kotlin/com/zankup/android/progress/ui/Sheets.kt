@@ -117,7 +117,7 @@ internal fun RadioRow(title: String, on: Boolean, onClick: () -> Unit, note: Str
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, color = colors.fg, fontSize = 15.sp)
-            if (note != null) Muted(note, style = MaterialTheme.typography.bodySmall)
+            if (note != null) Muted(note, style = SmallText)
         }
         Box(
             Modifier.size(24.dp).border(2.dp, if (on) colors.accent else colors.fg, CircleShape),
@@ -171,7 +171,7 @@ internal fun BucketSheet(title: String, activities: List<DatedActivity>, onOpen:
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Muted(longDate(day), style = MaterialTheme.typography.bodySmall)
+                        Muted(longDate(day), style = SmallText)
                     }
                 }
                 BucketStats(a.distanceM ?: 0.0, a.ascentM ?: 0.0, a.movingS, format)
@@ -233,7 +233,7 @@ internal fun DayList(activities: List<CalendarActivity>, onOpen: (Long) -> Unit)
                         a.distanceM?.takeIf { it > 0 }?.let(formats::distance),
                         formats.hoursMinutes(a.movingS)
                     ).joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall
+                    style = SmallText
                 )
             }
         }

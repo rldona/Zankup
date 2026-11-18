@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -312,7 +313,13 @@ private fun Today(day: HealthDay, today: LocalDate) {
                         color = colors.fg,
                         style = MaterialTheme.typography.titleSmall
                     )
-                    Text(r?.score?.toString() ?: "–", style = Numbers.tabular, fontSize = 28.sp, color = colors.fg)
+                    Text(
+                        r?.score?.toString() ?: "–",
+                        style = Numbers.tabular,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.fg
+                    )
                     Muted(meaning)
                 }
                 Box(Modifier.align(Alignment.TopEnd).semantics { contentDescription = zankup }) { ZankupMark() }
@@ -364,7 +371,13 @@ private fun WeightCard(weighings: List<WeightOut>, today: LocalDate, onOpen: () 
             return@ZankupCard
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(weightText(latest.weightKg), fontSize = 26.sp, style = Numbers.tabular, color = colors.fg)
+            Text(
+                weightText(latest.weightKg),
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                style = Numbers.tabular,
+                color = colors.fg
+            )
             if (moved != null) {
                 Text(
                     stringResource(R.string.health_weight_change30, signedWeight(moved)),
