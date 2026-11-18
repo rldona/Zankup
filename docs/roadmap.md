@@ -19,6 +19,7 @@ References: [architecture.md](architecture.md) · [findings.md](findings.md) · 
 | **8 · Several people, one Zankup** | More than one person on an instance, each with their own data and keys, and a first run that guides them | Welcome, sample-data screens and per-user keys | **M8: "someone else starts using my Zankup"** |
 | **9 · Web and app in step** | The web catches up with the app, adapted to a large screen, and the app takes what it lacks from the web | Home, activity charts, Goals, Stats, You and Settings on the web as on the app | **M9: "the web is as good as the app"** |
 | **10 · The web catches up again** | What the app gained after M9 (Progress, the activity laid out as Strava's, weight, Stats by its period) reaches the web, adapted to a large screen | Progress, the new activity page and weight on the web | **M10: "the web has Progress too"** |
+| **11 · Native Android app** | The Android app rewritten from scratch in Kotlin and Compose, on the same API and the React Native app's screen structure; the React Native app kept until the cutover | Zankup Next beside the current app, then replacing it as `com.zankup.app` | **M11: "Zankup is native on my phone"** |
 
 **Size estimate:** S ≈ half a day · M ≈ 1–2 days · L ≈ 3–5 days. Rough totals: M1 ≈ 20–25 working days (phases 0 and 1), M2 ≈ another 30–35.
 
@@ -673,6 +674,125 @@ buffers it the answer arrives whole, which is acceptable at this length.
 
 **M10 is done when** someone who opened Progress, an activity and their weight on the app this week finds the same on the web, laid out for the large screen, and the only differences are the ones OS-901 keeps for each side.
 
+## Phase 11 · Native Android app (Kotlin + Compose) → **M11**
+
+**Goal:** the Android app rewritten as a 100 % native app, from scratch, in Kotlin and Jetpack Compose. The React Native app works well; the reason is the product, not a failed measurement (OS-501 still stands): a native app feels and behaves as Android does (Material 3, predictive back, haptics, Glance widget, Credential Manager, Keystore, WorkManager and Health Connect with no bridge), and it is the app Zankup wants to be.
+
+**Planned on 18 Nov 2026** from `apps/mobile` as it is after M10 (about 45 screens and 24,000 lines of TypeScript) and the API.
+
+**What is reused, and what is not:**
+- **Reused:** the **server**, for all the data and every feature (sync, metrics, AI, notifications, health, import…), with its OpenAPI document as the contract; and the **screen structure of the React Native app** (`apps/mobile/app`: the tabs, every stacked screen, what each one shows and in what order), which is the functional spec.
+- **Not reused:** no code from `apps/mobile`, its Kotlin modules or `packages/core` is imported, generated, wrapped or translated line by line. The theme, the translations, the domain logic the screens compute (formatting, zones, splits, scales…), the charts and the map are written anew for Android. The backend should not need changes; if a screen needs one, it is its own ticket and serves both apps.
+
+**Working rules for the phase:**
+- **The React Native app stays** in `apps/mobile` and on the phone until the cutover (OS-1191) and its deprecation (OS-1192). During the phase it gets fixes; any feature it gains is added to the screen map (OS-1101) the same day, so the native app catches up with it.
+- **Three apps side by side on the phone:** Zankup (React Native, `com.zankup.app`), Zankup Dev (React Native, `com.zankup.app.dev`) and **Zankup Next** (native, `com.zankup.next`), signed with the owner's same key. Zankup Next needs its own Android OAuth client (Google sign-in), its own app in the Firebase project (notifications) and its package in `assetlinks.json` (passkeys); the `android:apk-key-hash` origin in `WEBAUTHN_ORIGINS` is the same, since the key is.
+- One block = one branch = one PR, as in every phase.
+
+**Stack:** Kotlin 2, Jetpack Compose with Material 3, type-safe Navigation Compose, Hilt, coroutines and Flow, OkHttp + Retrofit with kotlinx.serialization, Room, DataStore, Paging 3, WorkManager, Firebase Cloud Messaging, Credential Manager (Google and passkeys), `androidx.biometric` with the Android Keystore, the MapLibre Android SDK, charts drawn with Compose `Canvas`, Coil, Jetpack Glance, the Health Connect client, Baseline Profiles and Macrobenchmark. Tests with JUnit, Turbine, Compose UI tests and screenshot tests (Roborazzi).
+
+### Block 0 · Decision and foundations
+
+- **OS-1101 · The decision and the screen map** (S)
+  - The decision in `docs/architecture.md` (why native now, what OS-501 measured, what is and is not reused). The **screen map**: every route of `apps/mobile/app` (tabs Home, Activities, Progress, Health and You; the activity and its analysis; Progress's pages; stats, calendar, heatmap, reviews, routes and segments; health and weight; gear, import, sync, notifications, Coach, assistants; settings by section; sign-in and setup), with what it shows, its endpoints and its interactions. It is the checklist of the phase and of the parity check (OS-1190).
+- **OS-1102 · The Gradle project** (M) · depends on OS-1101
+  - `apps/android`, outside the pnpm workspace: a version catalog, modules `app`, `core:network`, `core:data`, `core:domain`, `core:designsystem` and one `feature:*` per area. minSdk 26 (Health Connect), the latest targetSdk, edge-to-edge. `debug` and `release` builds, both as `com.zankup.next` until the cutover; release signed with `~/.config/zankup/android/signing.properties`. ktlint and detekt, Android Lint, unit tests and `assembleRelease` in `.github/workflows/android.yml`; `make android` and `make android-release` (build and `adb install`).
+  - *Done when:* an empty Zankup Next with the Zankup icon installs beside the React Native app and CI is green.
+- **OS-1103 · The API client** (M) · depends on OS-1102
+  - Kotlin models and Retrofit interfaces generated from the backend's `openapi.json` (openapi-generator, kotlinx.serialization) by `make generate-api`, with a CI check that fails when they are stale. The instance URL as base URL, the access token and its refresh in an OkHttp interceptor, errors mapped to one sealed type, NDJSON streaming for the Coach.
+- **OS-1104 · The design system** (L) · depends on OS-1102
+  - Written for Compose: the colour schemes of every theme (System, Light, Dark, OLED Black, High contrast, Forest, Ocean, Sunset, Strava and Strava dark) plus dynamic colour, typography, shapes, spacing, sport and zone colours, and the components every screen uses (cards, chips, bottom sheets, skeletons, empty and error states, top bars, list rows, segmented periods). Material Symbols as the icon set, the ZANKUP wordmark as an `ImageVector`. A catalogue screen in debug builds and screenshot tests of every component in light and dark.
+- **OS-1105 · Languages** (S) · depends on OS-1102
+  - `strings.xml` in English and Spanish with plurals, per-app language (Android 13+) and locale-aware formatting; Lint fails on hard-coded text and a test fails when an English string has no Spanish one.
+
+### Block 1 · Session and navigation
+
+- **OS-1110 · Instance and sign-in** (L) · depends on OS-1103 and OS-1104
+  - The instance URL checked against `/api/health`; password + TOTP (the code in six boxes that submit themselves, the expired challenge, "forgot it?"); Google through Credential Manager with the instance's nonce (`/api/auth/google/mobile/nonce`, then `POST /api/auth/google/mobile`); passkeys through Credential Manager; the first account on a new instance (account, TOTP opened in the authenticator app, recovery codes, loading the history).
+- **OS-1111 · The fingerprint** (M) · depends on OS-1110
+  - The refresh token encrypted with a Keystore key that needs class 3 biometrics (`BiometricPrompt` with a `CryptoObject`), destroyed when the enrolled fingerprints change; refreshed with `rotate: false`. Weak biometrics only as an app lock, as a setting.
+  - *Done when:* on the S26 you sign in once with Google and afterwards open Zankup Next with just your fingerprint.
+- **OS-1112 · Navigation** (M) · depends on OS-1104
+  - The five tabs in the React Native app's order, every stacked screen of the screen map as a typed route, `zankup://activity/<id>` deep links, predictive back, and Home's header (Sync, Coach, Search, Notifications).
+
+### Block 2 · Data, offline, sync and notifications
+
+- **OS-1120 · Repositories and offline** (L) · depends on OS-1103
+  - Room as the source of truth (feed, activities, the latest 60 series, profile, settings), DataStore for preferences; screens shown from what is kept and refreshed in the background; the offline notice and recovering when back online; signing out deletes everything.
+- **OS-1121 · Background sync** (S) · depends on OS-1120 and OS-1111
+  - A periodic WorkManager job (~30 min) that refreshes the feed and the week, keeps the latest series and updates the widget; with the fingerprint it waits for the next opening, as today.
+- **OS-1122 · Notifications** (M) · depends on OS-1110
+  - Firebase Messaging, the token registered on its device (`PUT /api/notifications/fcm`), one channel per kind, a tap opening what it is about.
+- **OS-1123 · The domain logic on the phone** (M) · depends on OS-1102
+  - What the screens compute themselves, written in Kotlin with its own unit tests: durations, distances, pace and speed by locale and units, zones, the split under the cursor, grade-adjusted pace, effort ranges, cumulative series, the tightest round axis, power levels for the rider's weight.
+
+### Block 3 · Home, Activities and the activity
+
+- **OS-1130 · Home** (M) · depends on OS-1112 and OS-1120
+  - This week, the last day with activities, the last seven days and the metrics.
+- **OS-1131 · The feed and search** (M) · depends on OS-1120
+  - Paging 3, each card with its map or the strength workout's body map, goals reached, and search.
+- **OS-1132 · The map** (L) · depends on OS-1104
+  - MapLibre Android: the route coloured by metric with its legend, the dot following the charts' cursor, replay at 10×/30×/100×, the map controls and saving a section as a segment.
+- **OS-1133 · The charts** (L) · depends on OS-1104
+  - Lines and areas with the elevation behind, bars, zones as thick bars, the power curve and the radar; the cursor scrubbed with the finger and haptic clicks, at the screen's rate (120 Hz); values sliding to new ones when a filter changes. Built once, used by every screen.
+- **OS-1134 · The activity, by sport** (L) · depends on OS-1132, OS-1133 and OS-1123
+  - The blocks in the React Native app's order for rides, runs and strength (`/api/activities/{id}/context` loaded beside it): figures, fitness before and after, matched activities, relative effort, goals, results, power, pace, HR, cadence and elevation charts with their zones, laps and splits, best efforts, segments, the sets and the body map, the training analysis page, weather, device and gear.
+- **OS-1135 · Editing and sharing an activity** (M) · depends on OS-1134
+  - Name, description, sport, gear and a strength workout's type; adding and removing photos (the photo picker); the share card.
+
+### Block 4 · Progress and stats
+
+- **OS-1140 · Progress and its cards** (L) · depends on OS-1133 and OS-1120
+  - Volume, Series, the Training log, Fitness, Relative effort, race predictions, Goals (with adding and editing), training zones, Skills, Best times, Monthly activities and Data sources, each with its page.
+- **OS-1141 · Stats, the calendar and the reviews** (M) · depends on OS-1140
+  - Stats by its period, year by year, estimates, the calendar, the heatmap and the month and year in review.
+- **OS-1142 · Routes and segments** (S) · depends on OS-1132
+
+### Block 5 · Health
+
+- **OS-1150 · Health** (M) · depends on OS-1133 and OS-1120
+  - Last night with its hypnogram, today's figures with their sources, Readiness, the 30/90/365-day trends, and weight with its page (add, edit, delete).
+- **OS-1151 · Health Connect** (M) · depends on OS-1150
+  - The same read permissions and history as today, sent to the API as the React Native app does.
+
+### Block 6 · You, the Coach and settings
+
+- **OS-1160 · You and the profile** (M) · depends on OS-1112 and OS-1120
+  - Who you are (editable), the year's numbers, by sport, records, physical data, estimates and the account (sign-in methods, passkeys, Google).
+- **OS-1161 · Settings** (L) · depends on OS-1160
+  - Every section of the React Native app: general and themes, heart rate and zones with recomputing, notifications by kind and a test, the AI assistant and MCP tokens, privacy zones on a map, health sources, exporting your data, Garmin, the instance and the signed-in devices.
+- **OS-1162 · The Coach and the AI** (M) · depends on OS-1103
+  - The activity's summary, the weekly report and the Coach streamed as it is written, its links opening the activity; the assistants.
+- **OS-1163 · Gear, import, sync and notifications** (M) · depends on OS-1120
+  - Gear; importing files picked on the phone and uploaded in parts; the Sync screen (now, whole history, progress, latest runs); the notifications inbox.
+
+### Block 7 · What only Android has
+
+- **OS-1170 · The home-screen widget** (M) · depends on OS-1121
+  - Jetpack Glance: the latest activity and today's form, opening the activity.
+- **OS-1171 · Icons, shortcuts and small touches** (S) · depends on OS-1112
+  - The launcher icon variants (activity aliases), app shortcuts (Sync, the latest activity, the Coach), the Quick Settings tile to sync, themed icon.
+
+### Block 8 · Quality, cutover and deprecation
+
+- **OS-1180 · Performance** (M) · depends on Blocks 3 to 6
+  - Baseline Profiles and Macrobenchmark for cold start, opening an activity, scrubbing a chart and scrolling the feed, plus memory and APK size, on the S26 and on a mid-range phone. Zankup Next must match or beat OS-501's figures and the React Native app's on the same phone.
+- **OS-1181 · Accessibility** (S) · depends on Blocks 3 to 6
+  - TalkBack on every screen, the largest font scale, 48 dp targets and the High contrast theme.
+- **OS-1190 · Parity check** (M) · depends on every ticket above
+  - Both apps side by side, every row of the screen map, both languages and every theme; the differences that stay are written down.
+- **OS-1191 · The cutover** (S) · depends on OS-1190
+  - The native app becomes `com.zankup.app`, with a `versionCode` above the React Native app's and the same key, so it installs over it as an update (you sign in once more: the React Native app's keystore data cannot be read). Zankup Next and its OAuth client and Firebase app are removed.
+- **OS-1192 · Deprecating the React Native app** (S) · depends on OS-1191 and two weeks of daily use
+  - `apps/mobile` and `apps/mobile-poc` removed with their Expo dependencies, scripts and CI jobs; `packages/core` keeps only what the web uses; README, `architecture.md` and this roadmap (phase 5 superseded by phase 11) updated.
+
+**Suggested blocks** (one branch and one PR each): foundations (OS-1101 to OS-1105); session and navigation (OS-1110 to OS-1112); data (OS-1120 to OS-1123); the map and the charts (OS-1132, OS-1133), first and on their own, as they are the hardest and every later screen uses them; Home, the feed and the activity (OS-1130, OS-1131, OS-1134, OS-1135); Progress and stats (OS-1140 to OS-1142); health (OS-1150, OS-1151); You, the Coach and settings (OS-1160 to OS-1163); Android only (OS-1170, OS-1171); then quality, the check, the cutover and the deprecation. Once data and the charts are in, Progress, Health and You are independent of each other.
+
+**Rough size:** 8 S, 18 M and 8 L, ≈ 50–80 working days (about 65); the map, the charts and the activity alone are about 12.
+
+**M11 is done when** the native app has replaced the React Native one on your phone as `com.zankup.app`, every row of the screen map is there, it is at least as fast, and `apps/mobile` is gone.
+
 ---
 
 ## Backlog
@@ -716,3 +836,7 @@ Not planned in any phase. Each one comes back when its reason to wait goes away.
 | 6 | Duplicated or contradictory data between Garmin and the Fitbit Air | Configurable priority rules (OS-605) and the source always visible |
 | 7 | The LLM invents numbers | Tools that return real data, evaluation with number checks (OS-707) |
 | 7 | Health data sent to a third party | Minimisation (OS-702), no coordinates, global switch (OS-708) |
+| 11 | The React Native app keeps moving while the native one is built | Fixes only there; every new feature added to the screen map (OS-1101) the same day |
+| 11 | The map and the charts take far longer than planned | Built first and on their own (OS-1132, OS-1133), measured at 120 Hz before any screen uses them |
+| 11 | Biometric keys behave differently on Samsung phones | The same rules as today (class 3 for the key, weak only as a lock), tested on the S26 in OS-1111 |
+| 11 | The cutover loses the session or notifications | Same package and key, so it installs as an update; one sign-in, and the FCM token registered again on first launch |
