@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Latest activity</string>
+    <string name="widget_description">Your latest activity and today\'s form</string>
+    <string name="widget_form">Form</string>
+    <string name="shortcut_sync">Sync</string>
+    <string name="shortcut_coach">Coach</string>
+    <string name="shortcut_latest">Latest activity</string>
+</resources>

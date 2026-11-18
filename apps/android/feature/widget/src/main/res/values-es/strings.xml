@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Última actividad</string>
+    <string name="widget_description">Tu última actividad y tu frescura de hoy</string>
+    <string name="widget_form">Frescura</string>
+    <string name="shortcut_sync">Sincronizar</string>
+    <string name="shortcut_coach">Coach</string>
+    <string name="shortcut_latest">Última actividad</string>
+</resources>
