@@ -8,7 +8,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,7 +22,6 @@ fun ZankupTopBar(
     title: String,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
-    scrollBehavior: TopAppBarScrollBehavior? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val colors = ZankupTheme.colors
@@ -38,7 +36,6 @@ fun ZankupTopBar(
             }
         },
         actions = actions,
-        scrollBehavior = scrollBehavior,
         colors =
         TopAppBarDefaults.topAppBarColors(
             containerColor = colors.page,

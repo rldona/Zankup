@@ -46,7 +46,10 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Other(R.drawable.ic_exercise),
     Calendar(R.drawable.ic_calendar_month),
     SignOut(R.drawable.ic_logout),
-    Lock(R.drawable.ic_lock)
+    Lock(R.drawable.ic_lock),
+    Play(R.drawable.ic_play_arrow, R.drawable.ic_play_arrow_fill),
+    Pause(R.drawable.ic_pause, R.drawable.ic_pause_fill),
+    Options(R.drawable.ic_tune)
 }
 
 @Composable

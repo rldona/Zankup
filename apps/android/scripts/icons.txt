@@ -33,3 +33,6 @@ wand_stars
 calendar_month
 logout
 lock
+play_arrow fill
+pause fill
+tune
