@@ -16,9 +16,12 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,6 +39,15 @@ sealed interface SessionState {
     data class SignedIn(val api: ZankupApi) : SessionState
 }
 
+/** What the data layer needs from the session: the signed-in client, and when everything must be forgotten. */
+interface ApiSource {
+    /** The client while signed in; null otherwise. */
+    val api: ZankupApi?
+
+    /** True once signed out (the kept data goes with it). */
+    val signedOut: Flow<Boolean>
+}
+
 /**
  * The session (OS-1111). The refresh token is the only secret kept: sealed by a Keystore key that the
  * fingerprint releases ([Protection.STRONG]) or, without strong biometrics, by a plain Keystore key. The
@@ -49,11 +61,15 @@ constructor(
     @param:ApplicationContext private val context: Context,
     private val prefs: SessionPrefs,
     @param:Named("debug") private val debug: Boolean
-) {
+) : ApiSource {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val state = MutableStateFlow<SessionState>(SessionState.Starting)
     private val mutex = Mutex()
     val current: StateFlow<SessionState> = state.asStateFlow()
+
+    override val api: ZankupApi? get() = (state.value as? SessionState.SignedIn)?.api
+
+    override val signedOut: Flow<Boolean> = state.map { it is SessionState.SignedOut }.distinctUntilChanged()
 
     /** The tokens in memory, as the API client reads and renews them. */
     private val memory =
@@ -165,6 +181,19 @@ constructor(
             set(SessionState.SignedIn(client(instance)))
             kept
         }
+
+    /**
+     * A client for work done in the background (the sync, the widget), with no one to touch the sensor:
+     * only when the refresh token is sealed without the fingerprint; null otherwise. It shares nothing
+     * with the open app's session and never changes what is stored (`rotate: false`).
+     */
+    suspend fun backgroundApi(): ZankupApi? {
+        val instance = savedInstance() ?: return null
+        val sealed = prefs.sealed()?.takeIf { it.protection == Protection.DEVICE } ?: return null
+        val refresh =
+            runCatching { Vault.open(Vault.cipherFor(Protection.DEVICE, sealed.iv), sealed) }.getOrNull() ?: return null
+        return ZankupApi(instance, com.zankup.android.network.MemoryTokenStore(Tokens("", refresh)), debug)
+    }
 
     /** Signs this phone out on the server too (its device row goes), then forgets everything here. */
     suspend fun signOut() {
