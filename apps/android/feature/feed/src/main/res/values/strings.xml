@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feed_title">Activities</string>
+    <string name="feed_sync">Sync</string>
+    <string name="feed_calendar">Calendar</string>
+    <string name="feed_search">Search</string>
+    <string name="feed_search_hint">Name, description or place</string>
+    <string name="feed_search_clear">Clear the search</string>
+    <string name="feed_filters">Filters</string>
+    <string name="feed_filters_on">Filters, some on</string>
+    <string name="feed_empty">No activities yet</string>
+    <string name="feed_empty_body">They appear here after the first sync.</string>
+    <string name="feed_none">No activity matches this search</string>
+    <plurals name="feed_summary">
+        <item quantity="one">%1$d activity · %2$s · %3$s · %4$s</item>
+        <item quantity="other">%1$d activities · %2$s · %3$s · %4$s</item>
+    </plurals>
+    <string name="feed_period">Period</string>
+    <string name="feed_period_all">All time</string>
+    <string name="feed_period_year">This year</string>
+    <string name="feed_period_last12">Last 12 months</string>
+    <string name="feed_distance">Distance (%1$s)</string>
+    <string name="feed_duration">Moving time (min)</string>
+    <string name="feed_ascent">Minimum ascent (%1$s)</string>
+    <string name="feed_min">Min</string>
+    <string name="feed_max">Max</string>
+    <string name="feed_with_record">With a record</string>
+    <string name="feed_with_description">With a description</string>
+    <string name="feed_with_gps">With a GPS track</string>
+    <string name="feed_sort">Sort by</string>
+    <string name="feed_sort_date">Date</string>
+    <string name="feed_sort_distance">Distance</string>
+    <string name="feed_sort_duration">Time</string>
+    <string name="feed_sort_elevation">Elevation</string>
+    <string name="feed_sort_speed">Speed</string>
+    <string name="feed_order_desc">Descending</string>
+    <string name="feed_order_asc">Ascending</string>
+    <plurals name="feed_show">
+        <item quantity="one">Show %d result</item>
+        <item quantity="other">Show %d results</item>
+    </plurals>
+    <string name="feed_show_none">No results</string>
+    <string name="feed_show_results">Show results</string>
+    <string name="feed_clear">Clear</string>
+</resources>
