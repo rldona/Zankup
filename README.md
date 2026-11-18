@@ -55,7 +55,8 @@ Other tasks: `make test`, `make lint`, `make format`, `make check` (what CI runs
 ```
 backend/            Python · FastAPI API, sync and computation engine (Railway)
 apps/web/           PWA · React + Vite (Vercel)
-apps/mobile/        Android app · React Native + Expo (phase 5)
+apps/android/       Android app · native, Kotlin + Compose (phase 11, in progress)
+apps/mobile/        Android app · React Native + Expo (phase 5, until the native one replaces it)
 packages/core/      Shared TypeScript: API client, hooks, formatting, design tokens, i18n
 packages/metrics/   Python · zankup-metrics: pure metric algorithms (MIT)
 tools/              Development scripts

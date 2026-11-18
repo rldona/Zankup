@@ -680,6 +680,8 @@ buffers it the answer arrives whole, which is acceptable at this length.
 
 **Planned on 18 Nov 2026** from `apps/mobile` as it is after M10 (about 45 screens and 24,000 lines of TypeScript) and the API.
 
+**Status (18 Nov 2026):** block 0 is built (OS-1101 to OS-1105): the [screen map](android-screen-map.md), `apps/android` with the API client generated from the OpenAPI document, the design system with every theme and its screenshot tests, and the texts in English and Spanish. Zankup Next installs on the S26 beside the React Native app (release APK 1.1 MB, cold start to its first screen 134 ms) and reaches the instance's API. Next: block 1, session and navigation.
+
 **What is reused, and what is not:**
 - **Reused:** the **server**, for all the data and every feature (sync, metrics, AI, notifications, health, import…), with its OpenAPI document as the contract; and the **screen structure of the React Native app** (`apps/mobile/app`: the tabs, every stacked screen, what each one shows and in what order), which is the functional spec.
 - **Not reused:** no code from `apps/mobile`, its Kotlin modules or `packages/core` is imported, generated, wrapped or translated line by line. The theme, the translations, the domain logic the screens compute (formatting, zones, splits, scales…), the charts and the map are written anew for Android. The backend should not need changes; if a screen needs one, it is its own ticket and serves both apps.
@@ -696,10 +698,10 @@ buffers it the answer arrives whole, which is acceptable at this length.
 - **OS-1101 · The decision and the screen map** (S)
   - The decision in `docs/architecture.md` (why native now, what OS-501 measured, what is and is not reused). The **screen map**: every route of `apps/mobile/app` (tabs Home, Activities, Progress, Health and You; the activity and its analysis; Progress's pages; stats, calendar, heatmap, reviews, routes and segments; health and weight; gear, import, sync, notifications, Coach, assistants; settings by section; sign-in and setup), with what it shows, its endpoints and its interactions. It is the checklist of the phase and of the parity check (OS-1190).
 - **OS-1102 · The Gradle project** (M) · depends on OS-1101
-  - `apps/android`, outside the pnpm workspace: a version catalog, modules `app`, `core:network`, `core:data`, `core:domain`, `core:designsystem` and one `feature:*` per area. minSdk 26 (Health Connect), the latest targetSdk, edge-to-edge. `debug` and `release` builds, both as `com.zankup.next` until the cutover; release signed with `~/.config/zankup/android/signing.properties`. ktlint and detekt, Android Lint, unit tests and `assembleRelease` in `.github/workflows/android.yml`; `make android` and `make android-release` (build and `adb install`).
+  - `apps/android`, outside the pnpm workspace: a version catalog, modules `app`, `core:network`, `core:data`, `core:domain`, `core:designsystem` and one `feature:*` per area. minSdk 26 (Health Connect), the latest targetSdk, edge-to-edge. `release` as `com.zankup.next` ("Zankup Next") until the cutover and `debug` as `com.zankup.next.debug` ("Zankup Next Dev", with the component catalogue), so both fit on the phone; release signed with `~/.config/zankup/android/signing.properties`. ktlint (detekt does not support Kotlin 2.4 yet), Android Lint, unit and screenshot tests and `assembleRelease` in `.github/workflows/android-native.yml`; `make android` and `make android-release` (build and `adb install`).
   - *Done when:* an empty Zankup Next with the Zankup icon installs beside the React Native app and CI is green.
 - **OS-1103 · The API client** (M) · depends on OS-1102
-  - Kotlin models and Retrofit interfaces generated from the backend's `openapi.json` (openapi-generator, kotlinx.serialization) by `make generate-api`, with a CI check that fails when they are stale. The instance URL as base URL, the access token and its refresh in an OkHttp interceptor, errors mapped to one sealed type, NDJSON streaming for the Coach.
+  - Kotlin models and Retrofit interfaces generated from the backend's `openapi.json` (openapi-generator, kotlinx.serialization) on every build, so nothing generated is committed and it cannot go stale; `make generate-api` refreshes the document as before. The instance URL as base URL, the access token and its refresh in an OkHttp interceptor, errors mapped to one sealed type, NDJSON streaming for the Coach.
 - **OS-1104 · The design system** (L) · depends on OS-1102
   - Written for Compose: the colour schemes of every theme (System, Light, Dark, OLED Black, High contrast, Forest, Ocean, Sunset, Strava and Strava dark) plus dynamic colour, typography, shapes, spacing, sport and zone colours, and the components every screen uses (cards, chips, bottom sheets, skeletons, empty and error states, top bars, list rows, segmented periods). Material Symbols as the icon set, the ZANKUP wordmark as an `ImageVector`. A catalogue screen in debug builds and screenshot tests of every component in light and dark.
 - **OS-1105 · Languages** (S) · depends on OS-1102
@@ -713,7 +715,7 @@ buffers it the answer arrives whole, which is acceptable at this length.
   - The refresh token encrypted with a Keystore key that needs class 3 biometrics (`BiometricPrompt` with a `CryptoObject`), destroyed when the enrolled fingerprints change; refreshed with `rotate: false`. Weak biometrics only as an app lock, as a setting.
   - *Done when:* on the S26 you sign in once with Google and afterwards open Zankup Next with just your fingerprint.
 - **OS-1112 · Navigation** (M) · depends on OS-1104
-  - The five tabs in the React Native app's order, every stacked screen of the screen map as a typed route, `zankup://activity/<id>` deep links, predictive back, and Home's header (Sync, Coach, Search, Notifications).
+  - The five tabs in the React Native app's order, every stacked screen of the screen map as a typed route, `zankup://activity/<id>` deep links, predictive back, and the headers as the React Native app has them: Home's (the Coach when the AI is on, Notifications) and Activities' (Sync, Calendar, the search bar).
 
 ### Block 2 · Data, offline, sync and notifications
 
@@ -765,7 +767,7 @@ buffers it the answer arrives whole, which is acceptable at this length.
 - **OS-1162 · The Coach and the AI** (M) · depends on OS-1103
   - The activity's summary, the weekly report and the Coach streamed as it is written, its links opening the activity; the assistants.
 - **OS-1163 · Gear, import, sync and notifications** (M) · depends on OS-1120
-  - Gear; importing files picked on the phone and uploaded in parts; the Sync screen (now, whole history, progress, latest runs); the notifications inbox.
+  - Gear; importing files picked on the phone and uploaded in parts (`PUT /api/direct/uploads/{import_id}/{index}` is not in the OpenAPI document: it is added there, or called by hand); the Sync screen (now, whole history, progress, latest runs); the notifications inbox.
 
 ### Block 7 · What only Android has
 
