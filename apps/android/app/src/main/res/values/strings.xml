@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Zankup Next</string>
+    <string name="start_title">The native Zankup is on its way</string>
+    <string name="start_body">This build is the foundation: theme, languages and the API client. Screens arrive block by block.</string>
+    <string name="start_checking">Checking %1$s…</string>
+    <string name="start_connected">Connected to %1$s · API %2$s</string>
+    <string name="start_unreachable">%1$s cannot be reached</string>
+</resources>

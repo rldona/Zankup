@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="start_title">El Zankup nativo está en camino</string>
+    <string name="start_body">Esta versión es la base: tema, idiomas y el cliente de la API. Las pantallas llegan bloque a bloque.</string>
+    <string name="start_checking">Comprobando %1$s…</string>
+    <string name="start_connected">Conectado a %1$s · API %2$s</string>
+    <string name="start_unreachable">No se puede llegar a %1$s</string>
+</resources>

@@ -1,0 +1,31 @@
+# Material Symbols (Rounded, weight 400, grade 0, optical size 24) used by the app. "name" or "name fill"
+# for the filled one too. Run scripts/material_symbols.py after changing this list.
+home fill
+cards_stack fill
+monitoring fill
+favorite fill
+person fill
+arrow_back
+chevron_right
+close
+check
+add
+search
+sync
+notifications fill
+settings
+chat
+error
+cloud_off
+refresh
+more_vert
+visibility
+visibility_off
+fingerprint
+directions_run
+directions_bike
+directions_walk
+fitness_center
+rowing
+pool
+exercise

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texts of the shared components. Every one must exist in values-es (StringsTest). -->
+<resources>
+    <string name="brand_name" translatable="false">Zankup</string>
+    <string name="loading">Loading</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    <string name="retry">Try again</string>
+    <string name="error_title">Something went wrong</string>
+    <string name="error_body">It could not be loaded. Try again in a moment.</string>
+    <string name="error_offline_title">You are offline</string>
+    <string name="error_offline_body">It will load when you are back online.</string>
+
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_oled">OLED black</string>
+    <string name="theme_high_contrast">High contrast</string>
+    <string name="theme_forest">Forest</string>
+    <string name="theme_ocean">Ocean</string>
+    <string name="theme_sunset">Sunset</string>
+    <string name="theme_strava">Strava</string>
+    <string name="theme_strava_dark">Strava dark</string>
+
+    <plurals name="activities">
+        <item quantity="one">%d activity</item>
+        <item quantity="other">%d activities</item>
+    </plurals>
+</resources>

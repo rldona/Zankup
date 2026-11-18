@@ -1,5 +1,5 @@
 # Common tasks. Everything also works with the underlying commands (see README).
-.PHONY: help setup dev api db stop test lint format check generate-api migrate migration sync history
+.PHONY: help setup dev api db stop test lint format check generate-api migrate migration sync history android android-release
 
 help: ## List the tasks
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  make %-13s %s\n", $$1, $$2}'
@@ -57,3 +57,9 @@ sync: migrate ## Sync new Garmin activities into the local database (since=YYYY-
 
 history: migrate ## Load the whole Garmin Connect history into the local database (safe to re-run)
 	uv run python -m zankup.sync --all
+
+android: ## Native app (apps/android): build "Zankup Next Dev" and install it on the connected phone
+	cd apps/android && ./gradlew installDebug
+
+android-release: ## Native app: build the signed release ("Zankup Next") and install it on the connected phone
+	cd apps/android && ./gradlew installRelease
