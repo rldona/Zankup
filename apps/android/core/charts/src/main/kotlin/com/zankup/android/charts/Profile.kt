@@ -58,5 +58,9 @@ class Series(
     /** Keep the axis on zero (power, cadence); otherwise it hugs the values (altitude, heart rate). */
     val fromZero: Boolean = false,
     /** The elevation drawn in grey behind the series, on its own scale (as Strava combines them). */
-    val backdrop: FloatArray? = null
+    val backdrop: FloatArray? = null,
+    /** The average, dashed across the chart, in the axis' unit. */
+    val average: Float? = null,
+    /** The axis' unit, written in place of its lowest label ("/km", "bpm", "m"). */
+    val unit: String? = null
 )
