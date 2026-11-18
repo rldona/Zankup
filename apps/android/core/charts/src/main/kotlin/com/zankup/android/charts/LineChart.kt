@@ -160,9 +160,9 @@ fun LineChart(
                 val top = 0f
                 val bottom = size.height - bottomBand.toPx()
                 val plot = Size(right - left, bottom - top)
-                // A point every 3 dp, each the average of what falls in it, joined by a smooth curve: the
+                // A point every 2 dp, each the average of what falls in it, joined by a smooth curve: the
                 // shape reads without the needles of every sample.
-                val count = (plot.width / 3.dp.toPx()).toInt().coerceIn(2, 400)
+                val count = (plot.width / 2.dp.toPx()).toInt().coerceIn(2, 600)
                 val stepX = plot.width / (count - 1)
                 val cols = soften(columns(profile, values, count))
                 val back = series.backdrop?.let { soften(columns(profile, it, count)) }
