@@ -62,6 +62,7 @@ class ZankupApi(
             .Builder()
             .baseUrl(baseUrl)
             .client(http)
+            .addConverterFactory(EnumQueries)
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(ZankupJson.asConverterFactory("application/json".toMediaType()))
             .build()
