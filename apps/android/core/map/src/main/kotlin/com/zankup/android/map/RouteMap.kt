@@ -42,8 +42,8 @@ import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
 /** OpenFreeMap's styles (free, no key): quiet enough for the route on top to stand out. */
-private const val STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron"
-private const val STYLE_DARK = "https://tiles.openfreemap.org/styles/dark"
+internal const val STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron"
+internal const val STYLE_DARK = "https://tiles.openfreemap.org/styles/dark"
 
 /**
  * The activity's map (OS-1132): the route, coloured by a metric over the shared ramp when [colours] has
@@ -57,11 +57,13 @@ fun RouteMap(
     section: ChartSection,
     modifier: Modifier = Modifier,
     colours: List<Pair<Double, Color>>? = null,
-    interactive: Boolean = true
+    interactive: Boolean = true,
+    /** The line's colour when there is no gradient; the accent by default. */
+    colour: Color? = null
 ) {
     val context = LocalContext.current
     val palette = ZankupTheme.colors
-    val accent = palette.accent
+    val accent = colour ?: palette.accent
     val surface = palette.surface
     val view = remember { mapView(context) }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }

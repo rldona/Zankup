@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="routes_title">Your routes</string>
+    <string name="routes_empty">Routes appear here once you repeat one.</string>
+    <string name="routes_best">Best</string>
+    <string name="routes_latest">Latest</string>
+    <plurals name="routes_times">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
+    <string name="segments_title">Your segments</string>
+    <string name="segments_empty">Save a stretch of an activity as a segment: pick it on the profile and press \"Save as segment\".</string>
+    <string name="segments_delete">Delete segment</string>
+    <string name="segments_history">Your efforts</string>
+    <plurals name="segments_efforts">
+        <item quantity="one">%d effort</item>
+        <item quantity="other">%d efforts</item>
+    </plurals>
+    <string name="routes_cancel">Cancel</string>
+    <string name="routes_delete">Delete</string>
+    <string name="routes_fastest">Fastest</string>
+    <string name="routes_delete_failed">Something went wrong. Try again.</string>
+</resources>

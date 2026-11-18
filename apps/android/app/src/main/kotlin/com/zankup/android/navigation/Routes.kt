@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object SyncRoute
 
 // Progress.
-@Serializable data object ProgressDetailRoute
+@Serializable data class ProgressDetailRoute(val sport: String? = null)
 
 @Serializable data object TrainingLogRoute
 
