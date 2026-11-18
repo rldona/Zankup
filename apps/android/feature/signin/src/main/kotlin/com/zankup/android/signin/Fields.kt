@@ -1,12 +1,17 @@
 package com.zankup.android.signin
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,12 +21,23 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
@@ -82,6 +98,7 @@ internal fun Field(
         modifier =
         modifier
             .fillMaxWidth()
+            .keepAboveKeyboard()
             .then(if (contentType != null) Modifier.semantics { this.contentType = contentType } else Modifier)
     )
 }
@@ -104,6 +121,7 @@ internal fun CodeBoxes(code: String, onCode: (String) -> Unit, onComplete: () ->
         keyboardActions = KeyboardActions(onDone = { onComplete() }),
         modifier =
         modifier
+            .keepAboveKeyboard()
             .focusRequester(focus)
             .semantics {
                 contentDescription = description
@@ -135,4 +153,47 @@ internal fun CodeBoxes(code: String, onCode: (String) -> Unit, onComplete: () ->
             }
         }
     )
+}
+
+/** Where a form ends (under its buttons and links), so a focused field can bring all of it above the keyboard. */
+internal class FormEnd {
+    var coordinates: LayoutCoordinates? = null
+}
+
+internal val LocalFormEnd = staticCompositionLocalOf<FormEnd?> { null }
+
+/** Marks the end of the form: put it after the last button or link. */
+@Composable
+internal fun Modifier.formEnd(): Modifier {
+    val end = LocalFormEnd.current
+    return onGloballyPositioned { end?.coordinates = it }
+}
+
+/**
+ * Keeps a focused field above the keyboard together with everything under it to the end of the form
+ * ([formEnd]): the button that submits it and the links beside it. On a form taller than the space left,
+ * the field itself wins. It runs again on every step of the keyboard's height, after that frame is laid
+ * out, so the last run sees the screen already shrunk to the keyboard.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun Modifier.keepAboveKeyboard(): Modifier {
+    val requester = remember { BringIntoViewRequester() }
+    var field by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var focused by remember { mutableStateOf(false) }
+    val end = LocalFormEnd.current
+    val keyboard = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, keyboard) {
+        val self = field
+        if (focused && keyboard > 0 && self != null && self.isAttached) {
+            withFrameNanos { }
+            val last = end?.coordinates?.takeIf { it.isAttached }
+            val bottom = last?.let { self.localPositionOf(it, Offset(0f, it.size.height.toFloat())).y } ?: 0f
+            requester.bringIntoView(Rect(0f, 0f, self.size.width.toFloat(), maxOf(self.size.height.toFloat(), bottom)))
+        }
+    }
+    return this
+        .bringIntoViewRequester(requester)
+        .onGloballyPositioned { field = it }
+        .onFocusChanged { focused = it.hasFocus }
 }

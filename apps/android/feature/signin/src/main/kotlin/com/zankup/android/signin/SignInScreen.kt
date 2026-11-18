@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -29,6 +31,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,36 +73,46 @@ fun SignInScreen(viewModel: SignInViewModel = hiltViewModel()) {
             .imePadding(),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            Modifier
-                .widthIn(max = 480.dp)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = ZankupTheme.spacing.l, vertical = ZankupTheme.spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.m)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Mark(height = 32.dp, color = colors.accent)
-                Wordmark(height = 20.dp)
-            }
-            when (ui.step) {
-                Step.INSTANCE -> InstanceStep(ui, viewModel)
-                Step.PASSWORD -> PasswordStep(ui, viewModel, onGoogle = { viewModel.google(credentials, prompter) }) {
-                    viewModel.passkey(credentials, prompter)
+        val formEnd = remember { FormEnd() }
+        CompositionLocalProvider(LocalFormEnd provides formEnd) {
+            Column(
+                Modifier
+                    .widthIn(max = 480.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = ZankupTheme.spacing.l, vertical = ZankupTheme.spacing.xl),
+                verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.m)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Mark(height = 32.dp, color = colors.accent)
+                    Wordmark(height = 20.dp)
                 }
-                Step.CODE -> CodeStep(ui, viewModel) { viewModel.submitCode(prompter) }
-                Step.FORGOT -> ForgotStep(ui, viewModel)
-                Step.SETUP_ACCOUNT -> SetupAccountStep(ui, viewModel)
-                Step.SETUP_TOTP -> SetupTotpStep(ui, viewModel)
-                Step.SETUP_CODES -> SetupCodesStep(ui, viewModel) { viewModel.finishSetup(prompter) }
-            }
-            ui.error?.let { ErrorText(it) }
-            if (ui.notKept) {
-                Text(
-                    stringResource(R.string.signin_not_kept),
-                    color = colors.muted,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                when (ui.step) {
+                    Step.INSTANCE -> InstanceStep(ui, viewModel)
+                    Step.PASSWORD -> PasswordStep(ui, viewModel, onGoogle = {
+                        viewModel.google(credentials, prompter)
+                    }) {
+                        viewModel.passkey(credentials, prompter)
+                    }
+                    Step.CODE -> CodeStep(ui, viewModel) { viewModel.submitCode(prompter) }
+                    Step.FORGOT -> ForgotStep(ui, viewModel)
+                    Step.SETUP_ACCOUNT -> SetupAccountStep(ui, viewModel)
+                    Step.SETUP_TOTP -> SetupTotpStep(ui, viewModel)
+                    Step.SETUP_CODES -> SetupCodesStep(ui, viewModel) { viewModel.finishSetup(prompter) }
+                }
+                ui.error?.let { ErrorText(it) }
+                if (ui.notKept) {
+                    Text(
+                        stringResource(R.string.signin_not_kept),
+                        color = colors.muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                // The end of the form: a focused field brings everything down to here above the keyboard.
+                Spacer(Modifier.height(ZankupTheme.spacing.s).formEnd())
             }
         }
     }
