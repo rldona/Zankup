@@ -20,7 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 /** A pace with stops far outside its axis, the elevation behind, a section and the cursor. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w411dp-h300dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "w411dp-h330dp-xxhdpi")
 class LineChartScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
@@ -29,7 +29,7 @@ class LineChartScreenshotTest {
     fun paceWithStopsCursorAndSection() {
         val n = 600
         val profile = Profile(FloatArray(n) { it * 17f }, byTime = false)
-        val pace = FloatArray(n) { if (it % 150 == 0) 1800f else 330f + 20f * sin(it / 25f) }
+        val pace = FloatArray(n) { if (it % 300 == 150) 30f else 5.5f + 0.4f * sin(it / 9f) + 0.25f * sin(it / 37f) }
         val alt = FloatArray(n) { 650f + 30f * sin(it / 80f) }
         val cursor = ChartCursor().apply { index = 240 }
         val section = ChartSection().apply { range = 300..420 }
@@ -38,14 +38,20 @@ class LineChartScreenshotTest {
                 LineChart(
                     profile,
                     Series("Pace", pace, {
-                        "%d:%02d".format(it.toInt() / 60, it.toInt() % 60)
-                    }, "5:30 /km", inverted = true, backdrop = alt),
+                        val sec = (it * 60).toInt()
+                        "%d:%02d".format(sec / 60, sec % 60)
+                    }, "5:30 /km", inverted = true, backdrop = alt, average = 5.55f, unit = "/km"),
                     cursor,
                     section,
-                    modifier = Modifier.background(ZankupTheme.colors.surface).padding(8.dp),
+                    // Room on top for the bubble, which rises above the chart.
+                    modifier = Modifier.background(
+                        ZankupTheme.colors.surface
+                    ).padding(top = 72.dp, start = 8.dp, end = 8.dp),
                     xLabel = { "%.2f km".format(it / 1000f) },
                     markLabel = { "%.0f km".format(it / 1000f) },
-                    clip = true
+                    clip = true,
+                    color = androidx.compose.ui.graphics.Color(0xFF67A3E6),
+                    height = 230.dp
                 )
             }
         }

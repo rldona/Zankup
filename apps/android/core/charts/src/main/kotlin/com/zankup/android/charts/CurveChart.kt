@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,18 +21,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.theme.ZankupTheme
-import com.zankup.android.domain.niceAxis
+import com.zankup.android.domain.tightAxis
 import kotlin.math.ln
 
 /** One curve: the best value for each duration (seconds → watts), and its colour. */
@@ -49,17 +53,23 @@ fun CurveChart(
     durationLabel: (Float) -> String,
     modifier: Modifier = Modifier,
     marks: List<Float> = listOf(1f, 5f, 30f, 60f, 300f, 1200f, 3600f),
-    height: Dp = 180.dp
+    height: Dp = 180.dp,
+    /** How the axis writes a value (without its unit, which [unitLabel] puts at the bottom). */
+    axisFormat: (Float) -> String = format,
+    /** The axis' unit, written in place of its lowest label ("W"). */
+    unitLabel: String? = null
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
     val haptics = LocalHapticFeedback.current
-    val labelStyle = TextStyle(color = colors.muted, fontSize = 11.sp)
-    val readout = TextStyle(color = colors.bg, fontSize = 12.sp)
+    val labelStyle = TextStyle(color = colors.fg, fontSize = 13.sp)
+    val valueStyle = TextStyle(color = Color(0xFF16181D), fontSize = 19.sp, fontWeight = FontWeight.Bold)
+    val whereStyle = TextStyle(color = Color(0xFF16181D), fontSize = 14.sp)
     val durations = curves.flatMap { c -> c.points.map { it.first } }.distinct().sorted()
     var picked by remember(durations) { mutableIntStateOf(-1) }
-    val axisWidth = 40.dp
-    val bottomBand = 20.dp
+    // Where the plot starts: just past the widest axis value, so the values and the chart sit centred.
+    val plotLeft = remember { mutableFloatStateOf(0f) }
+    val bottomBand = 28.dp
     val lo = ln(durations.firstOrNull()?.coerceAtLeast(1f) ?: 1f)
     val hi = ln(durations.lastOrNull()?.coerceAtLeast(2f) ?: 2f)
 
@@ -68,18 +78,30 @@ fun CurveChart(
             .fillMaxWidth()
             .height(height)
             .pointerInput(durations) {
-                val left = axisWidth.toPx()
                 fun at(px: Float): Int {
+                    val left = plotLeft.floatValue
                     val share = ((px - left) / (size.width - left)).coerceIn(0f, 1f)
                     val target = lo + share * (hi - lo)
                     return durations.indices.minByOrNull { kotlin.math.abs(ln(durations[it]) - target) } ?: -1
                 }
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    val before = picked
                     picked = at(down.position.x)
                     val drag =
                         awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-                            ?: return@awaitEachGesture
+                    if (drag == null) {
+                        // A tap hides the bubble already shown; a scroll of the page leaves it as it was.
+                        val tapped = currentEvent.changes.none { it.pressed }
+                        picked = if (!tapped) {
+                            before
+                        } else if (before >= 0) {
+                            -1
+                        } else {
+                            picked
+                        }
+                        return@awaitEachGesture
+                    }
                     horizontalDrag(drag.id) { change ->
                         val now = at(change.position.x)
                         if (now != picked) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
@@ -88,13 +110,22 @@ fun CurveChart(
                     }
                 }
             }.drawWithCache {
-                val left = axisWidth.toPx()
+                val all = curves.flatMap { c -> c.points.map { it.second } }
+                // The axis hugs the values, as Strava's: the long durations fill the chart too.
+                val axis = tightAxis((all.minOrNull() ?: 0f).toDouble(), (all.maxOrNull() ?: 1f).toDouble())
+                val widest =
+                    (axis.ticks.map { axisFormat(it.toFloat()) } + listOfNotNull(unitLabel))
+                        .maxOfOrNull { measurer.measure(it, labelStyle).size.width } ?: 0
+                val left = widest + 10.dp.toPx()
+                plotLeft.floatValue = left
+                val right = size.width - 1f
                 val bottom = size.height - bottomBand.toPx()
-                val width = size.width - left
-                val top = curves.flatMap { c -> c.points.map { it.second } }.maxOrNull() ?: 1f
-                val axis = niceAxis(0.0, top.toDouble().coerceAtLeast(1.0))
+                val width = right - left
                 fun x(d: Float) = left + (ln(d.coerceAtLeast(1f)) - lo) / (hi - lo).coerceAtLeast(1e-6f) * width
-                fun y(v: Float) = bottom - (v / axis.max.toFloat()) * bottom
+                fun y(v: Float): Float {
+                    val share = ((v - axis.min) / (axis.max - axis.min).coerceAtLeast(1e-9)).toFloat()
+                    return bottom - share.coerceIn(0f, 1f) * bottom
+                }
                 val paths =
                     curves.map { curve ->
                         curve to
@@ -104,64 +135,82 @@ fun CurveChart(
                                 }
                             }
                     }
-                val ticks = axis.ticks.map { it to measurer.measure(format(it.toFloat()), labelStyle) }
+                val grid = Color(0xFF4A4A48)
+                val ticks =
+                    axis.ticks.filter { y(it.toFloat()) < bottom - 2f }
+                        .map { it to measurer.measure(axisFormat(it.toFloat()), labelStyle) }
+                val unitText = unitLabel?.let { measurer.measure(it, labelStyle) }
                 val markLabels = marks.filter {
                     it in (durations.firstOrNull() ?: 0f)..(durations.lastOrNull() ?: 0f)
-                }.map {
-                    it to
-                        measurer.measure(durationLabel(it), labelStyle)
-                }
+                }.map { it to measurer.measure(durationLabel(it), labelStyle) }
                 onDrawBehind {
+                    // The grid: a line at each round value and each duration mark, inside a frame.
                     ticks.forEach { (tick, label) ->
                         val ty = y(tick.toFloat())
-                        drawLine(colors.line, Offset(left, ty), Offset(size.width, ty), 1f)
+                        drawLine(grid, Offset(left, ty), Offset(right, ty), 1.5f)
                         drawText(
                             label,
                             topLeft = Offset(
-                                left - label.size.width - 6f,
-                                (ty - label.size.height / 2f).coerceIn(
-                                    0f,
-                                    bottom - label.size.height
-                                )
+                                left - label.size.width - 10.dp.toPx(),
+                                ty - label.size.height / 2f
                             )
+                        )
+                    }
+                    unitText?.let {
+                        drawText(
+                            it,
+                            topLeft = Offset(left - it.size.width - 10.dp.toPx(), bottom - it.size.height / 2f)
                         )
                     }
                     markLabels.forEach { (d, label) ->
-                        drawText(
-                            label,
-                            topLeft = Offset(
-                                (x(d) - label.size.width / 2f).coerceIn(
-                                    left,
-                                    size.width - label.size.width
-                                ),
-                                bottom + 4f
-                            )
+                        val mx = x(d)
+                        drawLine(grid, Offset(mx, 0f), Offset(mx, bottom + 4.dp.toPx()), 1.5f)
+                        val lx = (mx - label.size.width / 2f).coerceIn(left, size.width - label.size.width)
+                        drawText(label, topLeft = Offset(lx, bottom + 8.dp.toPx()))
+                    }
+                    drawRect(grid, Offset(left, 0f), Size(width, bottom), style = Stroke(1.5f))
+                    paths.forEach { (curve, path) ->
+                        drawPath(
+                            path,
+                            curve.color,
+                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                         )
                     }
-                    paths.forEach { (curve, path) -> drawPath(path, curve.color, style = Stroke(width = 2.dp.toPx())) }
+                    // The pick: a bubble in the curve's colour above the chart with the value and the
+                    // duration, a white line down from it and a dot on each curve.
                     val index = picked
                     if (index in durations.indices) {
                         val d = durations[index]
                         val cx = x(d)
-                        drawLine(colors.fg.copy(alpha = 0.6f), Offset(cx, 0f), Offset(cx, bottom), 1.5f)
-                        val parts =
-                            curves.mapNotNull { c ->
-                                c.points.firstOrNull { it.first == d }?.let { (_, v) ->
-                                    drawCircle(c.color, 4.dp.toPx(), Offset(cx, y(v)))
-                                    format(v)
-                                }
+                        val found = curves.mapNotNull { c ->
+                            c.points.firstOrNull { it.first == d }?.let {
+                                c to
+                                    it.second
                             }
-                        val label = measurer.measure("${durationLabel(d)} · ${parts.joinToString(" / ")}", readout)
-                        val pad = 6.dp.toPx()
-                        val w = label.size.width + pad * 2
-                        val bx = (cx - w / 2f).coerceIn(left, size.width - w)
-                        drawRoundRect(
-                            colors.fg,
-                            Offset(bx, 0f),
-                            Size(w, label.size.height + pad),
-                            CornerRadius(pad, pad)
+                        }
+                        // The last curve is the one on top (this activity): its colour and its value first.
+                        val tint = found.lastOrNull()?.first?.color ?: colors.accent
+                        val value = measurer.measure(
+                            found.reversed().joinToString(" / ") {
+                                format(it.second)
+                            },
+                            valueStyle
                         )
-                        drawText(label, topLeft = Offset(bx + pad, pad / 2f))
+                        val where = measurer.measure(durationLabel(d), whereStyle)
+                        val padX = 12.dp.toPx()
+                        val padY = 8.dp.toPx()
+                        val w = maxOf(value.size.width, where.size.width) + padX * 2
+                        val h = value.size.height + where.size.height + padY * 2
+                        val bx = (cx - w / 2f).coerceIn(0f, size.width - w)
+                        val by = -h - 6.dp.toPx()
+                        drawLine(Color.White, Offset(cx, by + h), Offset(cx, bottom), 2.dp.toPx())
+                        drawRoundRect(tint, Offset(bx, by), Size(w, h), CornerRadius(10.dp.toPx()))
+                        drawText(value, topLeft = Offset(bx + padX, by + padY))
+                        drawText(where, topLeft = Offset(bx + padX, by + padY + value.size.height))
+                        found.forEach { (_, v) ->
+                            drawCircle(Color.White.copy(alpha = 0.3f), 9.dp.toPx(), Offset(cx, y(v)))
+                            drawCircle(Color.White, 5.dp.toPx(), Offset(cx, y(v)))
+                        }
                     }
                 }
             }

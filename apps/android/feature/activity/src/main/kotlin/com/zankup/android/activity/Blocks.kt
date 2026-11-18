@@ -820,11 +820,20 @@ internal fun PowerCurveCard(a: ActivityDetail, model: ActivityModel) {
             Curve(
                 stringResource(R.string.this_activity),
                 mine.map { it.durationS.toFloat() to it.value.toFloat() },
-                ZankupTheme.colors.sport.ride
+                androidx.compose.ui.graphics.Color(0xFFA63DE6)
             )
         )
     Block(stringResource(R.string.power_curve)) {
-        CurveChart(curves, format = { "%.0f W".format(it) }, durationLabel = ::durationLabel)
+        // Room above for the bubble, which rises over the title while the curve is touched.
+        androidx.compose.foundation.layout.Spacer(Modifier.height(32.dp))
+        CurveChart(
+            curves,
+            format = { "%.0f W".format(it) },
+            durationLabel = ::durationLabel,
+            axisFormat = { "%.0f".format(it) },
+            unitLabel = "W",
+            height = 230.dp
+        )
     }
 }
 

@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -409,14 +410,18 @@ private fun FiguresBlock(a: ActivityDetail, sport: Sport) {
 /** A chart's colour, as Strava's: the kinds' zone colours, cadence in zone 4's orange, the elevation grey. */
 @Composable
 private fun chartColour(kind: Kind) = when (kind) {
-    Kind.HR -> HR_SCALE[4]
-    Kind.POWER -> POWER_SCALE[4]
-    Kind.PACE, Kind.GAP, Kind.SPEED -> PACE_SCALE[4]
-    Kind.CADENCE -> ZankupTheme.colors.zones[3]
-    Kind.ELEVATION -> ZankupTheme.colors.muted
+    Kind.HR -> Color(0xFFF07473)
+    Kind.POWER -> Color(0xFFD09CF2)
+    Kind.PACE, Kind.SPEED -> Color(0xFF67A3E6)
+    Kind.GAP -> Color(0xFFCFE2F7)
+    Kind.CADENCE -> Color(0xFFF07FD6)
+    Kind.ELEVATION -> Color(0xFF6B6A64)
 }
 
-/** One chart on a card of its own: its title, the chart and its figures centred under it. */
+/**
+ * One chart on a card of its own: its title, the chart (the touched value in a bubble above it) and its
+ * figures under it, one a row, the label on the left and the value on the right.
+ */
 @Composable
 private fun ChartCard(
     chart: Chart,
@@ -430,11 +435,14 @@ private fun ChartCard(
     val unit = if (formats.units == Units.METRIC) 1000f else 1609.344f
     val colors = ZankupTheme.colors
     ZankupCard(Modifier.padding(horizontal = 16.dp)) {
-        CardTitle(chart.series.label, Modifier.padding(bottom = 24.dp))
+        // Room under the title for the bubble, which rises over it while the chart is touched.
+        CardTitle(chart.series.label, Modifier.padding(bottom = 40.dp))
+        // Each chart its own bubble, not tied to the other charts nor to the map.
+        val own = remember(chart.kind) { ChartCursor() }
         LineChart(
             drawn.profile,
             chart.series,
-            cursor,
+            own,
             section,
             selecting = selecting,
             unit = if (drawn.profile.byTime) 60f else unit,
@@ -443,9 +451,7 @@ private fun ChartCard(
             },
             markLabel = { x ->
                 if (drawn.profile.byTime) {
-                    formatDuration(
-                        x.toDouble()
-                    )
+                    formatDuration(x.toDouble())
                 } else {
                     "%.0f %s".format(x / unit, formats.unit.distanceUnit)
                 }
@@ -453,21 +459,18 @@ private fun ChartCard(
             // Every chart scaled as the React Native app's: outliers trimmed, four round steps.
             clip = true,
             color = chartColour(chart.kind),
-            height = 170.dp,
-            filled = true
+            height = 230.dp
         )
         val footer = chart.footer + extra
         if (footer.isNotEmpty()) {
-            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-            androidx.compose.foundation.layout.FlowRow(
-                Modifier.fillMaxWidth().padding(top = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
                 footer.forEach { (label, value) ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(label, fontSize = 11.sp, color = colors.muted)
-                        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, style = Numbers.tabular)
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(label, Modifier.weight(1f), fontSize = 16.sp, color = colors.fg)
+                        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Bold, style = Numbers.tabular)
                     }
                 }
             }

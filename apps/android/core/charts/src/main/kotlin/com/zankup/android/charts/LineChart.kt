@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -21,13 +22,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,6 +33,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,14 +69,19 @@ fun LineChart(
     /** Clip the axis to the 2nd–98th percentile, so a stop does not flatten a pace. */
     clip: Boolean = false,
     height: Dp = 168.dp,
-    /** Strava's look: a solid area in [color] with no line, over the elevation in grey, the grid dashed. */
-    filled: Boolean = false
+    /** Kept for callers; every chart is drawn as a solid area now. */
+    @Suppress("UNUSED_PARAMETER") filled: Boolean = true,
+    /** The series' average, dashed across the chart. */
+    average: Float? = series.average,
+    /** The axis' unit, written in place of its lowest label ("/km", "bpm", "m"). */
+    unitLabel: String? = series.unit
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
     val haptics = LocalHapticFeedback.current
-    val labelStyle = TextStyle(color = colors.muted, fontSize = 11.sp)
-    val readoutStyle = TextStyle(color = colors.bg, fontSize = 12.sp)
+    val labelStyle = TextStyle(color = colors.fg, fontSize = 13.sp)
+    val valueStyle = TextStyle(color = Color(0xFF16181D), fontSize = 19.sp, fontWeight = FontWeight.Bold)
+    val whereStyle = TextStyle(color = Color(0xFF16181D), fontSize = 14.sp)
 
     // The slide between old and new values.
     var shown by remember { mutableStateOf(series.values) }
@@ -94,8 +97,10 @@ fun LineChart(
     }
 
     val current by rememberUpdatedState(selecting)
-    val axisWidth = 40.dp
-    val bottomBand = 20.dp
+    // Where the plot starts: just past the widest axis value, so the values and the chart sit centred
+    // in the card. Worked out while drawing; the finger reads it.
+    val plotLeft = remember { mutableFloatStateOf(0f) }
+    val bottomBand = 28.dp
     val step = markStep(profile.total, unit)
 
     Spacer(
@@ -104,8 +109,8 @@ fun LineChart(
             .height(height)
             .semantics { contentDescription = "${series.label}: ${series.summary}" }
             .pointerInput(profile) {
-                val left = axisWidth.toPx()
                 fun indexAt(px: Float): Int {
+                    val left = plotLeft.floatValue
                     val share = ((px - left) / (size.width - left)).coerceIn(0f, 1f)
                     return profile.indexAt(share * profile.total)
                 }
@@ -127,10 +132,16 @@ fun LineChart(
                         }
                         mark = now
                     }
+                    val showing = cursor.index >= 0
                     // Only a sideways move is the chart's: a vertical one is left to the page's scroll.
                     val drag =
                         awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-                            ?: return@awaitEachGesture run { if (!current) cursor.index = start }
+                    if (drag == null) {
+                        // A tap (not a scroll): it shows the bubble there, or hides the one already shown.
+                        val tapped = currentEvent.changes.none { it.pressed }
+                        if (tapped && !current) cursor.index = if (showing) -1 else start
+                        return@awaitEachGesture
+                    }
                     follow(drag.position.x)
                     horizontalDrag(drag.id) { change ->
                         follow(change.position.x)
@@ -138,80 +149,91 @@ fun LineChart(
                     }
                 }
             }.drawWithCache {
-                val left = axisWidth.toPx()
-                val bottom = size.height - bottomBand.toPx()
-                val plot = Size(size.width - left, bottom)
                 val values = if (morph.value >= 1f) shown else blend(previous, shown, morph.value)
                 val axis = axisFor(values, series.fromZero, clip)
-                val count = plot.width.toInt().coerceAtLeast(1)
-                val cols = columns(profile, values, count)
-                val back = series.backdrop?.let { columns(profile, it, count) }
+                val widest =
+                    (axis?.ticks.orEmpty().map { series.format(it.toFloat()) } + listOfNotNull(unitLabel))
+                        .maxOfOrNull { measurer.measure(it, labelStyle).size.width } ?: 0
+                val left = widest + 10.dp.toPx()
+                plotLeft.floatValue = left
+                val right = size.width - 1f
+                val top = 0f
+                val bottom = size.height - bottomBand.toPx()
+                val plot = Size(right - left, bottom - top)
+                // A point every 2 dp, each the average of what falls in it, joined by a smooth curve: the
+                // shape reads without the needles of every sample.
+                val count = (plot.width / 2.dp.toPx()).toInt().coerceIn(2, 600)
+                val stepX = plot.width / (count - 1)
+                val cols = soften(columns(profile, values, count))
+                val back = series.backdrop?.let { soften(columns(profile, it, count)) }
                 val backRange = series.backdrop?.let { valueRange(it, false) }
 
                 fun y(v: Float): Float {
                     axis ?: return bottom
-                    // Outside the axis (a stop in a pace) the line stays on its edge.
+                    // Outside the axis (a stop in a pace) the area stays on its edge.
                     val share = ((v - axis.min) / (axis.max - axis.min)).toFloat().coerceIn(0f, 1f)
-                    return if (series.inverted) share * bottom else bottom - share * bottom
+                    return if (series.inverted) top + share * plot.height else bottom - share * plot.height
                 }
 
-                // The elevation behind, on its own scale, filling the lower part.
+                // The elevation behind, on its own scale, nearly to the top (as Strava draws it).
                 val backPath =
                     if (back != null && backRange != null) {
                         val (lo, hi) = backRange
                         val span = (hi - lo).takeIf { it > 0f } ?: 1f
-                        areaPath(back, left, bottom) { bottom - (it - lo) / span * bottom * 0.85f }
+                        areaPath(back, left, stepX, bottom) { bottom - (it - lo) / span * plot.height * 0.95f }
                     } else {
                         null
                     }
-                val line = linePath(cols, left) { y(it) }
-                val area = areaPath(cols, left, bottom) { y(it) }
-                val fill =
-                    if (filled) {
-                        SolidColor(color.copy(alpha = 0.75f))
-                    } else {
-                        Brush.verticalGradient(listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.04f)), 0f, bottom)
-                    }
-                val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
-                val ticks = axis?.ticks.orEmpty()
+                val area = areaPath(cols, left, stepX, bottom) { y(it) }
+                val grid = Color(0xFF4A4A48)
+                val dash = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))
+                // The round values, but the lowest is the unit, on the baseline.
+                val ticks = axis?.ticks.orEmpty().filter { y(it.toFloat()) < bottom - 2f }
                 val tickLabels = ticks.map { measurer.measure(series.format(it.toFloat()), labelStyle) }
+                val unitText = unitLabel?.let { measurer.measure(it, labelStyle) }
                 val marks =
-                    generateSequence(0f) { it + step }
+                    generateSequence(step) { it + step }
                         .takeWhile { it <= profile.total }
                         .map { it to measurer.measure(markLabel(it), labelStyle) }
                         .toList()
 
                 onDrawBehind {
-                    backPath?.let {
-                        drawPath(it, if (filled) colors.muted.copy(alpha = 0.3f) else colors.fg.copy(alpha = 0.08f))
-                    }
+                    backPath?.let { drawPath(it, Color(0xFF3A3A37)) }
+                    drawPath(area, color.copy(alpha = 0.8f))
+                    // The grid: a line at each round value and each mark, inside a frame.
                     ticks.forEachIndexed { i, tick ->
                         val ty = y(tick.toFloat())
-                        // Filled, only the baseline is solid.
-                        val effect = if (filled && ty < bottom - 1f) dash else null
-                        drawLine(colors.line, Offset(left, ty), Offset(size.width, ty), 1f, pathEffect = effect)
+                        drawLine(grid, Offset(left, ty), Offset(right, ty), 1.5f)
                         val label = tickLabels[i]
-                        // Inside the chart: the top label must not climb onto what sits above it.
-                        val top = (ty - label.size.height / 2f).coerceIn(0f, bottom - label.size.height)
-                        drawText(label, topLeft = Offset(left - label.size.width - 6f, top))
+                        drawText(
+                            label,
+                            topLeft = Offset(
+                                left - label.size.width - 10.dp.toPx(),
+                                ty - label.size.height / 2f
+                            )
+                        )
+                    }
+                    unitText?.let {
+                        drawText(
+                            it,
+                            topLeft = Offset(left - it.size.width - 10.dp.toPx(), bottom - it.size.height / 2f)
+                        )
                     }
                     var free = left
                     marks.forEach { (at, label) ->
                         val mx = left + at / profile.total * plot.width
+                        drawLine(grid, Offset(mx, top), Offset(mx, bottom + 4.dp.toPx()), 1.5f)
                         val lx = (mx - label.size.width / 2f).coerceIn(left, size.width - label.size.width)
                         // A mark too close to the one before is left out rather than written over it.
                         if (lx >= free) {
-                            drawText(label, topLeft = Offset(lx, bottom + 4f))
+                            drawText(label, topLeft = Offset(lx, bottom + 8.dp.toPx()))
                             free = lx + label.size.width + 8.dp.toPx()
                         }
                     }
-                    drawPath(area, fill)
-                    if (!filled) {
-                        drawPath(
-                            line,
-                            color,
-                            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                        )
+                    drawRect(grid, Offset(left, top), plot, style = Stroke(1.5f))
+                    average?.takeIf { it.isFinite() && axis != null }?.let { mean ->
+                        val ay = y(mean)
+                        drawLine(colors.fg, Offset(left, ay), Offset(right, ay), 1.5.dp.toPx(), pathEffect = dash)
                     }
 
                     // The section: a band, read here so picking it redraws only this canvas.
@@ -219,46 +241,35 @@ fun LineChart(
                         val from = left + profile.x[range.first] / profile.total * plot.width
                         val to = left + profile.x[range.last] / profile.total * plot.width
                         drawRect(
-                            colors.accent.copy(alpha = 0.16f),
-                            Offset(from, 0f),
-                            Size((to - from).coerceAtLeast(2f), bottom)
+                            colors.fg.copy(alpha = 0.16f),
+                            Offset(from, top),
+                            Size((to - from).coerceAtLeast(2f), plot.height)
                         )
                     }
 
-                    // The cursor: a line, a dot on the series and the value with where it is.
+                    // The cursor: a bubble in the series' colour above the chart with the value and where it
+                    // is, a white line down from it, and a dot on the value.
                     val index = cursor.index
                     if (index in 0 until profile.size) {
                         val cx = left + profile.x[index] / profile.total * plot.width
-                        drawLine(
-                            colors.fg.copy(alpha = 0.6f),
-                            Offset(cx, 0f),
-                            Offset(cx, bottom),
-                            1.5f,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
-                        )
                         val v = values.getOrElse(index) { Float.NaN }
-                        val text = if (v.isFinite()) {
-                            "${series.format(
-                                v
-                            )} · ${xLabel(profile.x[index])}"
-                        } else {
-                            xLabel(profile.x[index])
-                        }
+                        val text = if (v.isFinite()) series.format(v) + (unitLabel?.let { " $it" } ?: "") else "—"
+                        val value = measurer.measure(text, valueStyle)
+                        val where = measurer.measure(xLabel(profile.x[index]), whereStyle)
+                        val padX = 12.dp.toPx()
+                        val padY = 8.dp.toPx()
+                        val w = maxOf(value.size.width, where.size.width) + padX * 2
+                        val h = value.size.height + where.size.height + padY * 2
+                        val bx = (cx - w / 2f).coerceIn(0f, size.width - w)
+                        val by = top - h - 6.dp.toPx()
+                        drawLine(Color.White, Offset(cx, by + h), Offset(cx, bottom), 2.dp.toPx())
+                        drawRoundRect(color, Offset(bx, by), Size(w, h), CornerRadius(10.dp.toPx()))
+                        drawText(value, topLeft = Offset(bx + padX, by + padY))
+                        drawText(where, topLeft = Offset(bx + padX, by + padY + value.size.height))
                         if (v.isFinite()) {
-                            drawCircle(colors.surface, 6.dp.toPx(), Offset(cx, y(v)))
-                            drawCircle(color, 4.dp.toPx(), Offset(cx, y(v)))
+                            drawCircle(Color.White.copy(alpha = 0.3f), 9.dp.toPx(), Offset(cx, y(v)))
+                            drawCircle(Color.White, 5.dp.toPx(), Offset(cx, y(v)))
                         }
-                        val label = measurer.measure(text, readoutStyle)
-                        val pad = 6.dp.toPx()
-                        val w = label.size.width + pad * 2
-                        val bx = (cx - w / 2f).coerceIn(left, size.width - w)
-                        drawRoundRect(
-                            colors.fg,
-                            Offset(bx, 0f),
-                            Size(w, label.size.height + pad),
-                            CornerRadius(pad, pad)
-                        )
-                        drawText(label, topLeft = Offset(bx + pad, pad / 2f))
                     }
                 }
             }
@@ -278,35 +289,44 @@ internal fun blend(from: FloatArray, to: FloatArray, t: Float): FloatArray {
     }
 }
 
-private fun linePath(cols: FloatArray, left: Float, y: (Float) -> Float): Path {
-    val path = Path()
-    var open = false
-    cols.forEachIndexed { c, v ->
-        if (v.isFinite()) {
-            if (open) path.lineTo(left + c, y(v)) else path.moveTo(left + c, y(v))
-            open = true
-        } else {
-            open = false
-        }
-    }
-    return path
+/** Each point blended with its neighbours (1·2·1), so a lone sample does not stand as a needle. */
+internal fun soften(cols: FloatArray): FloatArray = FloatArray(cols.size) { i ->
+    val v = cols[i]
+    if (!v.isFinite()) return@FloatArray v
+    val a = cols.getOrNull(i - 1)?.takeIf { it.isFinite() } ?: v
+    val b = cols.getOrNull(i + 1)?.takeIf { it.isFinite() } ?: v
+    (a + 2 * v + b) / 4f
 }
 
-private fun areaPath(cols: FloatArray, left: Float, bottom: Float, y: (Float) -> Float): Path {
+/**
+ * The area under the points ([cols], one every [step] from [left]), down to [bottom]: smooth, each corner
+ * rounded by a curve through the midpoints, and open where there is no value (a gap in the recording).
+ */
+private fun areaPath(cols: FloatArray, left: Float, step: Float, bottom: Float, y: (Float) -> Float): Path {
     val path = Path()
     var start = -1
+    var px = 0f
+    var py = 0f
     fun close(end: Int) {
-        path.lineTo(left + end, bottom)
-        path.lineTo(left + start, bottom)
+        path.lineTo(left + end * step, y(cols[end]))
+        path.lineTo(left + end * step, bottom)
+        path.lineTo(left + start * step, bottom)
         path.close()
     }
     cols.forEachIndexed { c, v ->
+        val x = left + c * step
         if (v.isFinite()) {
+            val vy = y(v)
             if (start == -1) {
                 start = c
-                path.moveTo(left + c, bottom)
+                path.moveTo(x, bottom)
+                path.lineTo(x, vy)
+            } else {
+                // Through the midpoint, with the previous point as the control: no sharp corners.
+                path.quadraticTo(px, py, (px + x) / 2f, (py + vy) / 2f)
             }
-            path.lineTo(left + c, y(v))
+            px = x
+            py = vy
         } else if (start != -1) {
             close(c - 1)
             start = -1

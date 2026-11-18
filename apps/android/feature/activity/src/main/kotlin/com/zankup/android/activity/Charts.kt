@@ -137,7 +137,9 @@ fun draw(
                             f.unit.pace(it)
                         } ?: "—",
                         inverted = true,
-                        backdrop = alt
+                        backdrop = alt,
+                        average = mean?.let { paceOf(it.toFloat()) },
+                        unit = "/" + f.unit.distanceUnit
                     ),
                     footer
                 )
@@ -165,7 +167,9 @@ fun draw(
                                 ::paceText,
                                 average?.let { f.unit.pace(it) } ?: "—",
                                 inverted = true,
-                                backdrop = alt
+                                backdrop = alt,
+                                average = average?.let { paceOf(it.toFloat()) },
+                                unit = "/" + f.unit.distanceUnit
                             ),
                             listOf(labels.gapAverage to (average?.let { f.unit.pace(it) } ?: "—"))
                         )
@@ -189,7 +193,9 @@ fun draw(
                         { formatNumber(it.toDouble(), f.locale, 1, 1) },
                         mean?.let { f.unit.speed(it) } ?: "—",
                         fromZero = true,
-                        backdrop = alt
+                        backdrop = alt,
+                        average = mean?.let { it.toFloat() * factor },
+                        unit = if (metric) "km/h" else "mph"
                     ),
                     footer
                 )
@@ -204,7 +210,19 @@ fun draw(
                 m?.trimp?.let { labels.effort to formatNumber(it.roundToInt().toDouble(), f.locale) }
             )
         charts[Kind.HR] =
-            Chart(Kind.HR, Series(labels.hr, hr, { "%.0f".format(it) }, bpm(hr.mean()), backdrop = alt), footer)
+            Chart(
+                Kind.HR,
+                Series(
+                    labels.hr,
+                    hr,
+                    { "%.0f".format(it) },
+                    bpm(hr.mean()),
+                    backdrop = alt,
+                    average = hr.mean(),
+                    unit = "bpm"
+                ),
+                footer
+            )
         colourBy("hr", labels.hr, hr) { "%.0f bpm".format(it) }
     }
     if (power != null && power.any { it.isFinite() && it > 0f }) {
@@ -224,7 +242,7 @@ fun draw(
                 Kind.POWER,
                 Series(labels.power, power, {
                     "%.0f".format(it)
-                }, watts(power.mean()), fromZero = true, backdrop = alt),
+                }, watts(power.mean()), fromZero = true, backdrop = alt, average = power.mean(), unit = "W"),
                 footer
             )
         colourBy("power", labels.power, power) { "%.0f W".format(it) }
@@ -239,7 +257,15 @@ fun draw(
         charts[Kind.CADENCE] =
             Chart(
                 Kind.CADENCE,
-                Series(labels.cadence, cad, { "%.0f".format(it) }, "${cad.mean().roundToInt()} $per", backdrop = alt),
+                Series(
+                    labels.cadence,
+                    cad,
+                    { "%.0f".format(it) },
+                    "${cad.mean().roundToInt()} $per",
+                    backdrop = alt,
+                    average = cad.mean(),
+                    unit = per
+                ),
                 footer
             )
     }
@@ -255,7 +281,13 @@ fun draw(
         charts[Kind.ELEVATION] =
             Chart(
                 Kind.ELEVATION,
-                Series(label, alt, { "%.0f".format(it) }, f.elevation(alt.highest().toDouble())),
+                Series(
+                    label,
+                    alt,
+                    { "%.0f".format(it) },
+                    f.elevation(alt.highest().toDouble()),
+                    unit = "m"
+                ),
                 footer
             )
         colourBy("alt", label, alt) { f.elevation(it.toDouble()) }
