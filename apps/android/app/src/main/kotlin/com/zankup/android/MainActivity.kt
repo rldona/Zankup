@@ -31,6 +31,8 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var reachability: Reachability
 
+    @Inject lateinit var settings: com.zankup.android.data.UserSettings
+
     /** The link that opened the app (or reached it while open), handed to the navigation once signed in. */
     private var link by mutableStateOf<Intent?>(null)
 
@@ -44,7 +46,7 @@ class MainActivity : FragmentActivity() {
         }
         setContent {
             ZankupTheme {
-                Root(session, reachability, link, onLinkHandled = { link = null })
+                Root(session, reachability, settings, link, onLinkHandled = { link = null })
             }
         }
     }

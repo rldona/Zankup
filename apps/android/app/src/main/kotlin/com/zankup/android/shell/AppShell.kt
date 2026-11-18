@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -95,7 +96,14 @@ private enum class Tab(val route: Any, val routeClass: KClass<*>, val icon: ZIco
 
 /** The signed-in app: the tab bar over the tabs, and every other screen stacked over them (OS-1112). */
 @Composable
-fun AppShell(api: ZankupApi, session: Session, reachability: Reachability, link: Intent?, onLinkHandled: () -> Unit) {
+fun AppShell(
+    api: ZankupApi,
+    session: Session,
+    reachability: Reachability,
+    settings: com.zankup.android.data.UserSettings,
+    link: Intent?,
+    onLinkHandled: () -> Unit
+) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
@@ -106,6 +114,10 @@ fun AppShell(api: ZankupApi, session: Session, reachability: Reachability, link:
         value = (status as? ApiResult.Ok)?.value?.available == true
     }
     val unreachable by reachability.unreachable.collectAsStateWithLifecycle()
+    // Figures in the person's units, as soon as their settings are known (metric until then).
+    val units by settings.units.collectAsStateWithLifecycle(initialValue = com.zankup.android.domain.Units.METRIC)
+    LaunchedEffect(api) { settings.query.refresh() }
+    val formats = remember(units) { com.zankup.android.ui.Formats(units, java.util.Locale.getDefault()) }
     LaunchedEffect(link) {
         if (link != null) {
             // A notification carries the web path it is about; a link, the app's own address.
@@ -115,76 +127,118 @@ fun AppShell(api: ZankupApi, session: Session, reachability: Reachability, link:
         }
     }
     AskForNotifications()
-    Scaffold(
-        containerColor = ZankupTheme.colors.page,
-        bottomBar = {
-            Column {
-                if (unreachable) OfflineNotice()
-                if (onTab) TabBar(nav, destination)
+    androidx.compose.runtime.CompositionLocalProvider(com.zankup.android.ui.LocalFormats provides formats) {
+        Scaffold(
+            containerColor = ZankupTheme.colors.page,
+            bottomBar = {
+                Column {
+                    if (unreachable) OfflineNotice()
+                    if (onTab) TabBar(nav, destination)
+                }
             }
-        }
-    ) { padding ->
-        NavHost(
-            nav,
-            startDestination = HomeRoute,
-            modifier = Modifier.padding(bottom = padding.calculateBottomPadding())
-        ) {
-            val back: () -> Unit = { nav.popBackStack() }
-            val go: (Any) -> Unit = { nav.navigate(it) }
+        ) { padding ->
+            NavHost(
+                nav,
+                startDestination = HomeRoute,
+                modifier = Modifier.padding(bottom = padding.calculateBottomPadding())
+            ) {
+                val back: () -> Unit = { nav.popBackStack() }
+                val go: (Any) -> Unit = { nav.navigate(it) }
 
-            composable<HomeRoute> { HomeTab(coach, go) }
-            composable<ActivitiesRoute> { ActivitiesTab(go) }
-            composable<ProgressRoute> { ProgressTab(go) }
-            composable<HealthRoute> { HealthTab(go) }
-            composable<YouRoute> { YouTab(go, session) }
+                composable<HomeRoute> {
+                    com.zankup.android.home.HomeScreen(
+                        coach = coach,
+                        onOpen = { id -> go(ActivityRoute(id)) },
+                        onCoach = { go(CoachRoute) },
+                        onNotifications = { go(NotificationsRoute) }
+                    )
+                }
+                composable<ActivitiesRoute> {
+                    com.zankup.android.feed.FeedScreen(
+                        onOpen = { id -> go(ActivityRoute(id)) },
+                        onSync = { go(SyncRoute) },
+                        onCalendar = { go(CalendarRoute) }
+                    )
+                }
+                composable<ProgressRoute> { ProgressTab(go) }
+                composable<HealthRoute> { HealthTab(go) }
+                composable<YouRoute> { YouTab(go, session) }
 
-            val scheme = BuildConfig.LINK_SCHEME
-            composable<ActivityRoute>(deepLinks = listOf(navDeepLink<ActivityRoute>(basePath = "$scheme://activity"))) {
-                ActivityPreview(it.toRoute<ActivityRoute>().id, back)
+                val scheme = BuildConfig.LINK_SCHEME
+                composable<ActivityRoute>(
+                    deepLinks = listOf(navDeepLink<ActivityRoute>(basePath = "$scheme://activity"))
+                ) {
+                    com.zankup.android.activity.ActivityScreen(
+                        it.toRoute<ActivityRoute>().id,
+                        com.zankup.android.activity.ActivityLinks(
+                            back = back,
+                            open = { id -> go(ActivityRoute(id)) },
+                            analysis = { id -> go(AnalysisRoute(id)) },
+                            matches = { id -> go(MatchesRoute(id)) },
+                            fitness = { go(FitnessRoute) },
+                            effort = { go(EffortRoute) },
+                            goals = { go(ObjectivesRoute) },
+                            bests = { key -> go(BestsRoute(key ?: "10k")) }
+                        ),
+                        aiAvailable = coach
+                    )
+                }
+                composable<AnalysisRoute> {
+                    com.zankup.android.activity.AnalysisScreen(it.toRoute<AnalysisRoute>().id, back)
+                }
+                composable<MatchesRoute> {
+                    com.zankup.android.activity.MatchesScreen(
+                        it.toRoute<MatchesRoute>().id,
+                        back,
+                        onOpen = { id -> go(ActivityRoute(id)) }
+                    )
+                }
+                composable<CalendarRoute> { Placeholder(stringResource(R.string.nav_calendar), "OS-1141", back) }
+                composable<SyncRoute> { Placeholder(stringResource(R.string.nav_sync), "OS-1163", back) }
+
+                composable<ProgressDetailRoute> {
+                    Placeholder(stringResource(R.string.nav_progress_detail), "OS-1140", back)
+                }
+                composable<TrainingLogRoute> { Placeholder(stringResource(R.string.nav_training_log), "OS-1140", back) }
+                composable<FitnessRoute> { Placeholder(stringResource(R.string.nav_fitness), "OS-1140", back) }
+                composable<EffortRoute> { Placeholder(stringResource(R.string.nav_effort), "OS-1140", back) }
+                composable<PredictionsRoute> { Placeholder(stringResource(R.string.nav_predictions), "OS-1140", back) }
+                composable<ObjectivesRoute> { Placeholder(stringResource(R.string.nav_objectives), "OS-1140", back) }
+                composable<ObjectiveEditRoute> {
+                    Placeholder(stringResource(R.string.nav_objective_new), "OS-1140", back)
+                }
+                composable<ZonesRoute> { Placeholder(stringResource(R.string.nav_zones), "OS-1140", back) }
+                composable<SkillsRoute> { Placeholder(stringResource(R.string.nav_skills), "OS-1140", back) }
+                composable<BestsRoute> { Placeholder(stringResource(R.string.nav_bests), "OS-1140", back) }
+                composable<MonthlyRoute> { Placeholder(stringResource(R.string.nav_monthly), "OS-1140", back) }
+                composable<SourcesRoute> { Placeholder(stringResource(R.string.nav_sources), "OS-1140", back) }
+
+                composable<StatsRoute> { Placeholder(stringResource(R.string.nav_stats), "OS-1141", back) }
+                composable<EstimatesRoute> { Placeholder(stringResource(R.string.nav_estimates), "OS-1141", back) }
+                composable<YearsRoute> { Placeholder(stringResource(R.string.nav_years), "OS-1141", back) }
+                composable<HeatmapRoute> { Placeholder(stringResource(R.string.nav_heatmap), "OS-1141", back) }
+                composable<ReviewRoute> { Placeholder(stringResource(R.string.nav_review), "OS-1141", back) }
+                composable<RoutesRoute> { Placeholder(stringResource(R.string.nav_routes), "OS-1142", back) }
+                composable<RouteRoute> { Placeholder(stringResource(R.string.nav_route), "OS-1142", back) }
+                composable<SegmentsRoute> { Placeholder(stringResource(R.string.nav_segments), "OS-1142", back) }
+                composable<SegmentRoute> { Placeholder(stringResource(R.string.nav_segment), "OS-1142", back) }
+
+                composable<WeightRoute> { Placeholder(stringResource(R.string.nav_weight), "OS-1150", back) }
+
+                composable<SettingsRoute> { SettingsList(go, back) }
+                composable<SettingsSectionRoute> {
+                    val section = it.toRoute<SettingsSectionRoute>().section
+                    Placeholder(stringResource(sectionTitle(section)), "OS-1161", back)
+                }
+                composable<AppIconRoute> { Placeholder(stringResource(R.string.nav_app_icon), "OS-1171", back) }
+                composable<CoachRoute> { Placeholder(stringResource(R.string.nav_coach), "OS-1162", back) }
+                composable<AssistantsRoute> { Placeholder(stringResource(R.string.nav_assistants), "OS-1162", back) }
+                composable<GearRoute> { Placeholder(stringResource(R.string.nav_gear), "OS-1163", back) }
+                composable<ImportRoute> { Placeholder(stringResource(R.string.nav_import), "OS-1163", back) }
+                composable<NotificationsRoute> {
+                    Placeholder(stringResource(R.string.nav_notifications), "OS-1163", back)
+                }
             }
-            composable<AnalysisRoute> { Placeholder(stringResource(R.string.nav_analysis), "OS-1134", back) }
-            composable<MatchesRoute> { Placeholder(stringResource(R.string.nav_matches), "OS-1134", back) }
-            composable<CalendarRoute> { Placeholder(stringResource(R.string.nav_calendar), "OS-1141", back) }
-            composable<SyncRoute> { Placeholder(stringResource(R.string.nav_sync), "OS-1163", back) }
-
-            composable<ProgressDetailRoute> {
-                Placeholder(stringResource(R.string.nav_progress_detail), "OS-1140", back)
-            }
-            composable<TrainingLogRoute> { Placeholder(stringResource(R.string.nav_training_log), "OS-1140", back) }
-            composable<FitnessRoute> { Placeholder(stringResource(R.string.nav_fitness), "OS-1140", back) }
-            composable<EffortRoute> { Placeholder(stringResource(R.string.nav_effort), "OS-1140", back) }
-            composable<PredictionsRoute> { Placeholder(stringResource(R.string.nav_predictions), "OS-1140", back) }
-            composable<ObjectivesRoute> { Placeholder(stringResource(R.string.nav_objectives), "OS-1140", back) }
-            composable<ObjectiveEditRoute> { Placeholder(stringResource(R.string.nav_objective_new), "OS-1140", back) }
-            composable<ZonesRoute> { Placeholder(stringResource(R.string.nav_zones), "OS-1140", back) }
-            composable<SkillsRoute> { Placeholder(stringResource(R.string.nav_skills), "OS-1140", back) }
-            composable<BestsRoute> { Placeholder(stringResource(R.string.nav_bests), "OS-1140", back) }
-            composable<MonthlyRoute> { Placeholder(stringResource(R.string.nav_monthly), "OS-1140", back) }
-            composable<SourcesRoute> { Placeholder(stringResource(R.string.nav_sources), "OS-1140", back) }
-
-            composable<StatsRoute> { Placeholder(stringResource(R.string.nav_stats), "OS-1141", back) }
-            composable<EstimatesRoute> { Placeholder(stringResource(R.string.nav_estimates), "OS-1141", back) }
-            composable<YearsRoute> { Placeholder(stringResource(R.string.nav_years), "OS-1141", back) }
-            composable<HeatmapRoute> { Placeholder(stringResource(R.string.nav_heatmap), "OS-1141", back) }
-            composable<ReviewRoute> { Placeholder(stringResource(R.string.nav_review), "OS-1141", back) }
-            composable<RoutesRoute> { Placeholder(stringResource(R.string.nav_routes), "OS-1142", back) }
-            composable<RouteRoute> { Placeholder(stringResource(R.string.nav_route), "OS-1142", back) }
-            composable<SegmentsRoute> { Placeholder(stringResource(R.string.nav_segments), "OS-1142", back) }
-            composable<SegmentRoute> { Placeholder(stringResource(R.string.nav_segment), "OS-1142", back) }
-
-            composable<WeightRoute> { Placeholder(stringResource(R.string.nav_weight), "OS-1150", back) }
-
-            composable<SettingsRoute> { SettingsList(go, back) }
-            composable<SettingsSectionRoute> {
-                val section = it.toRoute<SettingsSectionRoute>().section
-                Placeholder(stringResource(sectionTitle(section)), "OS-1161", back)
-            }
-            composable<AppIconRoute> { Placeholder(stringResource(R.string.nav_app_icon), "OS-1171", back) }
-            composable<CoachRoute> { Placeholder(stringResource(R.string.nav_coach), "OS-1162", back) }
-            composable<AssistantsRoute> { Placeholder(stringResource(R.string.nav_assistants), "OS-1162", back) }
-            composable<GearRoute> { Placeholder(stringResource(R.string.nav_gear), "OS-1163", back) }
-            composable<ImportRoute> { Placeholder(stringResource(R.string.nav_import), "OS-1163", back) }
-            composable<NotificationsRoute> { Placeholder(stringResource(R.string.nav_notifications), "OS-1163", back) }
         }
     }
 }
