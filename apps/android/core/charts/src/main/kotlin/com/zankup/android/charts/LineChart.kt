@@ -160,9 +160,12 @@ fun LineChart(
                 val top = 0f
                 val bottom = size.height - bottomBand.toPx()
                 val plot = Size(right - left, bottom - top)
-                val count = plot.width.toInt().coerceAtLeast(1)
-                val cols = columns(profile, values, count)
-                val back = series.backdrop?.let { columns(profile, it, count) }
+                // A point every 3 dp, each the average of what falls in it, joined by a smooth curve: the
+                // shape reads without the needles of every sample.
+                val count = (plot.width / 3.dp.toPx()).toInt().coerceIn(2, 400)
+                val stepX = plot.width / (count - 1)
+                val cols = soften(columns(profile, values, count))
+                val back = series.backdrop?.let { soften(columns(profile, it, count)) }
                 val backRange = series.backdrop?.let { valueRange(it, false) }
 
                 fun y(v: Float): Float {
@@ -177,11 +180,11 @@ fun LineChart(
                     if (back != null && backRange != null) {
                         val (lo, hi) = backRange
                         val span = (hi - lo).takeIf { it > 0f } ?: 1f
-                        areaPath(back, left, bottom) { bottom - (it - lo) / span * plot.height * 0.95f }
+                        areaPath(back, left, stepX, bottom) { bottom - (it - lo) / span * plot.height * 0.95f }
                     } else {
                         null
                     }
-                val area = areaPath(cols, left, bottom) { y(it) }
+                val area = areaPath(cols, left, stepX, bottom) { y(it) }
                 val grid = Color(0xFF4A4A48)
                 val dash = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))
                 // The round values, but the lowest is the unit, on the baseline.
@@ -286,21 +289,44 @@ internal fun blend(from: FloatArray, to: FloatArray, t: Float): FloatArray {
     }
 }
 
-private fun areaPath(cols: FloatArray, left: Float, bottom: Float, y: (Float) -> Float): Path {
+/** Each point blended with its neighbours (1·2·1), so a lone sample does not stand as a needle. */
+internal fun soften(cols: FloatArray): FloatArray = FloatArray(cols.size) { i ->
+    val v = cols[i]
+    if (!v.isFinite()) return@FloatArray v
+    val a = cols.getOrNull(i - 1)?.takeIf { it.isFinite() } ?: v
+    val b = cols.getOrNull(i + 1)?.takeIf { it.isFinite() } ?: v
+    (a + 2 * v + b) / 4f
+}
+
+/**
+ * The area under the points ([cols], one every [step] from [left]), down to [bottom]: smooth, each corner
+ * rounded by a curve through the midpoints, and open where there is no value (a gap in the recording).
+ */
+private fun areaPath(cols: FloatArray, left: Float, step: Float, bottom: Float, y: (Float) -> Float): Path {
     val path = Path()
     var start = -1
+    var px = 0f
+    var py = 0f
     fun close(end: Int) {
-        path.lineTo(left + end, bottom)
-        path.lineTo(left + start, bottom)
+        path.lineTo(left + end * step, y(cols[end]))
+        path.lineTo(left + end * step, bottom)
+        path.lineTo(left + start * step, bottom)
         path.close()
     }
     cols.forEachIndexed { c, v ->
+        val x = left + c * step
         if (v.isFinite()) {
+            val vy = y(v)
             if (start == -1) {
                 start = c
-                path.moveTo(left + c, bottom)
+                path.moveTo(x, bottom)
+                path.lineTo(x, vy)
+            } else {
+                // Through the midpoint, with the previous point as the control: no sharp corners.
+                path.quadraticTo(px, py, (px + x) / 2f, (py + vy) / 2f)
             }
-            path.lineTo(left + c, y(v))
+            px = x
+            py = vy
         } else if (start != -1) {
             close(c - 1)
             start = -1
