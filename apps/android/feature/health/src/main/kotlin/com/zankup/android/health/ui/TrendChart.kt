@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,20 +33,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,21 +163,24 @@ internal fun TrendChart(
     }
     val (of, axes) = remember(layers) { chartScales(layers) }
     val right = axes.size > 1
-    val muted = TextStyle(color = colors.muted, fontSize = 10.sp, fontFeatureSettings = "tnum")
-    val strong = TextStyle(color = colors.fg, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    val nameStyle = SpanStyle(color = colors.muted)
-    val figure = SpanStyle(color = colors.fg, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
-    val plain = TextStyle(fontSize = 12.sp)
+    val muted = TextStyle(color = colors.fg, fontSize = 12.sp, fontFeatureSettings = "tnum")
+    val ink = Color(0xFF16181D)
+    val valueStyle =
+        TextStyle(color = ink, fontSize = 17.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
+    val whereStyle = TextStyle(color = ink, fontSize = 13.sp)
+    // Where the plot starts and ends: just past the widest values on each side. Worked out while drawing.
+    val plotLeft = remember { mutableFloatStateOf(0f) }
+    val plotRight = remember { mutableFloatStateOf(0f) }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(legendGap)) {
         Spacer(
             Modifier
                 .fillMaxWidth()
-                .height(height + 16.dp)
+                .height(height + 64.dp)
                 .semantics { contentDescription = description }
                 .pointerInput(count, right) {
-                    val left = 34.dp.toPx()
                     fun index(x: Float): Int {
-                        val plot = size.width - left - (if (right) 34.dp.toPx() else 8.dp.toPx())
+                        val left = plotLeft.floatValue
+                        val plot = plotRight.floatValue - left
                         val slot = if (count > 0) plot / count else 0f
                         return if (slot > 0) floor((x - left) / slot).toInt() else -1
                     }
@@ -202,11 +202,23 @@ internal fun TrendChart(
                         }
                     }
                 }.drawWithCache {
-                    val axisW = 34.dp.toPx()
-                    val top = 8.dp.toPx()
-                    val chartH = height.toPx()
+                    // Room on top for the bubble, which rises over the title while a day is picked.
+                    val top = 36.dp.toPx()
+                    val chartH = height.toPx() + 28.dp.toPx()
                     val inner = chartH - top
-                    val plot = (size.width - axisW - (if (right) axisW else 8.dp.toPx())).coerceAtLeast(0f)
+                    val gapLabel = 10.dp.toPx()
+                    val leftTicks = axes.firstOrNull()?.ticks.orEmpty()
+                    val steps = (leftTicks.size - 1).coerceAtLeast(1)
+                    val leftTexts = leftTicks.map { measurer.measure(shortNumber(it, locale), muted) }
+                    val rightTexts = axes.getOrNull(1)?.ticks.orEmpty().map {
+                        measurer.measure(shortNumber(it, locale), muted)
+                    }
+                    val axisW = (leftTexts.maxOfOrNull { it.size.width } ?: 0) + gapLabel
+                    val rightW = if (right) (rightTexts.maxOfOrNull { it.size.width } ?: 0) + gapLabel else 1f
+                    val plotEnd = size.width - rightW
+                    plotLeft.floatValue = axisW
+                    plotRight.floatValue = plotEnd
+                    val plot = (plotEnd - axisW).coerceAtLeast(0f)
                     val slot = if (count > 0) plot / count else 0f
                     val bar = (slot * 0.7f).coerceIn(1f, 14.dp.toPx())
                     val floorY = top + inner
@@ -216,39 +228,37 @@ internal fun TrendChart(
                         return (top + inner - (v - a.min) / span * inner).toFloat()
                     }
                     fun x(i: Int) = axisW + i * slot + slot / 2
-                    val leftTicks = axes.firstOrNull()?.ticks.orEmpty()
-                    val steps = (leftTicks.size - 1).coerceAtLeast(1)
-                    val leftTexts = leftTicks.map { measurer.measure(shortNumber(it, locale), muted) }
-                    fun tick(v: Double) = measurer.measure(shortNumber(v, locale), muted)
-                    val rightTexts = axes.getOrNull(1)?.ticks.orEmpty().map(::tick)
-                    val dayTexts = dayTicks(count).map { it to measurer.measure(days[it], muted) }
-                    val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
+                    val ticksAt = dayTicks(count)
+                    val dayTexts = ticksAt.map { it to measurer.measure(days[it], muted) }
+                    val grid = Color(0xFF4A4A48)
                     onDrawBehind {
                         val t = grow.value
                         // Bars dim a little while a day is picked, as the React Native app's.
                         val barAlpha = if (picked.intValue in 0 until count) 0.9f else 1f
+                        // The grid: a line at each round value and at each marked day, inside a frame.
                         for (i in leftTicks.indices) {
                             val py = top + inner - i.toFloat() / steps * inner
-                            drawLine(
-                                colors.line,
-                                Offset(axisW, py),
-                                Offset(axisW + plot, py),
-                                1f,
-                                pathEffect = if (i > 0) dash else null
-                            )
+                            drawLine(grid, Offset(axisW, py), Offset(plotEnd, py), 1.5f)
                             val text = leftTexts[i]
-                            val tx = axisW - 6.dp.toPx() - text.size.width
-                            drawText(text, topLeft = Offset(tx, py - text.size.height / 2))
+                            drawText(
+                                text,
+                                topLeft = Offset(
+                                    axisW - gapLabel - text.size.width,
+                                    py - text.size.height / 2
+                                )
+                            )
                         }
                         rightTexts.forEachIndexed { i, text ->
                             val py = top + inner - i.toFloat() / steps * inner
-                            val tx = size.width - axisW + 6.dp.toPx()
-                            drawText(text, topLeft = Offset(tx, py - text.size.height / 2))
+                            drawText(text, topLeft = Offset(plotEnd + gapLabel, py - text.size.height / 2))
+                        }
+                        ticksAt.forEach { i ->
+                            drawLine(grid, Offset(x(i), top), Offset(x(i), floorY + 4.dp.toPx()), 1.5f)
                         }
                         axes.forEachIndexed { k, a ->
                             if (a.min < 0 && a.max > 0) {
                                 val zy = y(k, 0.0)
-                                drawLine(colors.muted, Offset(axisW, zy), Offset(axisW + plot, zy), 1f)
+                                drawLine(colors.muted, Offset(axisW, zy), Offset(plotEnd, zy), 1.5f)
                             }
                         }
                         layers.forEachIndexed { index, layer ->
@@ -279,9 +289,12 @@ internal fun TrendChart(
                                     val stroke = layer.width.toPx()
                                     var path: Path? = null
                                     var points = 0
+                                    var lx = 0f
+                                    var ly = 0f
                                     fun flush() {
                                         val p = path ?: return
                                         if (points > 1) {
+                                            p.lineTo(lx, ly)
                                             drawPath(
                                                 p,
                                                 layer.color,
@@ -297,66 +310,91 @@ internal fun TrendChart(
                                             flush()
                                             continue
                                         }
+                                        val px = x(i)
                                         val py = floorY + (y(scale, v) - floorY) * t
                                         val p = path ?: Path().also { path = it }
-                                        if (points == 0) p.moveTo(x(i), py) else p.lineTo(x(i), py)
+                                        // Smooth: through the midpoints, each day the control of its curve.
+                                        if (points ==
+                                            0
+                                        ) {
+                                            p.moveTo(px, py)
+                                        } else {
+                                            p.quadraticTo(lx, ly, (lx + px) / 2, (ly + py) / 2)
+                                        }
+                                        lx = px
+                                        ly = py
                                         points++
                                         // A day alone between gaps: a dot.
                                         val alone = layer.values.getOrNull(i - 1) == null &&
                                             layer.values.getOrNull(i + 1) == null
-                                        if (alone) drawCircle(layer.color, stroke / 2 + 1f, Offset(x(i), py))
+                                        if (alone) drawCircle(layer.color, stroke / 2 + 1f, Offset(px, py))
                                     }
                                     flush()
                                 }
                             }
                         }
+                        drawRect(grid, Offset(axisW, top), Size(plot, inner), style = Stroke(1.5f))
                         dayTexts.forEach { (i, text) ->
-                            val lx = (x(i) - text.size.width / 2f)
-                                .coerceIn(axisW - 12.dp.toPx(), (size.width - text.size.width).coerceAtLeast(0f))
-                            drawText(text, topLeft = Offset(lx, chartH + 2.dp.toPx()))
+                            val lx = (
+                                x(
+                                    i
+                                ) - text.size.width / 2f
+                                ).coerceIn(0f, (size.width - text.size.width).coerceAtLeast(0f))
+                            drawText(text, topLeft = Offset(lx, floorY + 8.dp.toPx()))
                         }
                         val at = picked.intValue.takeIf { it in 0 until count } ?: return@onDrawBehind
                         val px = x(at)
-                        drawLine(colors.fg, Offset(px, top), Offset(px, chartH), 1f)
-                        // The picked day's values, beside the rule.
+                        // The picked day: a bubble above the chart with its values and the day, a white line
+                        // down from it and a dot on each line.
                         val items = layers.flatMap { layer ->
                             when (layer) {
                                 is LineLayer -> listOf(Triple(layer.label, layer.color, layer.values.getOrNull(at)))
                                 is BarsLayer -> layer.series.map { Triple(it.label, it.color, it.values.getOrNull(at)) }
                             }
-                        }.filter { it.third != null }.take(8)
-                        val head = measurer.measure(days[at], strong)
-                        // The label muted and the figure in bold, as the React Native app's readout.
+                        }.filter { it.third != null }.take(6)
+                        val single = items.size == 1
+                        val tint = if (single) items.first().second else colors.fg
+                        val padX = 12.dp.toPx()
+                        val padY = 8.dp.toPx()
+                        val dot = 8.dp.toPx()
                         val rows = items.map { (name, color, v) ->
-                            val text = buildAnnotatedString {
-                                withStyle(nameStyle) { append(name) }
-                                append("  ")
-                                withStyle(figure) { append(format(v!!)) }
-                            }
-                            color to measurer.measure(text, plain)
+                            val text = if (single) format(v!!) else "$name  ${format(v!!)}"
+                            color to measurer.measure(text, valueStyle.copy(fontSize = if (single) 17.sp else 13.sp))
                         }
-                        val pad = 8.dp.toPx()
-                        val dot = 7.dp.toPx()
-                        val gap = 2.dp.toPx()
-                        val widest = rows.maxOfOrNull { it.second.size.width + dot + pad } ?: 0f
-                        val w = maxOf(head.size.width.toFloat(), widest) + pad * 2
-                        val h = head.size.height + rows.sumOf { it.second.size.height } + gap * rows.size + pad * 2
-                        val bx = if (px < size.width / 2) px + 8.dp.toPx() else px - 8.dp.toPx() - w
-                        drawRoundRect(colors.surface2, Offset(bx, 0f), Size(w, h), CornerRadius(8.dp.toPx()))
-                        drawRoundRect(
-                            colors.line,
-                            Offset(bx, 0f),
-                            Size(w, h),
-                            CornerRadius(8.dp.toPx()),
-                            style = Stroke(1f)
-                        )
-                        var ty = pad
-                        drawText(head, topLeft = Offset(bx + pad, ty))
-                        ty += head.size.height + gap
+                        val where = measurer.measure(days[at], whereStyle)
+                        val inset = if (single) 0f else dot + 6.dp.toPx()
+                        val w =
+                            maxOf(where.size.width.toFloat(), rows.maxOfOrNull { it.second.size.width + inset } ?: 0f) +
+                                padX * 2
+                        val h = rows.sumOf { it.second.size.height } + where.size.height + padY * 2
+                        val bx = (px - w / 2f).coerceIn(0f, (size.width - w).coerceAtLeast(0f))
+                        val by = maxOf(top - h - 6.dp.toPx(), -40.dp.toPx())
+                        drawLine(Color.White, Offset(px, by + h), Offset(px, floorY), 2.dp.toPx())
+                        drawRoundRect(tint, Offset(bx, by), Size(w, h), CornerRadius(10.dp.toPx()))
+                        var ty = by + padY
                         rows.forEach { (color, text) ->
-                            drawCircle(color, dot / 2, Offset(bx + pad + dot / 2, ty + text.size.height / 2f))
-                            drawText(text, topLeft = Offset(bx + pad + dot + pad / 2, ty))
-                            ty += text.size.height + gap
+                            if (!single) {
+                                drawCircle(
+                                    color,
+                                    dot / 2,
+                                    Offset(
+                                        bx + padX + dot / 2,
+                                        ty + text.size.height / 2f
+                                    )
+                                )
+                            }
+                            drawText(text, topLeft = Offset(bx + padX + inset, ty))
+                            ty += text.size.height
+                        }
+                        drawText(where, topLeft = Offset(bx + padX, ty))
+                        layers.forEachIndexed { index, layer ->
+                            if (layer is LineLayer) {
+                                layer.values.getOrNull(at)?.let { v ->
+                                    val py = y(of[index], v)
+                                    drawCircle(Color.White.copy(alpha = 0.3f), 9.dp.toPx(), Offset(px, py))
+                                    drawCircle(Color.White, 5.dp.toPx(), Offset(px, py))
+                                }
+                            }
                         }
                     }
                 }
