@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings › Health (OS-1151). -->
+    <string name="hs_title">Health</string>
+    <string name="hs_history_title">History</string>
+    <string name="hs_history_note">When each source was connected, Zankup brought its last 30 days. This asks Garmin and Google Health for the last year (in the background: it takes a few minutes) and reads it from Health Connect on this phone.</string>
+    <string name="hs_history_bring">Bring the last year</string>
+    <string name="hs_history_working">Asking for the history…</string>
+    <string name="hs_history_queued">Under way: %1$s. The data will show up in Health as it arrives.</string>
+    <string name="hs_history_hc">Health Connect: %1$s and %2$s sent.</string>
+    <string name="hs_history_none">No health source is connected.</string>
+    <string name="hs_hc_title">Health Connect</string>
+    <string name="hs_hc_note">Reads sleep, resting heart rate, HRV, SpO₂, respiration and steps from Health Connect and sends them to your Zankup. Nothing is written to Health Connect.</string>
+    <string name="hs_hc_unavailable">Health Connect is not available on this phone.</string>
+    <string name="hs_hc_connect">Allow and read</string>
+    <string name="hs_hc_read">Read now</string>
+    <string name="hs_hc_denied">No permission was granted.</string>
+    <string name="hs_hc_done">Sent %1$s and %2$s.</string>
+    <string name="hs_hc_last">Last read: %1$s</string>
+    <string name="hs_sources">Sources</string>
+    <string name="hs_counts">%1$s, %2$s</string>
+    <string name="hs_delete">Delete its data</string>
+    <string name="hs_delete_confirm">Delete every sleep and daily figure from %1$s? It cannot be undone.</string>
+    <string name="hs_cancel">Cancel</string>
+    <string name="hs_priority">Preferred source</string>
+    <string name="hs_priority_note">When several sources recorded the same thing, Zankup picks one automatically: for sleep the one with stages, for HRV the source of that night\'s sleep, for resting HR and steps the one worn longest. You can choose instead.</string>
+    <string name="hs_automatic">Automatic</string>
+    <string name="hs_google_disconnect">Disconnect</string>
+    <string name="hs_google_off">Not set up on this server (GOOGLE_HEALTH_ENABLED and a Google OAuth client).</string>
+    <string name="hs_google_reconnect">Google stopped sharing the data: connect it again.</string>
+    <string name="hs_google_missing">Some permissions were not granted, so part of the data is missing.</string>
+    <string name="hs_google_on_web">Connect Google Health from the web app; on this phone, Health Connect reads it directly.</string>
+    <string name="hs_hc_source_note">Read from this phone: Health Connect, above.</string>
+    <string name="hs_garmin_off">No Garmin key: set GARMIN_PERSONAL_API_KEY on the server.</string>
+    <string name="hs_last_sync">Last sync: %1$s.</string>
+    <string name="hs_never">Not synced yet.</string>
+    <string name="hs_error">Something went wrong. Try again.</string>
+    <string name="hs_metric_sleep">Sleep</string>
+    <string name="hs_metric_hrv">HRV</string>
+    <string name="hs_metric_resting_hr">Resting heart rate</string>
+    <string name="hs_metric_spo2">SpO₂</string>
+    <string name="hs_metric_respiration">Respiration</string>
+    <string name="hs_metric_steps">Steps</string>
+    <plurals name="hs_nights">
+        <item quantity="one">%d night</item>
+        <item quantity="other">%d nights</item>
+    </plurals>
+    <plurals name="hs_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+</resources>

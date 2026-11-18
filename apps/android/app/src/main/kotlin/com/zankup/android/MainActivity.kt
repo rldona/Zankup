@@ -9,9 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.zankup.android.data.Reachability
 import com.zankup.android.designsystem.theme.ZankupTheme
+import com.zankup.android.healthconnect.HealthConnect
 import com.zankup.android.push.Push
 import com.zankup.android.session.Prompter
 import com.zankup.android.session.Session
@@ -33,6 +36,8 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var settings: com.zankup.android.data.UserSettings
 
+    @Inject lateinit var healthConnect: HealthConnect
+
     /** The link that opened the app (or reached it while open), handed to the navigation once signed in. */
     private var link by mutableStateOf<Intent?>(null)
 
@@ -43,6 +48,14 @@ class MainActivity : FragmentActivity() {
         link = intent.takeIf { it.opensSomething() }
         if (session.current.value == SessionState.Starting) {
             lifecycleScope.launch { session.unlock(Prompter(this@MainActivity)) }
+        }
+        // Health Connect, once allowed: what is new each time the app comes to the front, at most hourly.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                session.current.collect { state ->
+                    if (state is SessionState.SignedIn) runCatching { healthConnect.readAndSend(state.api) }
+                }
+            }
         }
         setContent {
             ZankupTheme {

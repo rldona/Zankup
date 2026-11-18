@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hc_privacy_title">Zankup y Health Connect</string>
+    <string name="hc_privacy_body">Zankup solo lee de Health Connect: sueño, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca, oxígeno en sangre, frecuencia respiratoria y pasos. Los envía a tu propia instancia de Zankup, que los guarda como la fuente Health Connect para que la pestaña Salud los muestre y calcule tu disposición. Nada se escribe en Health Connect y nada va a ningún otro sitio. Puedes quitar los permisos cuando quieras en Health Connect y borrar lo enviado desde Ajustes › Salud.</string>
+</resources>

@@ -15,19 +15,11 @@ import com.zankup.android.navigation.GearRoute
 import com.zankup.android.navigation.ImportRoute
 import com.zankup.android.navigation.SettingsRoute
 import com.zankup.android.navigation.StatsRoute
-import com.zankup.android.navigation.WeightRoute
 import com.zankup.android.session.Session
 import kotlinx.coroutines.launch
 
 // The five tabs as the navigation needs them: their headers as the React Native app has them, and links
 // to the screens stacked over them. Each tab's content arrives with its block.
-
-@Composable
-internal fun HealthTab(go: (Any) -> Unit) {
-    Placeholder(stringResource(R.string.nav_health), "OS-1150", onBack = null) {
-        ListRow(stringResource(R.string.nav_weight), onClick = { go(WeightRoute) })
-    }
-}
 
 /** You: the hub to Stats, Estimates, Gear, Import and Settings, and signing out. */
 @Composable
