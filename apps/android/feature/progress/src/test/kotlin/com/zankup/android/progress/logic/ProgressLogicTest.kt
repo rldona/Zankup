@@ -74,9 +74,10 @@ class ProgressLogicTest {
 
     @Test
     fun totalsAndTicks() {
-        assertEquals("4h 17min", hoursMinutes(4 * 3600 + 17 * 60.0))
-        assertEquals("30min", hoursMinutes(1800.0))
-        assertEquals("0h 0min", hoursMinutes(0.0))
+        assertEquals("4 h 17 min", hoursMinutes(4 * 3600 + 17 * 60.0))
+        assertEquals("30 min", hoursMinutes(1800.0))
+        assertEquals("0 min", hoursMinutes(0.0))
+        assertEquals("6 h", hoursMinutes(6 * 3600.0))
         assertEquals(listOf(0.0, 1800.0, 3600.0), axisTicks(3000.0, VolumeMetric.TIME, 2))
         assertEquals(listOf(0.0, 10_000.0, 20_000.0), axisTicks(18_000.0, VolumeMetric.DISTANCE, 2))
         assertEquals(12, percentChange(112.0, 100.0))
@@ -148,7 +149,7 @@ class ProgressLogicTest {
         assertEquals("24:54", raceTime(1494.0))
         assertEquals("2:01:35", raceTime(7295.0))
         assertEquals("4:59", racePace(1495.0, 5000.0, false))
-        assertEquals("3min 46s", changeText(-226.0))
+        assertEquals("3 min 46 s", changeText(-226.0))
         val history = listOf(Point(LocalDate.of(2026, 10, 1), 1500.0), Point(LocalDate.of(2026, 11, 10), 1480.0))
         assertEquals(1500.0, valueOn(history, LocalDate.of(2026, 10, 20))!!, 0.0)
         val line = series(history, LocalDate.of(2026, 10, 19), wednesday)
