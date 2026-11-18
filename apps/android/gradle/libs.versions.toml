@@ -25,6 +25,7 @@ room = "2.8.5"
 work = "2.12.0"
 firebase-bom = "35.2.0"
 google-services = "4.6.0"
+maplibre = "13.7.1"
 junit = "4.13.2"
 robolectric = "4.17"
 roborazzi = "1.79.0"
@@ -71,6 +72,7 @@ hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt-androidx" 
 hilt-androidx-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt-androidx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+maplibre = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }

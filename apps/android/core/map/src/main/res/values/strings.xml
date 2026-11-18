@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_play">Replay the activity</string>
+    <string name="map_pause">Pause the replay</string>
+    <string name="map_options">Map options</string>
+    <string name="map_colour_by">Colour by</string>
+    <string name="map_replay_speed">Replay speed</string>
+</resources>
