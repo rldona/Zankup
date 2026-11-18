@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Shared -->
+    <string name="tools_cancel">Cancelar</string>
+    <string name="tools_save">Guardar</string>
+    <string name="tools_edit">Editar</string>
+    <string name="tools_name">Nombre</string>
+    <string name="tools_error">Algo ha fallado. Inténtalo de nuevo.</string>
+    <string name="tools_more_info">Más información</string>
+    <string name="tools_close">Cerrar</string>
+
+    <!-- Gear -->
+    <string name="tools_gear_title">Material</string>
+    <string name="tools_gear_help">Zapatillas y bicis. Las actividades nuevas de un deporte reciben su material por defecto; el kilometraje suma todas sus actividades y lo que tenía antes.</string>
+    <string name="tools_gear_add">Añadir material</string>
+    <string name="tools_gear_empty">Aún no hay material. Al importar una exportación de Strava se trae el tuyo.</string>
+    <string name="tools_gear_retired">Retirado</string>
+    <string name="tools_gear_habitual">Habitual</string>
+    <string name="tools_gear_habitual_help">El de su tipo que más usas: se destaca aquí y las actividades nuevas de sus deportes lo llevan primero. Solo uno por tipo (zapatillas, bici…): marcarlo desmarca el anterior.</string>
+    <string name="tools_gear_retire">Retirar</string>
+    <string name="tools_gear_unretire">Volver a usar</string>
+    <string name="tools_gear_delete">Eliminar</string>
+    <string name="tools_gear_delete_confirm">¿Eliminar este material? Sus actividades se quedan, sin material.</string>
+    <string name="tools_gear_mileage">Kilometraje frente a su límite</string>
+    <string name="tools_gear_over_limit">Ha pasado su límite: quizá toque cambiarlo.</string>
+    <plurals name="tools_gear_activities">
+        <item quantity="one">%d actividad</item>
+        <item quantity="many">%d actividades</item>
+        <item quantity="other">%d actividades</item>
+    </plurals>
+    <string name="tools_gear_last_used">último uso %1$s</string>
+    <string name="tools_gear_default_for">por defecto para %1$s</string>
+    <string name="tools_gear_default_sports">Por defecto para estos deportes</string>
+    <string name="tools_gear_kind_label">Tipo</string>
+    <string name="tools_gear_kind_shoe">Zapatillas</string>
+    <string name="tools_gear_kind_bike">Bici</string>
+    <string name="tools_gear_kind_other">Otro</string>
+    <string name="tools_gear_brand">Marca</string>
+    <string name="tools_gear_model">Modelo</string>
+    <string name="tools_gear_initial">Distancia antes de Zankup (%1$s)</string>
+    <string name="tools_gear_limit">Avisar a los (%1$s)</string>
+
+    <!-- Import -->
+    <string name="tools_import_title">Importar</string>
+    <string name="tools_import_help">Trae tu historial a Zankup. Las actividades que ya están se reconocen y no se duplican.</string>
+    <string name="tools_import_strava">Strava: el ZIP de Ajustes → Mi cuenta → Descargar o eliminar tu cuenta. También se traen nombres, descripciones, material, fotos y tiempo; si Garmin ya tiene una actividad, gana el archivo de Garmin.</string>
+    <string name="tools_import_garmin">Garmin Connect: el ZIP de la exportación de tus datos.</string>
+    <string name="tools_import_files">Archivos FIT, TCX o GPX sueltos, comprimidos o no.</string>
+    <string name="tools_import_choose">Elegir archivos</string>
+    <string name="tools_import_uploading">Subiendo %1$s</string>
+    <string name="tools_import_upload_error">La subida ha fallado. Revisa la conexión y vuelve a intentarlo.</string>
+    <string name="tools_import_history">Importaciones</string>
+    <string name="tools_import_none">Aún no has importado nada.</string>
+    <string name="tools_import_counts" tools:ignore="PluralsCandidate">%1$d/%2$d · %3$d nuevas · %4$d combinadas · %5$d ya estaban · %6$d fallidas</string>
+    <plurals name="tools_import_photos">
+        <item quantity="one">%d foto</item>
+        <item quantity="many">%d fotos</item>
+        <item quantity="other">%d fotos</item>
+    </plurals>
+    <plurals name="tools_import_problems">
+        <item quantity="one">%d archivo no se pudo leer</item>
+        <item quantity="many">%d archivos no se pudieron leer</item>
+        <item quantity="other">%d archivos no se pudieron leer</item>
+    </plurals>
+    <string name="tools_import_kind_strava">Exportación de Strava</string>
+    <string name="tools_import_kind_archive">ZIP</string>
+    <string name="tools_import_kind_file">Archivo</string>
+    <string name="tools_import_status_uploading">Subiendo</string>
+    <string name="tools_import_status_queued">En espera</string>
+    <string name="tools_import_status_running">Importando</string>
+    <string name="tools_import_status_done">Hecho</string>
+    <string name="tools_import_status_error">Ha fallado</string>
+
+    <!-- Comparison with Strava -->
+    <string name="tools_compare_title">Cómo se comparan estas métricas</string>
+    <string name="tools_compare_help">Los valores de Strava de tu exportación frente a los de Zankup. Cada métrica mantiene su fórmula documentada: esto solo mide cuánto se parecen.</string>
+    <string name="tools_compare_metric">Métrica</string>
+    <string name="tools_compare_effort">Esfuerzo</string>
+    <string name="tools_compare_grade_adjusted_distance">Distancia ajustada</string>
+    <string name="tools_compare_calories">Calorías</string>
+    <string name="tools_compare_count">Actividades</string>
+    <string name="tools_compare_mae">Error medio</string>
+    <string name="tools_compare_ratio">Zankup / Strava</string>
+    <string name="tools_compare_largest">Las actividades que más difieren</string>
+    <string name="tools_compare_activity">Actividad %1$d</string>
+    <string name="tools_compare_not_enough">Aún no hay suficientes actividades con este valor.</string>
+
+    <!-- Sync -->
+    <string name="tools_sync_title">Sincronización</string>
+    <string name="tools_sync_now">Sincronizar ahora</string>
+    <string name="tools_sync_queued">Esperando su turno…</string>
+    <string name="tools_sync_running">Sincronizando con Garmin…</string>
+    <string name="tools_sync_success_none">Hecho: nada nuevo.</string>
+    <plurals name="tools_sync_success">
+        <item quantity="one">Hecho: %d actividad nueva.</item>
+        <item quantity="many">Hecho: %d actividades nuevas.</item>
+        <item quantity="other">Hecho: %d actividades nuevas.</item>
+    </plurals>
+    <string name="tools_sync_error">La sincronización ha fallado: %1$s</string>
+    <string name="tools_sync_window">Periodo %1$d de %2$d</string>
+    <string name="tools_sync_counts" tools:ignore="PluralsCandidate">%1$d encontradas · %2$d nuevas · %3$d descargadas</string>
+    <plurals name="tools_sync_pending">
+        <item quantity="one">Queda %d actividad por importar</item>
+        <item quantity="many">Quedan %d actividades por importar</item>
+        <item quantity="other">Quedan %d actividades por importar</item>
+    </plurals>
+    <plurals name="tools_sync_no_fit">
+        <item quantity="one">Se ha saltado %d actividad sin fichero FIT original.</item>
+        <item quantity="many">Se han saltado %d actividades sin fichero FIT original.</item>
+        <item quantity="other">Se han saltado %d actividades sin fichero FIT original.</item>
+    </plurals>
+    <string name="tools_sync_not_configured">Garmin no está configurado en esta instancia.</string>
+    <string name="tools_sync_auto">Garmin también se sincroniza solo cada 15 minutos.</string>
+    <string name="tools_sync_history">Todo tu historial</string>
+    <string name="tools_sync_history_help">Carga todas las actividades que tiene Garmin, de la más antigua a la más reciente. Puede tardar: sigue en segundo plano aunque cierres esta pestaña, y si la lanzas otra vez continúa donde se quedó.</string>
+    <string name="tools_sync_history_start">Cargar todo el historial</string>
+    <string name="tools_sync_recent">Sincronizaciones recientes</string>
+    <string name="tools_sync_trigger_cron">Automática</string>
+    <string name="tools_sync_trigger_button">Botón</string>
+    <string name="tools_sync_trigger_initial">Historial completo</string>
+    <string name="tools_sync_trigger_import">Importación</string>
+    <string name="tools_sync_status_queued">En cola</string>
+    <string name="tools_sync_status_running">En curso</string>
+    <string name="tools_sync_status_success">Hecho</string>
+    <string name="tools_sync_status_error">Falló</string>
+
+    <!-- Notifications -->
+    <string name="tools_notifications_title">Notificaciones</string>
+    <string name="tools_notifications_empty">Nada nuevo por ahora. Aquí aparecen los récords, las estimaciones que mejoran y los saltos de carga arriesgados.</string>
+    <string name="tools_event_record">Nuevo récord de %1$s: %2$s</string>
+    <string name="tools_event_estimate_up">Tu %1$s estimado ha subido a %2$s</string>
+    <string name="tools_event_ramp">Tu forma ha subido %1$s puntos esta semana: vigila la carga</string>
+    <string name="tools_effort_400m">400 m</string>
+    <string name="tools_effort_half_mile">½ milla</string>
+    <string name="tools_effort_1k">1 km</string>
+    <string name="tools_effort_1mile">1 milla</string>
+    <string name="tools_effort_2mile">2 millas</string>
+    <string name="tools_effort_5k">5 km</string>
+    <string name="tools_effort_10k">10 km</string>
+    <string name="tools_effort_15k">15 km</string>
+    <string name="tools_effort_10mile">10 millas</string>
+    <string name="tools_effort_half_marathon">Media maratón</string>
+    <string name="tools_effort_marathon">Maratón</string>
+    <string name="tools_estimate_ftp">FTP</string>
+    <string name="tools_estimate_critical_speed">Ritmo umbral</string>
+    <string name="tools_estimate_lthr">FC umbral</string>
+    <string name="tools_estimate_hr_max">FC máxima</string>
+    <string name="tools_estimate_vdot">VO₂máx (VDOT)</string>
+    <string name="tools_estimate_race_5k">5 km</string>
+    <string name="tools_estimate_race_10k">10 km</string>
+    <string name="tools_estimate_race_half_marathon">Media maratón</string>
+    <string name="tools_estimate_race_marathon">Maratón</string>
+</resources>

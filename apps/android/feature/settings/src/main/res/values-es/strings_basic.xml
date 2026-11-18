@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The list -->
+    <string name="set_title">Ajustes</string>
+    <string name="set_general">General</string>
+    <string name="set_general_note">Idioma, unidades y tema</string>
+    <string name="set_heart">Pulso y zonas</string>
+    <string name="set_heart_note">FC máxima y en reposo, modelo de zonas, umbral y FTP</string>
+    <string name="set_notifications">Notificaciones</string>
+    <string name="set_notifications_note">En este teléfono, y de qué tipo</string>
+    <string name="set_ai">Zankup Coach y MCP</string>
+    <string name="set_ai_note">El coach y los tokens personales</string>
+    <string name="set_privacy">Zonas de privacidad</string>
+    <string name="set_privacy_note">Lugares ocultos en lo que compartes</string>
+    <string name="set_health">Salud</string>
+    <string name="set_health_note">Health Connect, Garmin y Google Health</string>
+    <string name="set_data">Tus datos</string>
+    <string name="set_data_note">Importar, material y exportarlo todo</string>
+    <string name="set_account">Cuenta</string>
+    <string name="set_account_note">Acceso, passkeys, huella, Garmin, sesiones y cerrar sesión</string>
+    <string name="set_app_icon">Icono de la app</string>
+    <string name="set_app_icon_note">El icono de Zankup en tu pantalla de inicio</string>
+
+    <!-- Shared -->
+    <string name="set_save">Guardar</string>
+    <string name="set_saved">Guardado</string>
+    <string name="set_error">Algo ha fallado. Inténtalo de nuevo.</string>
+    <string name="set_checking">Comprobando…</string>
+    <string name="set_from_server">Ahora viene de la configuración del servidor; si lo cambias aquí, se usará el tuyo.</string>
+    <string name="set_hour_earlier">%1$s, una hora antes</string>
+    <string name="set_hour_later">%1$s, una hora después</string>
+
+    <!-- Service keys -->
+    <string name="set_key_from_app">Configurada · …%1$s</string>
+    <string name="set_key_from_server">En el servidor · …%1$s</string>
+    <string name="set_key_not_set">Sin configurar</string>
+    <string name="set_key_expires">Caduca el %1$s</string>
+    <string name="set_key_env_note">Viene de una variable de entorno del servidor. Si guardas una aquí, se usará la tuya.</string>
+    <string name="set_key_paste">Pega la clave</string>
+    <string name="set_key_replace">Cambiar por otra clave</string>
+    <string name="set_key_expires_on">Caduca el (opcional)</string>
+    <string name="set_key_remove">Quitar</string>
+    <string name="set_date_format">DD/MM/AAAA</string>
+    <string name="set_invalid_date">Escribe la fecha como DD/MM/AAAA, por ejemplo 14/08/1982.</string>
+
+    <!-- General -->
+    <string name="set_language">Idioma</string>
+    <string name="set_language_help">Las fechas y los números siguen al idioma. Las unidades se eligen aparte.</string>
+    <string name="set_language_auto">Igual que el teléfono</string>
+    <string name="set_restart_language">El nuevo idioma se aplica la próxima vez que abras la app.</string>
+    <string name="set_units">Unidades</string>
+    <string name="set_metric">Métricas (km, m)</string>
+    <string name="set_imperial">Imperiales (mi, ft)</string>
+    <string name="set_appearance">Apariencia</string>
+    <string name="set_theme_help">Se guarda en este teléfono: la web y tus otros dispositivos tienen el suyo.</string>
+    <string name="set_theme_system_note">Sigue a tu dispositivo</string>
+    <string name="set_theme_oled_note">Ahorra batería</string>
+    <string name="set_theme_high_contrast_note">Máxima legibilidad</string>
+    <string name="set_theme_strava_note">Naranja sobre blanco, plano</string>
+    <string name="set_theme_strava_dark_note">Naranja sobre negro</string>
+
+    <!-- Heart rate and zones -->
+    <string name="set_hr_title">Frecuencia cardiaca</string>
+    <string name="set_hr_help">Las zonas y el esfuerzo se calculan con estos datos. Deja la FC máxima vacía para usar la más alta registrada (%1$d ppm).</string>
+    <string name="set_hr_help_none">Las zonas y el esfuerzo se calculan con estos datos.</string>
+    <string name="set_hr_max">FC máxima</string>
+    <string name="set_hr_rest">FC en reposo</string>
+    <string name="set_zones">Zonas</string>
+    <string name="set_recompute_note">Cambiar esto recalcula todo tu historial en segundo plano.</string>
+    <string name="set_zone_model">Zonas de frecuencia cardiaca</string>
+    <string name="set_zone_max">Porcentaje de la FC máxima</string>
+    <string name="set_zone_reserve">Porcentaje de la FC de reserva (Karvonen)</string>
+    <string name="set_zone_lthr">Porcentaje de la FC umbral (Friel)</string>
+    <string name="set_lthr">FC umbral</string>
+    <string name="set_ftp">FTP (W)</string>
+    <string name="set_estimated">Estimada: %1$s</string>
+    <string name="set_recompute">Recalcular todas las métricas</string>
+    <string name="set_recomputing">Recalculando tus métricas: %1$d de %2$d actividades.</string>
+
+    <!-- Notifications -->
+    <string name="set_push_help">Actividades nuevas, récords y problemas con Garmin en este teléfono. Cuáles recibes se elige abajo, igual para la web y el teléfono.</string>
+    <string name="set_push_this_phone">En este teléfono</string>
+    <string name="set_push_on">Las notificaciones están activadas en este teléfono.</string>
+    <string name="set_push_off">Las notificaciones están desactivadas en este teléfono.</string>
+    <string name="set_push_denied">Las notificaciones de Zankup están bloqueadas en los ajustes de Android.</string>
+    <string name="set_push_unavailable">Esta versión de la app no puede recibir notificaciones.</string>
+    <string name="set_test">Enviar una prueba</string>
+    <string name="set_sent">Enviada.</string>
+    <string name="set_which">Avisarme de</string>
+    <string name="set_kind_activity">Actividades nuevas</string>
+    <string name="set_kind_record">Récords nuevos</string>
+    <string name="set_kind_sync_error">Fallos de sincronización con Garmin</string>
+    <string name="set_kind_garmin_key">Clave de Garmin a punto de caducar</string>
+    <string name="set_kind_estimate">Estimaciones al alza (FTP, velocidad crítica, VDOT)</string>
+    <string name="set_kind_import">Importaciones terminadas</string>
+    <string name="set_kind_weekly">Informe semanal del coach (lunes)</string>
+    <string name="set_alerts_title">Avisos por correo</string>
+    <string name="set_alerts_help">Si una sincronización o una copia de seguridad falla varias veces, Zankup te escribe aquí.</string>
+    <string name="set_alert_email">Correo para los avisos</string>
+    <string name="set_resend_help">Los correos salen por Resend (resend.com): pega aquí su clave de API.</string>
+
+    <!-- Your data -->
+    <string name="set_import">Importar</string>
+    <string name="set_import_note">FIT, TCX, GPX, una exportación de Garmin o todo tu historial de Strava</string>
+    <string name="set_gear">Material</string>
+    <string name="set_gear_note">Zapatillas y bicis, con su kilometraje</string>
+    <string name="set_export_title">Exportar todos tus datos</string>
+    <string name="set_export_help">Un ZIP con todos los archivos originales, tus fotos y todo lo demás en JSON. Queda disponible siete días.</string>
+    <string name="set_export_start">Preparar exportación</string>
+    <string name="set_export_preparing">Preparando… puedes salir de esta página.</string>
+    <string name="set_export_download">Descargar (%1$s)</string>
+    <string name="set_export_until">Disponible hasta el %1$s.</string>
+    <string name="set_backup_title">Copias de seguridad</string>
+    <string name="set_backup_help">Cada día se guarda una copia de la base de datos y de tus archivos en un almacenamiento compatible con S3 (Cloudflare R2, Backblaze, AWS…).</string>
+    <string name="set_backup_hour">Hora de la copia diaria</string>
+    <string name="set_keep_days">Días que se guardan las copias</string>
+    <string name="set_s3_endpoint">Endpoint S3</string>
+    <string name="set_s3_bucket">Bucket</string>
+    <string name="set_s3_region">Región</string>
+    <string name="set_s3_access_key_id">Access key ID</string>
+    <string name="set_s3_secret_help">La secret access key del almacenamiento, guardada cifrada:</string>
+</resources>

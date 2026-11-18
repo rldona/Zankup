@@ -79,7 +79,12 @@ private fun whenText(instant: Instant) = WHEN.format(instant.atZone(ZoneId.syste
  * Health needs the web, since its sign-in comes back to the browser.
  */
 @Composable
-fun HealthSettingsScreen(onBack: () -> Unit, model: HealthSettingsModel = hiltViewModel()) {
+fun HealthSettingsScreen(
+    onBack: () -> Unit,
+    /** Cards that belong to other modules: Google Health's switch for the instance. */
+    extra: @Composable () -> Unit = {},
+    model: HealthSettingsModel = hiltViewModel()
+) {
     val state by model.settings.state.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { model.refresh() }
@@ -97,6 +102,7 @@ fun HealthSettingsScreen(onBack: () -> Unit, model: HealthSettingsModel = hiltVi
         ) {
             History(model)
             HealthConnectCard(model)
+            extra()
             val settings = state?.data
             when {
                 settings != null -> {

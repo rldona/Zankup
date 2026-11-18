@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zankup.android.data.Reachability
@@ -38,6 +39,8 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var healthConnect: HealthConnect
 
+    @Inject lateinit var appearance: com.zankup.android.data.Appearance
+
     /** The link that opened the app (or reached it while open), handed to the navigation once signed in. */
     private var link by mutableStateOf<Intent?>(null)
 
@@ -58,7 +61,8 @@ class MainActivity : FragmentActivity() {
             }
         }
         setContent {
-            ZankupTheme {
+            val theme by appearance.theme.collectAsStateWithLifecycle()
+            ZankupTheme(choice = com.zankup.android.designsystem.theme.ThemeChoice.fromKey(theme)) {
                 Root(session, reachability, settings, link, onLinkHandled = { link = null })
             }
         }

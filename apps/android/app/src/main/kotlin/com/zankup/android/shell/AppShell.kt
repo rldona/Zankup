@@ -184,7 +184,18 @@ fun AppShell(
                         onConnect = { go(SettingsSectionRoute("health")) }
                     )
                 }
-                composable<YouRoute> { YouTab(go, session) }
+                composable<YouRoute> {
+                    com.zankup.android.you.YouScreen(
+                        onStats = { go(StatsRoute) },
+                        onEstimates = { go(EstimatesRoute) },
+                        onCoach = { go(CoachRoute) },
+                        onGear = { go(GearRoute) },
+                        onImport = { go(ImportRoute) },
+                        onAccount = { go(SettingsSectionRoute("account")) },
+                        onSettings = { go(SettingsRoute) },
+                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                    )
+                }
 
                 val scheme = BuildConfig.LINK_SCHEME
                 composable<ActivityRoute>(
@@ -218,7 +229,7 @@ fun AppShell(
                 composable<CalendarRoute> {
                     com.zankup.android.stats.CalendarScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
                 }
-                composable<SyncRoute> { Placeholder(stringResource(R.string.nav_sync), "OS-1163", back) }
+                composable<SyncRoute> { com.zankup.android.tools.SyncScreen(back) }
 
                 composable<ProgressDetailRoute> {
                     com.zankup.android.progress.ProgressDetailScreen(
@@ -313,37 +324,74 @@ fun AppShell(
 
                 composable<WeightRoute> { com.zankup.android.health.WeightScreen(back) }
 
-                composable<SettingsRoute> { SettingsList(go, back) }
+                composable<SettingsRoute> {
+                    com.zankup.android.settings.basic.SettingsScreen(
+                        back,
+                        onSection = { section -> go(SettingsSectionRoute(section)) },
+                        onAppIcon = { go(AppIconRoute) }
+                    )
+                }
                 composable<SettingsSectionRoute> {
                     val section = it.toRoute<SettingsSectionRoute>().section
                     if (section == "health") {
-                        com.zankup.android.health.settings.HealthSettingsScreen(back)
+                        com.zankup.android.health.settings.HealthSettingsScreen(back, extra = {
+                            com.zankup.android.settings.more.GoogleHealthSwitch()
+                        })
                     } else {
-                        Placeholder(stringResource(sectionTitle(section)), "OS-1161", back)
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        val push = remember(api) {
+                            com.zankup.android.settings.basic.PushControl(
+                                available = Push.available(context),
+                                enabled = { Push.enabled(context) },
+                                setEnabled = { on -> Push.setEnabled(context, api, on) }
+                            )
+                        }
+                        com.zankup.android.settings.basic.SettingsSectionScreen(
+                            section,
+                            back,
+                            push = push,
+                            onImport = { go(ImportRoute) },
+                            onGear = { go(GearRoute) },
+                            ai = {
+                                com.zankup.android.settings.basic.SettingsBody {
+                                    com.zankup.android.settings.more.AiSection(onAssistants = { go(AssistantsRoute) })
+                                }
+                            },
+                            privacy = {
+                                com.zankup.android.settings.basic.SettingsBody {
+                                    com.zankup.android.settings.more.PrivacySection()
+                                }
+                            },
+                            account = {
+                                com.zankup.android.settings.basic.SettingsBody {
+                                    // Signing out changes the session, and the root shows sign-in.
+                                    com.zankup.android.settings.more.AccountSection(onSignedOut = {})
+                                }
+                            }
+                        )
                     }
                 }
                 composable<AppIconRoute> { Placeholder(stringResource(R.string.nav_app_icon), "OS-1171", back) }
-                composable<CoachRoute> { Placeholder(stringResource(R.string.nav_coach), "OS-1162", back) }
-                composable<AssistantsRoute> { Placeholder(stringResource(R.string.nav_assistants), "OS-1162", back) }
-                composable<GearRoute> { Placeholder(stringResource(R.string.nav_gear), "OS-1163", back) }
-                composable<ImportRoute> { Placeholder(stringResource(R.string.nav_import), "OS-1163", back) }
+                composable<CoachRoute> {
+                    com.zankup.android.coach.CoachScreen(
+                        back,
+                        onSettings = { go(SettingsSectionRoute("ai")) },
+                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                    )
+                }
+                composable<AssistantsRoute> {
+                    com.zankup.android.coach.AssistantsScreen(back, onTokens = { go(SettingsSectionRoute("ai")) })
+                }
+                composable<GearRoute> { com.zankup.android.tools.GearScreen(back) }
+                composable<ImportRoute> {
+                    com.zankup.android.tools.ImportScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
+                }
                 composable<NotificationsRoute> {
-                    Placeholder(stringResource(R.string.nav_notifications), "OS-1163", back)
+                    com.zankup.android.tools.NotificationsScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
                 }
             }
         }
     }
-}
-
-internal fun sectionTitle(section: String) = when (section) {
-    "heart" -> R.string.section_heart
-    "notifications" -> R.string.section_notifications
-    "ai" -> R.string.section_ai
-    "privacy" -> R.string.section_privacy
-    "health" -> R.string.section_health
-    "data" -> R.string.section_data
-    "account" -> R.string.section_account
-    else -> R.string.section_general
 }
 
 /** Opens a tab as the bar does: one copy of each, its state kept. */
@@ -399,19 +447,6 @@ internal fun Placeholder(
                 title = stringResource(R.string.coming_soon),
                 body = stringResource(R.string.coming_soon_body, ticket),
                 icon = ZIcon.Progress
-            )
-        }
-    }
-}
-
-/** Settings' sections, each opening its own screen. */
-@Composable
-private fun SettingsList(go: (Any) -> Unit, back: () -> Unit) {
-    Placeholder(stringResource(R.string.nav_settings), "OS-1161", back) {
-        Links.SECTIONS.forEach { section ->
-            com.zankup.android.designsystem.components.ListRow(
-                title = stringResource(sectionTitle(section)),
-                onClick = { go(SettingsSectionRoute(section)) }
             )
         }
     }

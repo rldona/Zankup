@@ -26,6 +26,10 @@ the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 | `feature:stats`     | Stats, estimates, year by year, the calendar, the heatmap and the month and year in review                   |
 | `feature:routes`    | Routes done more than once and segments, each with its map and efforts                                       |
 | `feature:health`    | Health: last night, the day and the trends, weight, and Settings › Health with Health Connect                |
+| `feature:you`       | You: the profile and its editing, the year and all time by sport, records and physical data                  |
+| `feature:coach`     | The Coach streamed as it is written, the weekly report and the AI assistants                                 |
+| `feature:settings`  | Settings and every section: general, heart rate, notifications, AI, privacy, data, account                   |
+| `feature:tools`     | Gear, importing files, the sync screen and the notifications inbox                                           |
 
 ## Running it
 
