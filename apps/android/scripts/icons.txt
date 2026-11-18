@@ -25,7 +25,6 @@ fingerprint
 directions_run
 directions_bike
 directions_walk
-fitness_center
 rowing
 pool
 exercise
@@ -75,3 +74,4 @@ location_off
 health_and_safety
 database
 palette
+sports

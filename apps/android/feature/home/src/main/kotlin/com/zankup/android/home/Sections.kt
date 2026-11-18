@@ -155,7 +155,7 @@ internal fun DayHealthCard(day: HealthDay, modifier: Modifier = Modifier) {
                     colors.sport.ride,
                     stringResource(R.string.home_steps),
                     formatNumber(it.value.roundToInt().toDouble(), locale),
-                    extra = { Ring((it.value / STEPS_GOAL).toFloat().coerceIn(0f, 1f), 34.dp, 4.dp) }
+                    extra = { Ring((it.value / STEPS_GOAL).toFloat().coerceIn(0f, 1f), 34.dp, 4.dp, showTrack = false) }
                 )
             },
             day.restingHr?.let {
@@ -168,7 +168,7 @@ internal fun DayHealthCard(day: HealthDay, modifier: Modifier = Modifier) {
                 )
             },
             day.hrv?.let {
-                Figure("hrv", ZIcon.Hrv, colors.hrv, stringResource(R.string.home_hrv), msText(it.value))
+                Figure("hrv", ZIcon.Hrv, colors.sport.run, stringResource(R.string.home_hrv), msText(it.value))
             }
         )
     if (figures.isNotEmpty()) FigureCard(figures, modifier)
@@ -302,7 +302,7 @@ internal fun LastSevenSection(ui: HomeUi, modifier: Modifier = Modifier) {
                 Figure(
                     "hrv",
                     ZIcon.Hrv,
-                    colors.hrv,
+                    colors.sport.run,
                     stringResource(R.string.home_hrv),
                     stringResource(R.string.home_average, msText(it))
                 )

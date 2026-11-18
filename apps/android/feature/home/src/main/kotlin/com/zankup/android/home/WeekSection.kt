@@ -33,13 +33,11 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.color
-import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.ui.LocalFormats
 import com.zankup.android.ui.family
@@ -68,7 +66,7 @@ internal fun WeekSection(
         ) {
             Text(stringResource(R.string.home_week), style = MaterialTheme.typography.titleLarge)
             if (week.streak > 0) {
-                Pill(pluralStringResource(R.plurals.home_streak, week.streak, week.streak), colors.formPositive)
+                Badge(pluralStringResource(R.plurals.home_streak, week.streak, week.streak))
             }
         }
         Spacer(Modifier.height(ZankupTheme.spacing.sm))
@@ -166,21 +164,7 @@ private fun DayCircle(day: WeekDay, locale: Locale, onOpen: (Long) -> Unit, onPr
 
 @Composable
 private fun WeekFigure(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = ZankupTheme.colors.muted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleSmall.merge(Numbers.tabular),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
+    Box(modifier) { com.zankup.android.ui.Figure(label, value) }
 }
 
 /** The time trained so far against a usual week: ahead or behind as a pill, and a bar with the usual week marked. */

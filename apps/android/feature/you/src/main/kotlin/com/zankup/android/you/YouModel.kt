@@ -129,7 +129,7 @@ constructor(
         return result
     }
 
-    private companion object {
+    internal companion object {
         const val ME_KEY = "auth/me"
         const val PHYSICAL_HIDDEN = "physical_hidden"
     }

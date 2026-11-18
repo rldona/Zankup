@@ -56,7 +56,6 @@ import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
-import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Units
@@ -100,8 +99,8 @@ fun YouScreen(
     var editing by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
-        containerColor = colors.page,
-        topBar = { ZankupTopBar(stringResource(R.string.you_title)) }
+        // No title bar: the profile's header is the top of the tab, as in the React Native app.
+        containerColor = colors.page
     ) { padding ->
         val direction = LocalLayoutDirection.current
         val spacing = ZankupTheme.spacing
@@ -248,12 +247,12 @@ private fun Menu(
     modifier: Modifier = Modifier
 ) {
     ZankupCard(modifier) {
-        ListRow(stringResource(R.string.you_stats), icon = ZIcon.BarChart, onClick = onStats)
-        ListRow(stringResource(R.string.you_estimates), icon = ZIcon.Gauge, onClick = onEstimates)
-        if (coach) ListRow(stringResource(R.string.you_coach), icon = ZIcon.Coach, onClick = onCoach)
-        ListRow(stringResource(R.string.you_gear), icon = ZIcon.Steps, onClick = onGear)
-        ListRow(stringResource(R.string.you_import), icon = ZIcon.Upload, onClick = onImport)
-        ListRow(stringResource(R.string.you_account), icon = ZIcon.Account, onClick = onAccount)
+        ListRow(stringResource(R.string.you_stats), icon = ZIcon.BarChart, onClick = onStats, divider = true)
+        ListRow(stringResource(R.string.you_estimates), icon = ZIcon.Gauge, onClick = onEstimates, divider = true)
+        if (coach) ListRow(stringResource(R.string.you_coach), icon = ZIcon.Coach, onClick = onCoach, divider = true)
+        ListRow(stringResource(R.string.you_gear), icon = ZIcon.Steps, onClick = onGear, divider = true)
+        ListRow(stringResource(R.string.you_import), icon = ZIcon.Upload, onClick = onImport, divider = true)
+        ListRow(stringResource(R.string.you_account), icon = ZIcon.Account, onClick = onAccount, divider = true)
         ListRow(stringResource(R.string.you_settings), icon = ZIcon.Settings, onClick = onSettings)
     }
 }
@@ -309,10 +308,18 @@ private fun Physical(me: Me, hrMax: Int?, hidden: Boolean, onToggle: () -> Unit,
                 Column(Modifier.widthIn(min = 72.dp)) {
                     Text(
                         if (hidden) "•••" else value,
-                        style = MaterialTheme.typography.titleLarge.merge(Numbers.tabular),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ).merge(Numbers.tabular),
                         color = colors.fg
                     )
-                    Text(label, style = MaterialTheme.typography.labelMedium, color = colors.muted)
+                    // Capitals under the figure, as the React Native app's facts.
+                    Text(
+                        label.uppercase(f.locale),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.muted,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
         }

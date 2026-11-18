@@ -320,7 +320,7 @@ fun SourcesScreen(
                         onHealthSettings
                     ),
                     SourceItem(
-                        ZIcon.HealthConnect,
+                        ZIcon.HealthSafety,
                         "Health Connect",
                         stringResource(R.string.more_sources_hc_note),
                         on(HealthSourceStatus.Source.HEALTH_CONNECT),

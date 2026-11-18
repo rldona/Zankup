@@ -71,6 +71,21 @@ internal fun Pill(text: String, color: Color, modifier: Modifier = Modifier) {
     )
 }
 
+/** A filled capsule in the accent (the streak), as the React Native app's good badge. */
+@Composable
+internal fun Badge(text: String, modifier: Modifier = Modifier) {
+    val colors = ZankupTheme.colors
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+        ),
+        color = colors.accentFg,
+        maxLines = 1,
+        modifier = modifier.clip(CircleShape).background(colors.accent).padding(horizontal = 8.dp, vertical = 2.dp)
+    )
+}
+
 /** The form's colour: rested blue, neither grey, building green, overreaching red. */
 internal val FormTone.color: Color
     @Composable @ReadOnlyComposable
@@ -162,6 +177,8 @@ internal fun Ring(
     size: Dp,
     stroke: Dp,
     modifier: Modifier = Modifier,
+    /** The full circle behind the arc; the row's small ring has none, as in the React Native app. */
+    showTrack: Boolean = true,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     val track = ZankupTheme.colors.line
@@ -171,7 +188,7 @@ internal fun Ring(
             val width = stroke.toPx()
             val inset = width / 2
             val arc = Size(this.size.width - width, this.size.height - width)
-            drawArc(track, 0f, 360f, false, Offset(inset, inset), arc, style = Stroke(width))
+            if (showTrack) drawArc(track, 0f, 360f, false, Offset(inset, inset), arc, style = Stroke(width))
             if (share > 0f) {
                 drawArc(
                     done,
