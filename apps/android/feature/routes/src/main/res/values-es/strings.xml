@@ -1,3 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="routes_title">Tus rutas</string>
+    <string name="routes_empty">Las rutas aparecen aquí cuando repites alguna.</string>
+    <string name="routes_best">Mejor</string>
+    <string name="routes_latest">Última</string>
+    <plurals name="routes_times">
+        <item quantity="one">%d vez</item>
+        <item quantity="other">%d veces</item>
+    </plurals>
+    <string name="segments_title">Tus segmentos</string>
+    <string name="segments_empty">Guarda un tramo de una actividad como segmento: selecciónalo en el perfil y pulsa «Guardar como segmento».</string>
+    <string name="segments_delete">Borrar segmento</string>
+    <string name="segments_history">Tus esfuerzos</string>
+    <plurals name="segments_efforts">
+        <item quantity="one">%d esfuerzo</item>
+        <item quantity="other">%d esfuerzos</item>
+    </plurals>
+    <string name="routes_cancel">Cancelar</string>
+    <string name="routes_delete">Borrar</string>
+    <string name="routes_fastest">Más rápida</string>
+    <string name="routes_delete_failed">Algo ha fallado. Inténtalo de nuevo.</string>
 </resources>

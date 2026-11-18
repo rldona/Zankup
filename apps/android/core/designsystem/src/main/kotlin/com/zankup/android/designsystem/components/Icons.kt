@@ -62,7 +62,20 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Collapse(R.drawable.ic_expand_less),
     Steps(R.drawable.ic_footprint),
     Hrv(R.drawable.ic_monitor_heart),
-    Gauge(R.drawable.ic_speed)
+    Gauge(R.drawable.ic_speed),
+    Info(R.drawable.ic_info),
+    Reviews(R.drawable.ic_summarize),
+    Layers(R.drawable.ic_layers),
+    Timeline(R.drawable.ic_timeline),
+    LineChart(R.drawable.ic_show_chart),
+    ChevronLeft(R.drawable.ic_chevron_left),
+    Upload(R.drawable.ic_upload),
+    Award(R.drawable.ic_military_tech, R.drawable.ic_military_tech_fill),
+    MoreHoriz(R.drawable.ic_more_horiz),
+    HealthConnect(R.drawable.ic_ecg_heart),
+    Timer(R.drawable.ic_timer),
+    Devices(R.drawable.ic_devices),
+    Link(R.drawable.ic_link)
 }
 
 @Composable

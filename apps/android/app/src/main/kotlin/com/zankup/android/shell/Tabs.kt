@@ -10,47 +10,17 @@ import androidx.compose.ui.unit.dp
 import com.zankup.android.R
 import com.zankup.android.designsystem.components.ListRow
 import com.zankup.android.designsystem.components.ZIcon
-import com.zankup.android.navigation.BestsRoute
-import com.zankup.android.navigation.EffortRoute
 import com.zankup.android.navigation.EstimatesRoute
-import com.zankup.android.navigation.FitnessRoute
 import com.zankup.android.navigation.GearRoute
 import com.zankup.android.navigation.ImportRoute
-import com.zankup.android.navigation.MonthlyRoute
-import com.zankup.android.navigation.ObjectivesRoute
-import com.zankup.android.navigation.PredictionsRoute
-import com.zankup.android.navigation.ProgressDetailRoute
 import com.zankup.android.navigation.SettingsRoute
-import com.zankup.android.navigation.SkillsRoute
-import com.zankup.android.navigation.SourcesRoute
 import com.zankup.android.navigation.StatsRoute
-import com.zankup.android.navigation.TrainingLogRoute
 import com.zankup.android.navigation.WeightRoute
-import com.zankup.android.navigation.ZonesRoute
 import com.zankup.android.session.Session
 import kotlinx.coroutines.launch
 
 // The five tabs as the navigation needs them: their headers as the React Native app has them, and links
 // to the screens stacked over them. Each tab's content arrives with its block.
-
-@Composable
-internal fun ProgressTab(go: (Any) -> Unit) {
-    Placeholder(stringResource(R.string.nav_progress), "OS-1140", onBack = null) {
-        listOf(
-            R.string.nav_progress_detail to ProgressDetailRoute(),
-            R.string.nav_training_log to TrainingLogRoute,
-            R.string.nav_fitness to FitnessRoute,
-            R.string.nav_effort to EffortRoute,
-            R.string.nav_predictions to PredictionsRoute,
-            R.string.nav_objectives to ObjectivesRoute,
-            R.string.nav_zones to ZonesRoute,
-            R.string.nav_skills to SkillsRoute,
-            R.string.nav_bests to BestsRoute(),
-            R.string.nav_monthly to MonthlyRoute,
-            R.string.nav_sources to SourcesRoute
-        ).forEach { (title, route) -> ListRow(stringResource(title), onClick = { go(route) }) }
-    }
-}
 
 @Composable
 internal fun HealthTab(go: (Any) -> Unit) {

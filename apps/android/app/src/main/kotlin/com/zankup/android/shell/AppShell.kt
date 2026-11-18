@@ -160,7 +160,22 @@ fun AppShell(
                         onCalendar = { go(CalendarRoute) }
                     )
                 }
-                composable<ProgressRoute> { ProgressTab(go) }
+                composable<ProgressRoute> {
+                    com.zankup.android.progress.ProgressScreen(
+                        onVolume = { sport -> go(ProgressDetailRoute(sport)) },
+                        onTrainingLog = { go(TrainingLogRoute) },
+                        onFitness = { go(FitnessRoute) },
+                        onEffort = { go(EffortRoute) },
+                        onPredictions = { go(PredictionsRoute) },
+                        onGoals = { go(ObjectivesRoute) },
+                        onZones = { go(ZonesRoute) },
+                        onSkills = { go(SkillsRoute) },
+                        onBests = { key -> go(BestsRoute(key ?: "10k")) },
+                        onMonthly = { go(MonthlyRoute) },
+                        onSources = { go(SourcesRoute) },
+                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                    )
+                }
                 composable<HealthRoute> { HealthTab(go) }
                 composable<YouRoute> { YouTab(go, session) }
 
@@ -193,35 +208,101 @@ fun AppShell(
                         onOpen = { id -> go(ActivityRoute(id)) }
                     )
                 }
-                composable<CalendarRoute> { Placeholder(stringResource(R.string.nav_calendar), "OS-1141", back) }
+                composable<CalendarRoute> {
+                    com.zankup.android.stats.CalendarScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
+                }
                 composable<SyncRoute> { Placeholder(stringResource(R.string.nav_sync), "OS-1163", back) }
 
                 composable<ProgressDetailRoute> {
-                    Placeholder(stringResource(R.string.nav_progress_detail), "OS-1140", back)
+                    com.zankup.android.progress.ProgressDetailScreen(
+                        it.toRoute<ProgressDetailRoute>().sport,
+                        back,
+                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                    )
                 }
-                composable<TrainingLogRoute> { Placeholder(stringResource(R.string.nav_training_log), "OS-1140", back) }
-                composable<FitnessRoute> { Placeholder(stringResource(R.string.nav_fitness), "OS-1140", back) }
-                composable<EffortRoute> { Placeholder(stringResource(R.string.nav_effort), "OS-1140", back) }
-                composable<PredictionsRoute> { Placeholder(stringResource(R.string.nav_predictions), "OS-1140", back) }
-                composable<ObjectivesRoute> { Placeholder(stringResource(R.string.nav_objectives), "OS-1140", back) }
+                composable<TrainingLogRoute> {
+                    com.zankup.android.progress.TrainingLogScreen(
+                        back,
+                        onOpenActivity = { id -> go(ActivityRoute(id)) },
+                        onSearch = { goTab(nav, ActivitiesRoute) }
+                    )
+                }
+                composable<FitnessRoute> {
+                    com.zankup.android.progress.FitnessScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
+                }
+                composable<EffortRoute> {
+                    com.zankup.android.progress.EffortScreen(back, onOpenActivity = { id -> go(ActivityRoute(id)) })
+                }
+                composable<PredictionsRoute> { com.zankup.android.progress.PredictionsScreen(back) }
+                composable<ObjectivesRoute> {
+                    com.zankup.android.progress.more.ObjectivesScreen(
+                        back,
+                        onNew = { go(ObjectiveEditRoute()) },
+                        onEdit = { id -> go(ObjectiveEditRoute(id)) }
+                    )
+                }
                 composable<ObjectiveEditRoute> {
-                    Placeholder(stringResource(R.string.nav_objective_new), "OS-1140", back)
+                    com.zankup.android.progress.more.ObjectiveEditScreen(
+                        it.toRoute<ObjectiveEditRoute>().id,
+                        back,
+                        onSaved = back
+                    )
                 }
-                composable<ZonesRoute> { Placeholder(stringResource(R.string.nav_zones), "OS-1140", back) }
-                composable<SkillsRoute> { Placeholder(stringResource(R.string.nav_skills), "OS-1140", back) }
-                composable<BestsRoute> { Placeholder(stringResource(R.string.nav_bests), "OS-1140", back) }
-                composable<MonthlyRoute> { Placeholder(stringResource(R.string.nav_monthly), "OS-1140", back) }
-                composable<SourcesRoute> { Placeholder(stringResource(R.string.nav_sources), "OS-1140", back) }
+                composable<ZonesRoute> {
+                    com.zankup.android.progress.more.ZonesScreen(back, onHeartSettings = {
+                        go(SettingsSectionRoute("heart"))
+                    })
+                }
+                composable<SkillsRoute> { com.zankup.android.progress.more.SkillsScreen(back) }
+                composable<BestsRoute> {
+                    com.zankup.android.progress.more.BestsScreen(
+                        it.toRoute<BestsRoute>().key,
+                        back,
+                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                    )
+                }
+                composable<MonthlyRoute> { com.zankup.android.progress.more.MonthlyScreen(back) }
+                composable<SourcesRoute> {
+                    com.zankup.android.progress.more.SourcesScreen(
+                        back,
+                        onAccount = { go(SettingsSectionRoute("account")) },
+                        onImport = { go(ImportRoute) },
+                        onAssistants = { go(AssistantsRoute) },
+                        onHealthSettings = { go(SettingsSectionRoute("health")) }
+                    )
+                }
 
-                composable<StatsRoute> { Placeholder(stringResource(R.string.nav_stats), "OS-1141", back) }
-                composable<EstimatesRoute> { Placeholder(stringResource(R.string.nav_estimates), "OS-1141", back) }
-                composable<YearsRoute> { Placeholder(stringResource(R.string.nav_years), "OS-1141", back) }
-                composable<HeatmapRoute> { Placeholder(stringResource(R.string.nav_heatmap), "OS-1141", back) }
-                composable<ReviewRoute> { Placeholder(stringResource(R.string.nav_review), "OS-1141", back) }
-                composable<RoutesRoute> { Placeholder(stringResource(R.string.nav_routes), "OS-1142", back) }
-                composable<RouteRoute> { Placeholder(stringResource(R.string.nav_route), "OS-1142", back) }
-                composable<SegmentsRoute> { Placeholder(stringResource(R.string.nav_segments), "OS-1142", back) }
-                composable<SegmentRoute> { Placeholder(stringResource(R.string.nav_segment), "OS-1142", back) }
+                val openActivity: (Long) -> Unit = { id -> go(ActivityRoute(id)) }
+                composable<StatsRoute> {
+                    com.zankup.android.stats.StatsScreen(
+                        back,
+                        onReview = { period -> go(ReviewRoute(period)) },
+                        onHeatmap = { go(HeatmapRoute) },
+                        onBests = { key -> go(BestsRoute(key ?: "10k")) },
+                        onRoutes = { go(RoutesRoute) },
+                        onSegments = { go(SegmentsRoute) },
+                        onYears = { go(YearsRoute) },
+                        onOpenActivity = openActivity
+                    )
+                }
+                composable<EstimatesRoute> { com.zankup.android.stats.EstimatesScreen(back, openActivity) }
+                composable<YearsRoute> { com.zankup.android.stats.YearsScreen(back) }
+                composable<HeatmapRoute> { com.zankup.android.stats.HeatmapScreen(back) }
+                composable<ReviewRoute> {
+                    com.zankup.android.stats.ReviewScreen(it.toRoute<ReviewRoute>().period, back, openActivity)
+                }
+                composable<RoutesRoute> {
+                    com.zankup.android.routes.RoutesScreen(back, onOpen = { id -> go(RouteRoute(id)) })
+                }
+                composable<RouteRoute> {
+                    com.zankup.android.routes.RouteScreen(it.toRoute<RouteRoute>().id, back, openActivity)
+                }
+                composable<SegmentsRoute> {
+                    com.zankup.android.routes.SegmentsScreen(back, onOpen = { id -> go(SegmentRoute(id)) })
+                }
+                composable<SegmentRoute> {
+                    com.zankup.android.routes.SegmentScreen(it.toRoute<SegmentRoute>().id, back, openActivity)
+                }
 
                 composable<WeightRoute> { Placeholder(stringResource(R.string.nav_weight), "OS-1150", back) }
 
@@ -254,6 +335,15 @@ internal fun sectionTitle(section: String) = when (section) {
     else -> R.string.section_general
 }
 
+/** Opens a tab as the bar does: one copy of each, its state kept. */
+private fun goTab(nav: NavHostController, route: Any) {
+    nav.navigate(route) {
+        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 @Composable
 private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavDestination?) {
     val colors = ZankupTheme.colors
@@ -262,13 +352,7 @@ private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavD
             val selected = destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
             NavigationBarItem(
                 selected = selected,
-                onClick = {
-                    nav.navigate(tab.route) {
-                        popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                onClick = { goTab(nav, tab.route) },
                 icon = { ZankupIcon(tab.icon, contentDescription = null, filled = selected) },
                 label = { Text(stringResource(tab.label)) },
                 colors =

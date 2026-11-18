@@ -49,3 +49,16 @@ expand_less
 footprint
 monitor_heart
 speed
+info
+summarize
+layers
+timeline
+show_chart
+chevron_left
+upload
+military_tech fill
+more_horiz
+ecg_heart
+timer
+devices
+link
