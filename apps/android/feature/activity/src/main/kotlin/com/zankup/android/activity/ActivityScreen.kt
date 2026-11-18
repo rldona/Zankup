@@ -450,7 +450,8 @@ private fun ChartCard(
                     "%.0f %s".format(x / unit, formats.unit.distanceUnit)
                 }
             },
-            clip = chart.series.inverted,
+            // Every chart scaled as the React Native app's: outliers trimmed, four round steps.
+            clip = true,
             color = chartColour(chart.kind),
             height = 170.dp,
             filled = true

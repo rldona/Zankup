@@ -230,4 +230,7 @@
         <item quantity="many">Ruta hecha %1$d veces: esta es tu n.º %2$d</item>
         <item quantity="other">Ruta hecha %1$d veces: esta es tu n.º %2$d</item>
     </plurals>
+    <string name="share_image">Compartir como imagen</string>
+    <string name="share_image_note">Una imagen de la actividad con su ruta y sus cifras, para enviarla donde quieras.</string>
+    <string name="share_ascent">Desnivel</string>
 </resources>

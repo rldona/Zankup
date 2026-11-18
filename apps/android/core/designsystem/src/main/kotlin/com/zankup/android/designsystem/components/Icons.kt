@@ -93,7 +93,8 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     Assistant(R.drawable.ic_smart_toy),
     Pencil(R.drawable.ic_edit),
     ArrowUp(R.drawable.ic_keyboard_arrow_up),
-    ArrowDown(R.drawable.ic_keyboard_arrow_down)
+    ArrowDown(R.drawable.ic_keyboard_arrow_down),
+    Image(R.drawable.ic_image)
 }
 
 @Composable

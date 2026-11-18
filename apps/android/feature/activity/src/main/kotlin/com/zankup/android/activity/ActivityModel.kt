@@ -188,6 +188,25 @@ constructor(
         return webOrigin(api.baseUrl.toString()) + path.removePrefix("/")
     }
 
+    /** What a share image of this activity shows: the shared view, privacy zones already out (OS-919). */
+    suspend fun shared(): com.zankup.android.api.model.SharedActivity? {
+        val api = source.api ?: return null
+        return (call { api.service<SharingApi>().previewSharedActivity(id.toInt(), true) } as? ApiResult.Ok)?.value
+    }
+
+    /** Draws the card and saves it as a PNG in the cache, for the share sheet; null if it fails. */
+    internal suspend fun shareImage(content: CardContent, colours: CardColours): java.io.File? =
+        withContext(Dispatchers.Default) {
+            runCatching {
+                val dir = java.io.File(context.cacheDir, "share").apply { mkdirs() }
+                val file = java.io.File(dir, "zankup-$id.png")
+                val bitmap = drawCard(content, colours)
+                file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                bitmap.recycle()
+                file
+            }.getOrNull()
+        }
+
     suspend fun saveSegment(from: Int, to: Int, name: String): Boolean {
         val api = source.api ?: return false
         return call {

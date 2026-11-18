@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The share images, kept in the cache until the next one (OS-919). -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>

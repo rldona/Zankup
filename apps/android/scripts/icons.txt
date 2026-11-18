@@ -80,3 +80,4 @@ smart_toy
 edit
 keyboard_arrow_up
 keyboard_arrow_down
+image
