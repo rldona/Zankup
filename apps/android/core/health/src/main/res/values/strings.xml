@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hc_privacy_title">Zankup and Health Connect</string>
+    <string name="hc_privacy_body">Zankup only reads from Health Connect: sleep, resting heart rate, heart rate variability, blood oxygen, breathing rate and steps. It sends them to your own Zankup instance, which keeps them as the Health Connect source so the Health tab can show them and work out your readiness. Nothing is written to Health Connect, and nothing goes anywhere else. You can remove the permissions at any time in Health Connect, and delete what was sent from Settings › Health.</string>
+</resources>

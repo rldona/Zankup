@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hs_title">Salud</string>
+    <string name="hs_history_title">Historial</string>
+    <string name="hs_history_note">Al conectar cada fuente, Zankup trajo sus últimos 30 días. Esto pide el último año a Garmin y a Google Health (en segundo plano: tarda unos minutos) y lo lee de Health Connect en este teléfono.</string>
+    <string name="hs_history_bring">Traer el último año</string>
+    <string name="hs_history_working">Pidiendo el historial…</string>
+    <string name="hs_history_queued">En marcha: %1$s. Los datos irán apareciendo en Salud.</string>
+    <string name="hs_history_hc">Health Connect: %1$s y %2$s enviados.</string>
+    <string name="hs_history_none">No hay ninguna fuente de salud conectada.</string>
+    <string name="hs_hc_title">Health Connect</string>
+    <string name="hs_hc_note">Lee el sueño, la frecuencia cardiaca en reposo, la VFC, la SpO₂, la respiración y los pasos de Health Connect y los envía a tu Zankup. No escribe nada en Health Connect.</string>
+    <string name="hs_hc_unavailable">Health Connect no está disponible en este teléfono.</string>
+    <string name="hs_hc_connect">Permitir y leer</string>
+    <string name="hs_hc_read">Leer ahora</string>
+    <string name="hs_hc_denied">No se ha concedido ningún permiso.</string>
+    <string name="hs_hc_done">Enviados %1$s y %2$s.</string>
+    <string name="hs_hc_last">Última lectura: %1$s</string>
+    <string name="hs_sources">Fuentes</string>
+    <string name="hs_counts">%1$s, %2$s</string>
+    <string name="hs_delete">Borrar sus datos</string>
+    <string name="hs_delete_confirm">¿Borrar todo el sueño y las cifras diarias de %1$s? No se puede deshacer.</string>
+    <string name="hs_cancel">Cancelar</string>
+    <string name="hs_priority">Fuente preferida</string>
+    <string name="hs_priority_note">Cuando varias fuentes registran lo mismo, Zankup elige una automáticamente: para el sueño la que tiene fases, para la VFC la fuente del sueño de esa noche, para la FC en reposo y los pasos la que se llevó puesta más tiempo. Puedes elegirla tú.</string>
+    <string name="hs_automatic">Automática</string>
+    <string name="hs_google_disconnect">Desconectar</string>
+    <string name="hs_google_off">No está configurado en este servidor (GOOGLE_HEALTH_ENABLED y un cliente OAuth de Google).</string>
+    <string name="hs_google_reconnect">Google ha dejado de compartir los datos: vuelve a conectarlo.</string>
+    <string name="hs_google_missing">No se concedieron algunos permisos, así que faltan parte de los datos.</string>
+    <string name="hs_google_on_web">Conecta Google Health desde la web; en este teléfono, Health Connect lo lee directamente.</string>
+    <string name="hs_hc_source_note">Se lee desde este teléfono: Health Connect, arriba.</string>
+    <string name="hs_garmin_off">No hay clave de Garmin: configura GARMIN_PERSONAL_API_KEY en el servidor.</string>
+    <string name="hs_last_sync">Última sincronización: %1$s.</string>
+    <string name="hs_never">Aún no se ha sincronizado.</string>
+    <string name="hs_error">Algo ha fallado. Inténtalo de nuevo.</string>
+    <string name="hs_metric_sleep">Sueño</string>
+    <string name="hs_metric_hrv">VFC</string>
+    <string name="hs_metric_resting_hr">Frecuencia cardiaca en reposo</string>
+    <string name="hs_metric_spo2">SpO₂</string>
+    <string name="hs_metric_respiration">Respiración</string>
+    <string name="hs_metric_steps">Pasos</string>
+    <plurals name="hs_nights">
+        <item quantity="one">%d noche</item>
+        <item quantity="many">%d noches</item>
+        <item quantity="other">%d noches</item>
+    </plurals>
+    <plurals name="hs_days">
+        <item quantity="one">%d día</item>
+        <item quantity="many">%d días</item>
+        <item quantity="other">%d días</item>
+    </plurals>
+</resources>

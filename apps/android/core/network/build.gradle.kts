@@ -73,7 +73,17 @@ abstract class PrepareApiSpec : DefaultTask() {
                     else -> {
                         val map = node as Map<String, Any?>
                         val const = map["const"]
-                        map
+                        // A map of lists of an enum (health settings' priority) comes out typed as the enum
+                        // itself: its values are read as plain strings instead.
+                        val values = map["additionalProperties"] as? Map<String, Any?>
+                        val items = values?.get("items") as? Map<String, Any?>
+                        val map0 =
+                            if (items != null && "enum" in items) {
+                                map + ("additionalProperties" to values + ("items" to items - "enum"))
+                            } else {
+                                map
+                            }
+                        map0
                             .filterKeys { it != "const" && it != "propertyNames" && it != "prefixItems" }
                             .mapValues { (_, value) -> clean(value) }
                             // 3.0 has no `const`: a string one is a one-value enum, a boolean one just a boolean.

@@ -176,7 +176,14 @@ fun AppShell(
                         onOpenActivity = { id -> go(ActivityRoute(id)) }
                     )
                 }
-                composable<HealthRoute> { HealthTab(go) }
+                composable<HealthRoute> {
+                    com.zankup.android.health.HealthScreen(
+                        onWeight = { go(WeightRoute) },
+                        onSettings = { go(SettingsSectionRoute("health")) },
+                        onOpenActivity = { id -> go(ActivityRoute(id)) },
+                        onConnect = { go(SettingsSectionRoute("health")) }
+                    )
+                }
                 composable<YouRoute> { YouTab(go, session) }
 
                 val scheme = BuildConfig.LINK_SCHEME
@@ -304,12 +311,16 @@ fun AppShell(
                     com.zankup.android.routes.SegmentScreen(it.toRoute<SegmentRoute>().id, back, openActivity)
                 }
 
-                composable<WeightRoute> { Placeholder(stringResource(R.string.nav_weight), "OS-1150", back) }
+                composable<WeightRoute> { com.zankup.android.health.WeightScreen(back) }
 
                 composable<SettingsRoute> { SettingsList(go, back) }
                 composable<SettingsSectionRoute> {
                     val section = it.toRoute<SettingsSectionRoute>().section
-                    Placeholder(stringResource(sectionTitle(section)), "OS-1161", back)
+                    if (section == "health") {
+                        com.zankup.android.health.settings.HealthSettingsScreen(back)
+                    } else {
+                        Placeholder(stringResource(sectionTitle(section)), "OS-1161", back)
+                    }
                 }
                 composable<AppIconRoute> { Placeholder(stringResource(R.string.nav_app_icon), "OS-1171", back) }
                 composable<CoachRoute> { Placeholder(stringResource(R.string.nav_coach), "OS-1162", back) }

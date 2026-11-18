@@ -2,6 +2,7 @@ package com.zankup.android.network
 
 import com.zankup.android.api.model.ActivityPage
 import com.zankup.android.api.model.ActivityStreams
+import com.zankup.android.api.model.HealthSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -42,5 +43,16 @@ class GeneratedModelsTest {
         assertEquals(listOf(120, null, 122), streams.hr)
         assertNull(streams.power)
         assertNull(streams.speed)
+    }
+
+    @Test
+    fun readsHealthPriorityAsAMap() {
+        val settings =
+            ZankupJson.decodeFromString(
+                HealthSettings.serializer(),
+                """{"sources":[],"priority":{"sleep":["garmin","health_connect"],"hrv":[]}}"""
+            )
+        assertEquals(listOf("garmin", "health_connect"), settings.priority["sleep"])
+        assertEquals(emptyList<String>(), settings.priority["hrv"])
     }
 }
