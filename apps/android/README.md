@@ -21,6 +21,9 @@ the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 | `feature:home`      | Home: this week, the last day, the metrics and the last seven days                                           |
 | `feature:feed`      | Activities: the feed, search and its filters                                                                 |
 | `feature:activity`  | The activity by sport, its training analysis and matched activities, editing and sharing                     |
+| `feature:progress`  | The Progress tab, its eleven cards and the pages they open (volume, goals, zones, skills, best times…)       |
+| `feature:stats`     | Stats, estimates, year by year, the calendar, the heatmap and the month and year in review                   |
+| `feature:routes`    | Routes done more than once and segments, each with its map and efforts                                       |
 
 ## Running it
 
