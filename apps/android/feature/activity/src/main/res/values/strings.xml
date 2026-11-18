@@ -225,4 +225,7 @@
         <item quantity="one">Route done %1$d time: this is your #%2$d</item>
         <item quantity="other">Route done %1$d times: this is your #%2$d</item>
     </plurals>
+    <string name="share_image">Share as image</string>
+    <string name="share_image_note">A picture of the activity with its route and figures, to send anywhere.</string>
+    <string name="share_ascent">Elevation</string>
 </resources>

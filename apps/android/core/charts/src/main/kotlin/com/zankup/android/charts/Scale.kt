@@ -3,19 +3,35 @@ package com.zankup.android.charts
 import com.zankup.android.domain.niceAxis
 import com.zankup.android.domain.tightAxis
 
-/** The values' range for an axis: all of them, or from the 2nd to the 98th percentile ([clip]). */
+/**
+ * The values' range for an axis: all of them, or, with [clip], as the React Native app's activity charts
+ * (packages/core rangeOf): from the 2nd percentile, up to the top unless it stands far above the 98th
+ * (a stop in a pace), then to the 99.5th.
+ */
 internal fun valueRange(values: FloatArray, clip: Boolean): Pair<Float, Float>? {
     val finite = values.filter { it.isFinite() }
     if (finite.isEmpty()) return null
-    if (!clip || finite.size < 50) return finite.min() to finite.max()
+    if (!clip) return finite.min() to finite.max()
     val sorted = finite.sorted()
-    return sorted[(sorted.size * 0.02).toInt()] to sorted[((sorted.size - 1) * 0.98).toInt()]
+    fun at(q: Double) = sorted[minOf(sorted.size - 1, kotlin.math.floor(q * (sorted.size - 1)).toInt())]
+    val lo = at(0.02)
+    val max = sorted.last()
+    val p98 = at(0.98)
+    val hi = if (max <= maxOf(p98 * 1.5f, p98 + 1f)) max else at(0.995)
+    return if (hi > lo) lo to hi else lo to lo + 1f
 }
 
-/** The round axis for a series: from zero when it says so, else the tightest one around its values. */
+/**
+ * The round axis for a series: from zero when it says so; clipped, in four round steps as the React
+ * Native app's activity charts; else the tightest one around its values.
+ */
 internal fun axisFor(values: FloatArray, fromZero: Boolean, clip: Boolean): com.zankup.android.domain.Axis? {
     val (lo, hi) = valueRange(values, clip) ?: return null
-    return if (fromZero) niceAxis(0.0, hi.toDouble().coerceAtLeast(1.0)) else tightAxis(lo.toDouble(), hi.toDouble())
+    return when {
+        fromZero -> niceAxis(0.0, hi.toDouble().coerceAtLeast(1.0))
+        clip -> niceAxis(lo.toDouble(), hi.toDouble())
+        else -> tightAxis(lo.toDouble(), hi.toDouble())
+    }
 }
 
 /**

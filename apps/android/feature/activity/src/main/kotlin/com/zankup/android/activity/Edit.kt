@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,12 +37,17 @@ import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.ListRow
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupSheet
+import com.zankup.android.designsystem.components.color
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Sport
 import com.zankup.android.network.ApiResult
+import com.zankup.android.ui.R.string as UiStrings
+import com.zankup.android.ui.family
 import com.zankup.android.ui.sportName
 import com.zankup.android.ui.sportOf
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Editing an activity (OS-1135): name, description, sport, gear (or none), a strength workout's type and
@@ -190,10 +196,17 @@ internal fun ShareSheet(a: ActivityDetail, model: ActivityModel, onDone: () -> U
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(stringResource(R.string.share), style = MaterialTheme.typography.titleLarge)
+            val image = rememberShareImage(a, model, onFailed = { failed = true }, onDone = onDone)
+            ListRow(
+                stringResource(R.string.share_image),
+                subtitle = stringResource(R.string.share_image_note),
+                icon = ZIcon.Image,
+                onClick = image
+            )
             ListRow(
                 stringResource(R.string.share_link),
                 subtitle = stringResource(R.string.share_link_note),
-                icon = ZIcon.Share,
+                icon = ZIcon.Link,
                 onClick = {
                     scope.launch {
                         val link = model.shareLink()
@@ -210,6 +223,81 @@ internal fun ShareSheet(a: ActivityDetail, model: ActivityModel, onDone: () -> U
                 }
             )
             if (failed) Text(stringResource(R.string.share_failed), color = ZankupTheme.colors.formNegative)
+        }
+    }
+}
+
+/**
+ * Sharing the image (OS-919), as the React Native app: the shared view of the activity drawn on the
+ * 1080 × 1350 card in the theme's colours, saved in the cache and handed to Android's share sheet.
+ * Nothing leaves the phone until the person picks where to send it.
+ */
+@Composable
+private fun rememberShareImage(
+    a: ActivityDetail,
+    model: ActivityModel,
+    onFailed: () -> Unit,
+    onDone: () -> Unit
+): () -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val formats = com.zankup.android.ui.LocalFormats.current
+    val colors = ZankupTheme.colors
+    val sport = sportOf(a.sport)
+    val fallback = stringResource(sportName(sport))
+    val chooser = stringResource(R.string.share_image)
+    val labels = listOf(
+        stringResource(com.zankup.android.ui.R.string.figure_distance),
+        stringResource(com.zankup.android.ui.R.string.figure_time),
+        stringResource(if (sport.usesPace) UiStrings.figure_pace else UiStrings.figure_speed),
+        stringResource(R.string.share_ascent)
+    )
+    val colours = CardColours(
+        colors.bg.toArgb(),
+        colors.fg.toArgb(),
+        colors.muted.toArgb(),
+        sport.family.color.toArgb()
+    )
+    return {
+        scope.launch {
+            val shared = model.shared()
+            if (shared == null) {
+                onFailed()
+                return@launch
+            }
+            val moving = shared.movingS ?: shared.durationS
+            val distance = shared.distanceM?.takeIf { it > 0 }
+            val figures = listOfNotNull(
+                distance?.let { CardFigure(labels[0], formats.distance(it)) },
+                CardFigure(labels[1], formats.duration(moving)),
+                distance?.takeIf { moving > 0 }?.let { CardFigure(labels[2], formats.speedFor(sport, it, moving)) },
+                shared.ascentM?.takeIf { it > 0 }?.let { CardFigure(labels[3], formats.elevation(it)) }
+            )
+            val day = runCatching {
+                java.time.LocalDate.parse(shared.day).format(
+                    java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG)
+                        .withLocale(formats.locale)
+                )
+            }.getOrDefault(shared.day)
+            val route = shared.route.orEmpty().map { stretch ->
+                stretch.mapNotNull { point ->
+                    val lat = point.getOrNull(0)?.jsonPrimitive?.doubleOrNull
+                    val lon = point.getOrNull(1)?.jsonPrimitive?.doubleOrNull
+                    if (lat != null && lon != null) lat to lon else null
+                }
+            }
+            val file = model.shareImage(CardContent(shared.name ?: fallback, day, figures, route), colours)
+            if (file == null) {
+                onFailed()
+                return@launch
+            }
+            val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".share", file)
+            val send = Intent(Intent.ACTION_SEND)
+                .setType("image/png")
+                .putExtra(Intent.EXTRA_STREAM, uri)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(send, chooser))
+            onDone()
         }
     }
 }

@@ -32,8 +32,9 @@ sport icons and names, numbers grouped from four digits, the activity card, chip
 16 dp round), list rows, Home, You (the photo on its tab), the activity's screen (the header over the map,
 the route by pace or speed, the coach, fitness, matches, effort, goals, results, the analysis, splits,
 charts and zones), Progress, Stats, Health, Settings, the Coach and the tools. Kept native on purpose:
-Material's tab bar, sheets, dialogs, the date picker and switches. Still to do: the strength body map,
-the share image, and the pace chart's vertical scale.
+Material's tab bar, sheets, dialogs, the date picker and switches. The strength body map, the share image
+("Share as image", the 1080 × 1350 card) and the activity charts' scale (outliers trimmed, four round
+steps, as packages/core's rangeOf) match too.
 
 ## Screens
 
