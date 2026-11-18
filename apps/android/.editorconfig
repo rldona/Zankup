@@ -1,0 +1,8 @@
+# Kotlin's own conventions (4 spaces), over the repository's 2.
+[*.{kt,kts,xml}]
+indent_size = 4
+
+[*.{kt,kts}]
+ktlint_code_style = android_studio
+ktlint_function_naming_ignore_when_annotated_with = Composable
+max_line_length = 120

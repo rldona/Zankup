@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="loading">Cargando</string>
+    <string name="back">Atrás</string>
+    <string name="close">Cerrar</string>
+    <string name="retry">Reintentar</string>
+    <string name="error_title">Algo ha fallado</string>
+    <string name="error_body">No se ha podido cargar. Prueba de nuevo en un momento.</string>
+    <string name="error_offline_title">Sin conexión</string>
+    <string name="error_offline_body">Se cargará cuando vuelvas a tener conexión.</string>
+
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_oled">Negro OLED</string>
+    <string name="theme_high_contrast">Alto contraste</string>
+    <string name="theme_forest">Bosque</string>
+    <string name="theme_ocean">Océano</string>
+    <string name="theme_sunset">Atardecer</string>
+    <string name="theme_strava">Strava</string>
+    <string name="theme_strava_dark">Strava oscuro</string>
+
+    <plurals name="activities">
+        <item quantity="one">%d actividad</item>
+        <item quantity="many">%d actividades</item>
+        <item quantity="other">%d actividades</item>
+    </plurals>
+</resources>

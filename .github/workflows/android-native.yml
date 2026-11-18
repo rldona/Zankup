@@ -1,0 +1,55 @@
+name: Android (native)
+
+# The native app (phase 11, apps/android): ktlint, Android Lint, unit and screenshot tests and the release
+# build. It runs when the app changes, or what it is built from outside its folder: the API's OpenAPI
+# document (the generated client) and the brand assets. The APK is not kept: CI has no signing key.
+on:
+  pull_request:
+    paths:
+      - 'apps/android/**'
+      - 'packages/core/src/api/openapi.json'
+      - 'docs/brand/assets/**'
+      - '.github/workflows/android-native.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/android/**'
+      - 'packages/core/src/api/openapi.json'
+      - 'docs/brand/assets/**'
+      - '.github/workflows/android-native.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Native Android app
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/android
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Lint (ktlint and Android Lint)
+        run: ./gradlew ktlintCheck lintDebug --no-daemon
+      - name: Unit and screenshot tests
+        run: ./gradlew testDebugUnitTest verifyRoborazziDebug --no-daemon
+      - name: Release build (R8)
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Keep the screenshot differences when they fail
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: roborazzi
+          path: apps/android/**/build/outputs/roborazzi
+          retention-days: 7
