@@ -36,6 +36,9 @@ android {
         // Its own link scheme beside the React Native app's `zankup://` until the cutover.
         manifestPlaceholders["linkScheme"] = "zankup-next"
         buildConfigField("String", "LINK_SCHEME", "\"zankup-next\"")
+        // MapLibre's native library is 10–14 MB per architecture: the APK carries the phones' one (and the
+        // emulator's in debug). A Play Store bundle (OS-510) splits them by itself.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     signingConfigs {
@@ -52,6 +55,7 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            ndk { abiFilters += "x86_64" }
             manifestPlaceholders["linkScheme"] = "zankup-next-dev"
             buildConfigField("String", "LINK_SCHEME", "\"zankup-next-dev\"")
             // The owner's key here too, so passkeys and Google sign-in trust Zankup Next Dev as well.
@@ -88,6 +92,8 @@ dependencies {
     implementation(project(":core:session"))
     implementation(project(":core:data"))
     implementation(project(":core:domain"))
+    implementation(project(":core:charts"))
+    implementation(project(":core:map"))
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.hilt.work)

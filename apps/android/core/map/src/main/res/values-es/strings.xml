@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_play">Reproducir la actividad</string>
+    <string name="map_pause">Pausar la reproducción</string>
+    <string name="map_options">Opciones del mapa</string>
+    <string name="map_colour_by">Colorear por</string>
+    <string name="map_replay_speed">Velocidad de reproducción</string>
+</resources>

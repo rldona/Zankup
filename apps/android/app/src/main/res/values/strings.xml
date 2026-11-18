@@ -56,4 +56,13 @@
     <string name="unlock">Unlock</string>
     <string name="push_channel">Notifications</string>
     <string name="push_channel_description">New activities, records, Garmin problems and the weekly report.</string>
+    <string name="preview_section">Section</string>
+    <string name="latest_activities">Latest activities</string>
+    <string name="series_pace">Pace</string>
+    <string name="series_speed">Speed</string>
+    <string name="series_hr">Heart rate</string>
+    <string name="series_power">Power</string>
+    <string name="series_cadence">Cadence</string>
+    <string name="series_elevation">Elevation</string>
+    <string name="series_route">Route</string>
 </resources>
