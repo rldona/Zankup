@@ -184,6 +184,47 @@ constructor(
             kept
         }
 
+    /** The lock as set: whether the fingerprint opens the app, and weak biometrics as an app lock. */
+    suspend fun lock(): Pair<Boolean, Boolean> = prefs.biometricLock() to prefs.weakLock()
+
+    /**
+     * Changes the lock (Settings › Account) and seals the refresh token again to match: behind the
+     * fingerprint, which is asked for now, or behind a plain key. If the fingerprint is not given,
+     * nothing changes and it returns false.
+     */
+    suspend fun setLock(biometric: Boolean, weak: Boolean, prompter: Prompter): Boolean = mutex.withLock {
+        val refresh = memory.tokens?.refresh ?: return@withLock false
+        val before = prefs.biometricLock() to prefs.weakLock()
+        val oldSealed = prefs.sealed()
+        prefs.setBiometricLock(biometric)
+        prefs.setWeakLock(weak)
+        val protection =
+            if (biometric && !weak && BiometricLevel.of(context) == BiometricLevel.STRONG) {
+                Protection.STRONG
+            } else {
+                Protection.DEVICE
+            }
+        val sealed =
+            runCatching {
+                if (protection == Protection.STRONG) {
+                    val cipher = Vault.cipherFor(Protection.STRONG)
+                    (prompter.strong(cipher) as? PromptResult.Passed)?.cipher?.let {
+                        Vault.seal(it, refresh, protection)
+                    }
+                } else {
+                    Vault.seal(Vault.cipherFor(Protection.DEVICE), refresh, protection)
+                }
+            }.getOrNull()
+        if (sealed == null) {
+            prefs.setBiometricLock(before.first)
+            prefs.setWeakLock(before.second)
+            if (oldSealed != null) prefs.setSealed(oldSealed)
+            return@withLock false
+        }
+        prefs.setSealed(sealed)
+        true
+    }
+
     /**
      * A client for work done in the background (the sync, the widget), with no one to touch the sensor:
      * only when the refresh token is sealed without the fingerprint; null otherwise. It shares nothing
