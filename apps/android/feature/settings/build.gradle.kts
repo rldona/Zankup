@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":core:session"))
     implementation(project(":core:health"))
     implementation(libs.androidx.credentials)
+    implementation(libs.maplibre)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

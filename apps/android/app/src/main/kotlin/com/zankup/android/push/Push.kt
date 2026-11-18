@@ -12,6 +12,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.zankup.android.R
 import com.zankup.android.api.endpoints.NotificationsApi
 import com.zankup.android.api.model.FcmToken
+import com.zankup.android.network.ApiResult
 import com.zankup.android.network.ZankupApi
 import com.zankup.android.network.call
 import kotlin.coroutines.resume
@@ -48,12 +49,34 @@ object Push {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    /** Tells the instance where to send this phone's notifications. */
-    suspend fun register(context: Context, api: ZankupApi) {
-        if (!available(context)) return
-        val token = token() ?: return
-        call { api.service<NotificationsApi>().setFcmToken(FcmToken(token)) }
+    private fun prefs(context: Context) = context.getSharedPreferences("push", Context.MODE_PRIVATE)
+
+    /** Whether this phone gets notifications: on unless turned off in Settings › Notifications. */
+    fun enabled(context: Context) = available(context) && !prefs(context).getBoolean(OFF, false)
+
+    /** Tells the instance where to send this phone's notifications, unless they were turned off here. */
+    suspend fun register(context: Context, api: ZankupApi): Boolean {
+        if (!enabled(context)) return false
+        val token = token() ?: return false
+        return call { api.service<NotificationsApi>().setFcmToken(FcmToken(token)) } is ApiResult.Ok
     }
+
+    /** Settings › Notifications › This phone: registers the token, or tells the instance to forget it. */
+    suspend fun setEnabled(context: Context, api: ZankupApi, on: Boolean): Boolean {
+        if (!available(context)) return false
+        val done =
+            if (on) {
+                prefs(context).edit().putBoolean(OFF, false).apply()
+                register(context, api)
+            } else {
+                call { api.service<NotificationsApi>().setFcmToken(FcmToken(null)) } is ApiResult.Ok
+            }
+        if (done && !on) prefs(context).edit().putBoolean(OFF, true).apply()
+        if (!done && on) prefs(context).edit().putBoolean(OFF, true).apply()
+        return done
+    }
+
+    private const val OFF = "off"
 
     private suspend fun token(): String? = suspendCancellableCoroutine { continuation ->
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->

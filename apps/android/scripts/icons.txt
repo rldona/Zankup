@@ -62,3 +62,16 @@ ecg_heart
 timer
 devices
 link
+trending_up
+warning
+bar_chart
+account_circle
+content_copy
+open_in_new
+send
+stop fill
+add_comment
+location_off
+health_and_safety
+database
+palette

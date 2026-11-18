@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The list -->
+    <string name="set_title">Settings</string>
+    <string name="set_general">General</string>
+    <string name="set_general_note">Language, units and theme</string>
+    <string name="set_heart">Heart rate and zones</string>
+    <string name="set_heart_note">Max and resting HR, zone model, threshold and FTP</string>
+    <string name="set_notifications">Notifications</string>
+    <string name="set_notifications_note">On this phone, and which kinds</string>
+    <string name="set_ai">Zankup Coach and MCP</string>
+    <string name="set_ai_note">The coach and personal tokens</string>
+    <string name="set_privacy">Privacy zones</string>
+    <string name="set_privacy_note">Places hidden from what you share</string>
+    <string name="set_health">Health</string>
+    <string name="set_health_note">Health Connect, Garmin and Google Health</string>
+    <string name="set_data">Your data</string>
+    <string name="set_data_note">Import, gear and exporting everything</string>
+    <string name="set_account">Account</string>
+    <string name="set_account_note">Sign-in, passkeys, biometrics, Garmin, sessions and signing out</string>
+    <string name="set_app_icon">App icon</string>
+    <string name="set_app_icon_note">Zankup\'s icon on your home screen</string>
+
+    <!-- Shared -->
+    <string name="set_save">Save</string>
+    <string name="set_saved">Saved</string>
+    <string name="set_error">Something went wrong. Try again.</string>
+    <string name="set_checking">Checking…</string>
+    <string name="set_from_server">It comes from the server\'s configuration now; a value set here is used instead.</string>
+    <string name="set_hour_earlier">%1$s, one hour earlier</string>
+    <string name="set_hour_later">%1$s, one hour later</string>
+
+    <!-- Service keys -->
+    <string name="set_key_from_app">Set · …%1$s</string>
+    <string name="set_key_from_server">On the server · …%1$s</string>
+    <string name="set_key_not_set">Not set</string>
+    <string name="set_key_expires">Expires on %1$s</string>
+    <string name="set_key_env_note">It comes from an environment variable on the server. A key saved here is used instead.</string>
+    <string name="set_key_paste">Paste the key</string>
+    <string name="set_key_replace">Replace it with another key</string>
+    <string name="set_key_expires_on">Expires on (optional)</string>
+    <string name="set_key_remove">Remove</string>
+    <string name="set_date_format">DD/MM/YYYY</string>
+    <string name="set_invalid_date">Write the date as DD/MM/YYYY, for example 14/08/1982.</string>
+
+    <!-- General -->
+    <string name="set_language">Language</string>
+    <string name="set_language_help">Dates and numbers follow the language. Units are a separate setting.</string>
+    <string name="set_language_auto">Same as the phone</string>
+    <string name="set_language_en" translatable="false">English</string>
+    <string name="set_language_es" translatable="false">Español</string>
+    <string name="set_restart_language">The new language applies the next time you open the app.</string>
+    <string name="set_units">Units</string>
+    <string name="set_metric">Metric (km, m)</string>
+    <string name="set_imperial">Imperial (mi, ft)</string>
+    <string name="set_appearance">Appearance</string>
+    <string name="set_theme_help">Kept on this phone: the web and your other devices keep their own.</string>
+    <string name="set_theme_system_note">Follows your device</string>
+    <string name="set_theme_oled_note">Saves battery</string>
+    <string name="set_theme_high_contrast_note">Easiest to read</string>
+    <string name="set_theme_strava_note">Orange on white, flat</string>
+    <string name="set_theme_strava_dark_note">Orange on black</string>
+
+    <!-- Heart rate and zones -->
+    <string name="set_hr_title">Heart rate</string>
+    <string name="set_hr_help">Zones and effort are computed from these. Leave max HR empty to use the highest you have recorded (%1$d bpm).</string>
+    <string name="set_hr_help_none">Zones and effort are computed from these.</string>
+    <string name="set_hr_max">Max HR</string>
+    <string name="set_hr_rest">Resting HR</string>
+    <string name="set_zones">Zones</string>
+    <string name="set_recompute_note">Changing these recomputes your whole history in the background.</string>
+    <string name="set_zone_model">Heart rate zones</string>
+    <string name="set_zone_max">Share of max HR</string>
+    <string name="set_zone_reserve">Share of HR reserve (Karvonen)</string>
+    <string name="set_zone_lthr">Share of threshold HR (Friel)</string>
+    <string name="set_lthr">Threshold HR</string>
+    <string name="set_ftp">FTP (W)</string>
+    <string name="set_estimated">Estimated: %1$s</string>
+    <string name="set_recompute">Recompute all metrics</string>
+    <string name="set_recomputing">Recomputing your metrics: %1$d of %2$d activities.</string>
+
+    <!-- Notifications -->
+    <string name="set_push_help">New activities, records and Garmin problems on this phone. Which ones you get is chosen below, for the web and the phone alike.</string>
+    <string name="set_push_this_phone">On this phone</string>
+    <string name="set_push_on">Notifications are on for this phone.</string>
+    <string name="set_push_off">Notifications are off for this phone.</string>
+    <string name="set_push_denied">Notifications are blocked for Zankup in Android\'s settings.</string>
+    <string name="set_push_unavailable">This build of the app cannot receive notifications.</string>
+    <string name="set_test">Send a test</string>
+    <string name="set_sent">Sent.</string>
+    <string name="set_which">Notify me about</string>
+    <string name="set_kind_activity">New activities</string>
+    <string name="set_kind_record">New records</string>
+    <string name="set_kind_sync_error">Garmin sync failing</string>
+    <string name="set_kind_garmin_key">Garmin key about to expire</string>
+    <string name="set_kind_estimate">Estimates going up (FTP, critical speed, VDOT)</string>
+    <string name="set_kind_import">Finished imports</string>
+    <string name="set_kind_weekly">Coach\'s weekly report (Mondays)</string>
+    <string name="set_alerts_title">E-mail alerts</string>
+    <string name="set_alerts_help">When a sync or a backup fails several times, Zankup writes to you here.</string>
+    <string name="set_alert_email">E-mail for alerts</string>
+    <string name="set_resend_help">E-mails go out through Resend (resend.com): paste its API key here.</string>
+
+    <!-- Your data -->
+    <string name="set_import">Import</string>
+    <string name="set_import_note">FIT, TCX, GPX, a Garmin export or your whole Strava history</string>
+    <string name="set_gear">Gear</string>
+    <string name="set_gear_note">Shoes and bikes, with their mileage</string>
+    <string name="set_export_title">Export all your data</string>
+    <string name="set_export_help">A ZIP with every original file, your photos and everything else as JSON. It stays ready for seven days.</string>
+    <string name="set_export_start">Prepare export</string>
+    <string name="set_export_preparing">Preparing… you can leave this page.</string>
+    <string name="set_export_download">Download (%1$s)</string>
+    <string name="set_export_until">Available until %1$s.</string>
+    <string name="set_backup_title">Backups</string>
+    <string name="set_backup_help">Every day a copy of the database and your files goes to S3-compatible storage (Cloudflare R2, Backblaze, AWS…).</string>
+    <string name="set_backup_hour">Hour of the daily backup</string>
+    <string name="set_keep_days">Days backups are kept</string>
+    <string name="set_s3_endpoint">S3 endpoint</string>
+    <string name="set_s3_bucket">Bucket</string>
+    <string name="set_s3_region">Region</string>
+    <string name="set_s3_access_key_id">Access key ID</string>
+    <string name="set_s3_secret_help">The storage\'s secret access key, kept encrypted:</string>
+</resources>

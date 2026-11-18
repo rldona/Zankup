@@ -75,7 +75,20 @@ enum class ZIcon(@param:DrawableRes val outlined: Int, @param:DrawableRes val fi
     HealthConnect(R.drawable.ic_ecg_heart),
     Timer(R.drawable.ic_timer),
     Devices(R.drawable.ic_devices),
-    Link(R.drawable.ic_link)
+    Link(R.drawable.ic_link),
+    TrendingUp(R.drawable.ic_trending_up),
+    Warning(R.drawable.ic_warning),
+    BarChart(R.drawable.ic_bar_chart),
+    Account(R.drawable.ic_account_circle),
+    Copy(R.drawable.ic_content_copy),
+    OpenExternal(R.drawable.ic_open_in_new),
+    Send(R.drawable.ic_send),
+    Stop(R.drawable.ic_stop, R.drawable.ic_stop_fill),
+    NewChat(R.drawable.ic_add_comment),
+    LocationOff(R.drawable.ic_location_off),
+    HealthSafety(R.drawable.ic_health_and_safety),
+    Database(R.drawable.ic_database),
+    Palette(R.drawable.ic_palette)
 }
 
 @Composable
