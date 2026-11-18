@@ -72,7 +72,8 @@ class ZankupApi(
         override fun intercept(chain: Interceptor.Chain): Response {
             val request = chain.request()
             if (request.header("Authorization") != null) return chain.proceed(request)
-            val access = runBlocking { tokens.read()?.access } ?: return chain.proceed(request)
+            val access =
+                runBlocking { tokens.read()?.access }?.takeIf { it.isNotEmpty() } ?: return chain.proceed(request)
             return chain.proceed(request.newBuilder().header("Authorization", "Bearer $access").build())
         }
     }
@@ -99,7 +100,8 @@ class ZankupApi(
         /** A new access token, unless another request renewed it meanwhile (then that one is used). */
         private suspend fun renew(sent: String?): Tokens? {
             val current = tokens.read() ?: return null
-            if (sent != null && sent != "Bearer ${current.access}") return current
+            // Another request renewed it meanwhile: use that one.
+            if (current.access.isNotEmpty() && sent != "Bearer ${current.access}") return current
             val body = ZankupJson.encodeToString(
                 RefreshRequest.serializer(),
                 RefreshRequest(current.refresh, rotate = false)

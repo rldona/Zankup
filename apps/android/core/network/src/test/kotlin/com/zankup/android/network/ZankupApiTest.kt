@@ -62,6 +62,20 @@ class ZankupApiTest {
     }
 
     @Test
+    fun anOpeningWithoutAccessTokenGetsOneFirst() = runTest {
+        // After unlocking, only the refresh token is known: the first request goes without a token.
+        val tokens = MemoryTokenStore(Tokens("", "refresh-1"))
+        server.enqueue(json("""{"detail":"Not authenticated"}""", 401))
+        server.enqueue(json("""{"access_token":"fresh","refresh_token":"refresh-1","expires_in":900}"""))
+        server.enqueue(json("""{"id":1,"email":"a@b.c","name":"A"}"""))
+        call { api(tokens).service<AuthApi>().getMe() }
+
+        assertNull(server.takeRequest().headers["Authorization"])
+        assertEquals("/api/auth/refresh", server.takeRequest().url.encodedPath)
+        assertEquals("Bearer fresh", server.takeRequest().headers["Authorization"])
+    }
+
+    @Test
     fun signsOutWhenTheRefreshIsRefused() = runTest {
         val tokens = MemoryTokenStore(Tokens("old", "gone"))
         var signedOut = false
