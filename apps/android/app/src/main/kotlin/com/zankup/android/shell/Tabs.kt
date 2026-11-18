@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 internal fun ProgressTab(go: (Any) -> Unit) {
     Placeholder(stringResource(R.string.nav_progress), "OS-1140", onBack = null) {
         listOf(
-            R.string.nav_progress_detail to ProgressDetailRoute,
+            R.string.nav_progress_detail to ProgressDetailRoute(),
             R.string.nav_training_log to TrainingLogRoute,
             R.string.nav_fitness to FitnessRoute,
             R.string.nav_effort to EffortRoute,
