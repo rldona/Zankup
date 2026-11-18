@@ -34,6 +34,7 @@ import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.EmptyState
 import com.zankup.android.designsystem.components.ErrorState
 import com.zankup.android.designsystem.components.ListRow
+import com.zankup.android.designsystem.components.OfflineNotice
 import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.SportFamily
@@ -113,6 +114,7 @@ fun Catalogue(modifier: Modifier = Modifier) {
         SectionHeader("Empty and error")
         EmptyState("No activities yet", body = "Sync your Garmin to see them here.", icon = ZIcon.Activities)
         ErrorState(onRetry = {}, offline = true)
+        OfflineNotice()
         Text(stringResource(R.string.brand_name), color = colors.muted)
     }
 }

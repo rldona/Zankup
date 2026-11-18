@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.R
+import com.zankup.android.data.Reachability
 import com.zankup.android.designsystem.brand.Wordmark
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -36,13 +37,13 @@ import kotlinx.coroutines.launch
 
 /** The gate: sign-in, the lock, or the app, as the session says. */
 @Composable
-fun Root(session: Session, link: Intent?, onLinkHandled: () -> Unit) {
+fun Root(session: Session, reachability: Reachability, link: Intent?, onLinkHandled: () -> Unit) {
     val state by session.current.collectAsStateWithLifecycle()
     when (val current = state) {
         SessionState.Starting -> Box(Modifier.fillMaxSize().background(ZankupTheme.colors.page))
         SessionState.SignedOut -> SignInScreen()
         SessionState.Locked -> LockScreen(session)
-        is SessionState.SignedIn -> AppShell(current.api, session, link, onLinkHandled)
+        is SessionState.SignedIn -> AppShell(current.api, session, reachability, link, onLinkHandled)
     }
 }
 

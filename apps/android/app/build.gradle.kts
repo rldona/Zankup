@@ -8,6 +8,10 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Notifications need the instance's Firebase project (`google-services.json`, never committed): without it
+// the app builds and simply cannot receive them.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 /**
  * Release builds are signed with the owner's own key, the same as the React Native app's, so passkeys
  * and Google sign-in trust both and the cutover (OS-1191) installs over it. Never committed.
@@ -82,6 +86,12 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
     implementation(project(":core:session"))
+    implementation(project(":core:data"))
+    implementation(project(":core:domain"))
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.androidx.compiler)
     implementation(project(":feature:signin"))
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

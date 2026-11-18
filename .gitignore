@@ -5,6 +5,8 @@
 
 # Personal data: synced activities, Strava export and generated prototype data
 data/
+# ...but not the native app's `data` module and package folders: code, never personal data.
+!apps/android/**/data/
 strava/
 docs/prototypes/data.js
 

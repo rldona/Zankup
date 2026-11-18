@@ -10,7 +10,9 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import com.zankup.android.data.Reachability
 import com.zankup.android.designsystem.theme.ZankupTheme
+import com.zankup.android.push.Push
 import com.zankup.android.session.Prompter
 import com.zankup.android.session.Session
 import com.zankup.android.session.SessionState
@@ -27,6 +29,8 @@ import kotlinx.coroutines.launch
 class MainActivity : FragmentActivity() {
     @Inject lateinit var session: Session
 
+    @Inject lateinit var reachability: Reachability
+
     /** The link that opened the app (or reached it while open), handed to the navigation once signed in. */
     private var link by mutableStateOf<Intent?>(null)
 
@@ -34,19 +38,22 @@ class MainActivity : FragmentActivity() {
         installSplashScreen().setKeepOnScreenCondition { session.current.value == SessionState.Starting }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        link = intent.takeIf { it.data != null }
+        link = intent.takeIf { it.opensSomething() }
         if (session.current.value == SessionState.Starting) {
             lifecycleScope.launch { session.unlock(Prompter(this@MainActivity)) }
         }
         setContent {
             ZankupTheme {
-                Root(session, link, onLinkHandled = { link = null })
+                Root(session, reachability, link, onLinkHandled = { link = null })
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.data != null) link = intent
+        if (intent.opensSomething()) link = intent
     }
+
+    /** A link (`zankup-next://…`) or a notification's web path. */
+    private fun Intent.opensSomething() = data != null || hasExtra(Push.EXTRA_URL)
 }

@@ -2,7 +2,8 @@
 """Writes the Zankup mark and wordmark as vector drawables, from docs/brand/assets (the source of truth).
 
 - core/designsystem: zankup_mark.xml and zankup_wordmark.xml, one colour (tinted where they are drawn).
-- app: the adaptive launcher icon's foreground (white mark in the safe zone) and the splash icon.
+- app: the adaptive launcher icon's foreground (white mark in the safe zone), the splash icon and the
+  notifications' small icon.
 Usage: scripts/brand.py (run it when the brand assets change).
 """
 
@@ -81,6 +82,8 @@ def main() -> None:
 
     (APP / "ic_launcher_foreground.xml").write_text(vector("108dp", "108dp", 108, 108, centred(46)))
     (APP / "ic_splash.xml").write_text(vector("108dp", "108dp", 108, 108, centred(40)))
+    # The status bar's small icon: the mark alone, filling the 24 dp square (Android tints it).
+    (APP / "ic_notification.xml").write_text(vector("24dp", "24dp", 108, 108, centred(92)))
     print("brand drawables written")
 
 
