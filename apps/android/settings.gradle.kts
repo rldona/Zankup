@@ -18,6 +18,8 @@ rootProject.name = "zankup-android"
 
 include(":app")
 include(":core:designsystem")
+include(":core:domain")
 include(":core:network")
 include(":core:session")
+include(":core:data")
 include(":feature:signin")
