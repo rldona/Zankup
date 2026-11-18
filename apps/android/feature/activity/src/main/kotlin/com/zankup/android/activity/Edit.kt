@@ -93,7 +93,7 @@ internal fun EditSheet(a: ActivityDetail, model: ActivityModel, onDone: () -> Un
                         it.value
                     },
                     workout ?: "",
-                    { it.replace('_', ' ').replaceFirstChar(Char::uppercase) },
+                    { workoutName(it) },
                     {
                         workout =
                             it

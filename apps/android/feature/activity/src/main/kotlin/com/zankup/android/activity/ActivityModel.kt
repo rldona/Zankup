@@ -16,6 +16,7 @@ import com.zankup.android.api.model.ActivityEdit
 import com.zankup.android.api.model.ActivityStreams
 import com.zankup.android.api.model.CurvePoint
 import com.zankup.android.api.model.GearOut
+import com.zankup.android.api.model.ReportOut
 import com.zankup.android.api.model.SegmentCreate
 import com.zankup.android.api.model.ShareCreate
 import com.zankup.android.api.model.SummaryOut
@@ -108,6 +109,20 @@ constructor(
         viewModelScope.launch { if (streamsState.value == null) streamsState.value = streams(id) }
     }
 
+    private val reportState = MutableStateFlow<ReportState>(ReportState.Idle)
+    val report: StateFlow<ReportState> = reportState.asStateFlow()
+
+    /** "Tell me more": the kept report, or a new one written now (the server decides). */
+    fun loadReport() {
+        if (reportState.value is ReportState.Ready || reportState.value is ReportState.Writing) return
+        reportState.value = ReportState.Writing
+        viewModelScope.launch {
+            val api = source.api
+            val result = api?.let { call { it.service<AiApi>().createActivityReport(id.toInt()) } }
+            reportState.value = (result as? ApiResult.Ok)?.value?.let { ReportState.Ready(it) } ?: ReportState.Failed
+        }
+    }
+
     fun refreshPowerCurve() = viewModelScope.launch { allTimePower.refresh() }
 
     /** "Write it": asks the instance's assistant for the activity's summary. */
@@ -185,6 +200,14 @@ constructor(
         source.api?.baseUrl?.resolve("api/photos/$photoId?thumb=$thumb")?.toString()
 
     val http get() = source.api?.http
+}
+
+/** Where the coach's longer report is. */
+sealed interface ReportState {
+    data object Idle : ReportState
+    data object Writing : ReportState
+    data object Failed : ReportState
+    data class Ready(val report: ReportOut) : ReportState
 }
 
 /** Share links open the web app: the reference instance's API is on api.zankup.com, its web on zankup.com. */
