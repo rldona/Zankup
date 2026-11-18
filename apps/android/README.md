@@ -30,6 +30,7 @@ the plan is phase 11 of the [roadmap](../../docs/roadmap.md).
 | `feature:coach`     | The Coach streamed as it is written, the weekly report and the AI assistants                                 |
 | `feature:settings`  | Settings and every section: general, heart rate, notifications, AI, privacy, data, account                   |
 | `feature:tools`     | Gear, importing files, the sync screen and the notifications inbox                                           |
+| `feature:widget`    | The home-screen widget (Glance) and the launcher's shortcuts                                                 |
 
 ## Running it
 
