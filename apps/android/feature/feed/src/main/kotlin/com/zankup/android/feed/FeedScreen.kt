@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -201,7 +202,8 @@ private fun ActivityList(ui: FeedUi, model: FeedViewModel, onOpen: (Long) -> Uni
     ) {
         LazyColumn(
             state = state,
-            modifier = Modifier.fillMaxSize(),
+            // The tag the benchmarks scroll by (OS-1180).
+            modifier = Modifier.fillMaxSize().testTag("feed"),
             contentPadding = PaddingValues(
                 start = spacing.gutter,
                 end = spacing.gutter,

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.baselineprofile)
 }
 
 // Notifications need the instance's Firebase project (`google-services.json`, never committed): without it
@@ -87,6 +88,9 @@ android {
 }
 
 dependencies {
+    // The startup and the main journeys compiled ahead of time (OS-1180), from :baselineprofile.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
     implementation(project(":core:session"))

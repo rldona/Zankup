@@ -13,8 +13,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -92,6 +96,7 @@ private enum class Tab(val route: Any, val routeClass: KClass<*>, val icon: ZIco
 }
 
 /** The signed-in app: the tab bar over the tabs, and every other screen stacked over them (OS-1112). */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AppShell(
     api: ZankupApi,
@@ -126,6 +131,8 @@ fun AppShell(
     AskForNotifications()
     androidx.compose.runtime.CompositionLocalProvider(com.zankup.android.ui.LocalFormats provides formats) {
         Scaffold(
+            // Test tags as resource ids, for the benchmarks' UI Automator (OS-1180).
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
             containerColor = ZankupTheme.colors.page,
             bottomBar = {
                 Column {
@@ -407,6 +414,7 @@ private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavD
         Tab.entries.forEach { tab ->
             val selected = destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
             NavigationBarItem(
+                modifier = Modifier.testTag("tab_" + tab.name.lowercase()),
                 selected = selected,
                 onClick = { goTab(nav, tab.route) },
                 icon = { ZankupIcon(tab.icon, contentDescription = null, filled = selected) },

@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 rootProject.name = "zankup-android"
 
 include(":app")
+include(":baselineprofile")
 include(":core:designsystem")
 include(":core:domain")
 include(":core:network")
