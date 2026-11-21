@@ -11,10 +11,8 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 /** The fitness page's ranges, a month by default. */
 enum class FitnessRange(val key: String, val days: Long) {
@@ -49,10 +47,18 @@ fun fitnessChange(from: Double, to: Double): Change {
     return Change(points, percent, direction)
 }
 
-/** A circle's radius for a day's load, from 3 to 7 dp: bigger circles, harder days. */
-fun loadRadius(load: Double, maxLoad: Double): Float {
-    if (load <= 0 || maxLoad <= 0) return 0f
-    return (3 + 4 * sqrt(min(1.0, load / maxLoad))).toFloat()
+/** The relative effort of a very hard day: a ball tops out there. */
+private const val HARD_DAY_EFFORT = 200.0
+
+/**
+ * A day's ball: nothing without an activity, then bigger the harder the day by its relative effort
+ * (the same figure the Relative effort card shows). A walk or half an hour of gym stays the smallest;
+ * a 10 km run or a long ride grow with what they cost, up to [HARD_DAY_EFFORT]. Small, as Strava's:
+ * the hard day's is twice the easy one's, but neither takes over the line.
+ */
+fun loadRadius(load: Double): Float {
+    if (load <= 0) return 0f
+    return (1.6 + 2.4 * (load / HARD_DAY_EFFORT).coerceIn(0.0, 1.0)).toFloat()
 }
 
 private const val CTL_DAYS = 42
@@ -88,12 +94,13 @@ private fun roundScale(top: Double, intervals: Int): List<Double> {
 }
 
 /**
- * The fitness chart's axis: from zero to the tightest round value over the line's top, in four to six
- * steps (Strava: 106 → 120, not 125); on a tie, the fewer steps. Never under 10.
+ * The fitness chart's axis: from zero to the tightest round value over the line's top, in four to nine
+ * steps (Strava: 106 → 120, not 125; 80 → 90, not 100), so the line uses the height. On a tie, the
+ * fewer steps. Never under 10.
  */
 fun fitnessScale(values: List<Double>): List<Double> {
     val top = max(10.0, values.maxOrNull() ?: 0.0) * 1.05
-    return listOf(4, 5, 6).map { roundScale(top, it) }.reduce { best, s -> if (s.last() < best.last()) s else best }
+    return (4..9).map { roundScale(top, it) }.reduce { best, s -> if (s.last() < best.last()) s else best }
 }
 
 /** The days written under a chart of [count] days: about [wanted], evenly spread, the first and the last. */

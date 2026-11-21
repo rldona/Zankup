@@ -67,7 +67,12 @@ constructor(store: Store, private val source: ApiSource) : ViewModel() {
 }
 
 @Composable
-internal fun DataSection(onImport: () -> Unit, onGear: () -> Unit, model: DataModel = hiltViewModel()) {
+internal fun DataSection(
+    onImport: () -> Unit,
+    onGear: () -> Unit,
+    onSync: () -> Unit,
+    model: DataModel = hiltViewModel()
+) {
     SettingsBody {
         SettingsGroup(
             rows = listOf(
@@ -83,6 +88,13 @@ internal fun DataSection(onImport: () -> Unit, onGear: () -> Unit, model: DataMo
                         stringResource(R.string.set_gear),
                         subtitle = stringResource(R.string.set_gear_note),
                         onClick = onGear
+                    )
+                },
+                {
+                    ListRow(
+                        stringResource(R.string.set_sync),
+                        subtitle = stringResource(R.string.set_sync_note),
+                        onClick = onSync
                     )
                 }
             )

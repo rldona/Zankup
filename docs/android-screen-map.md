@@ -384,7 +384,7 @@ Also in this area: the activity's AI summary and report (section 3), the AI and 
 - [ ] **Endpoints:** `POST /api/imports`, then each part `PUT /api/direct/uploads/{import_id}/{index}?token=` (outside the OpenAPI document, raw bytes), `POST /api/imports/{import_id}/finish`; `GET /api/imports`; `GET /api/stats/strava-comparison`.
 - [ ] **Interactions:** Android's file picker (several files, FIT/TCX/GPX/ZIP); retries a failed part.
 
-### `app/sync.tsx` — Sync (from Activities)
+### `app/sync.tsx` — Sync (from Settings › Your data)
 
 - [ ] **Shows:** "syncs automatically" note; "Sync now"; the current run's state (queued, running, with a progress bar of windows); "Whole history" with help and "Load history"; "Recent runs" (folded list with status, counts, errors).
 - [ ] **Endpoints:** `GET /api/sync?limit=10` (every 2 s while a run is queued or running), `POST /api/sync {history}`. When a run ends, the feed and stats are refreshed.

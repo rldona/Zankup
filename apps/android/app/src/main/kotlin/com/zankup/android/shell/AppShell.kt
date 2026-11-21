@@ -49,6 +49,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.zankup.android.BuildConfig
+import com.zankup.android.Perf
 import com.zankup.android.R
 import com.zankup.android.api.endpoints.AiApi
 import com.zankup.android.data.Reachability
@@ -102,6 +103,7 @@ import com.zankup.android.network.ZankupApi
 import com.zankup.android.network.call
 import com.zankup.android.push.Push
 import com.zankup.android.session.Session
+import com.zankup.android.tools.NotificationsBadgeModel
 import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
 
@@ -172,8 +174,11 @@ fun AppShell(
     // One avatar for every tab's bar: switching tabs no longer remounts it and flashes the fallback icon.
     val avatarModel: com.zankup.android.you.AvatarModel = hiltViewModel()
     val youMe by avatarModel.me.state.collectAsStateWithLifecycle(initialValue = null)
-    LaunchedEffect(Unit) { avatarModel.me.refresh() }
+    LaunchedEffect(Unit) { avatarModel.me.refreshIfStale() }
     val youAvatar = youMe?.data?.avatarUrl
+    val notificationsBadge: NotificationsBadgeModel = hiltViewModel()
+    val unreadNotifications by notificationsBadge.unread.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { notificationsBadge.refresh() }
     // Each tab's lists outlive the tab's composition: a detail's back keeps its place, a tab switch starts at the top.
     val homeList = rememberLazyListState()
     val feedList = rememberLazyListState()
@@ -197,6 +202,10 @@ fun AppShell(
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTab = destination?.isTab() == true
+    // Debug only: the frame reports name the screen drawing when one misses (Perf is empty in release).
+    LaunchedEffect(destination?.route) {
+        Perf.screen = destination?.route?.substringAfterLast('.') ?: "?"
+    }
     val coach by produceState(false, api) {
         val status = call { api.service<AiApi>().getAiStatus() }
         reachability.note(status)
@@ -205,7 +214,7 @@ fun AppShell(
     val unreachable by reachability.unreachable.collectAsStateWithLifecycle()
     // Figures in the person's units, as soon as their settings are known (metric until then).
     val units by settings.units.collectAsStateWithLifecycle(initialValue = com.zankup.android.domain.Units.METRIC)
-    LaunchedEffect(api) { settings.query.refresh() }
+    LaunchedEffect(api) { settings.query.refreshIfStale() }
     val formats = remember(units) { com.zankup.android.ui.Formats(units, java.util.Locale.getDefault()) }
     // With the system's animations off (or reduced), screens cut instead of travelling: the transitions
     // are skipped rather than played at once.
@@ -264,12 +273,13 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
+                    LaunchedEffect(Unit) { notificationsBadge.refresh() }
                     TabScreen(Tab.HOME, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.home.HomeScreen(
-                            coach = coach,
                             onOpen = { id -> go(ActivityRoute(id)) },
                             onCoach = { go(CoachRoute) },
                             onNotifications = { go(NotificationsRoute) },
+                            unreadNotifications = unreadNotifications,
                             modifier = fill,
                             listState = homeList
                         )
@@ -285,7 +295,6 @@ fun AppShell(
                         com.zankup.android.feed.FeedScreen(
                             onOpen = { id -> go(ActivityRoute(id)) },
                             onBack = back,
-                            onSync = { go(SyncRoute) },
                             onCalendar = { go(CalendarRoute) },
                             modifier = fill,
                             feedScroll = feedList,
@@ -345,7 +354,6 @@ fun AppShell(
                         com.zankup.android.you.YouScreen(
                             onStats = { go(StatsRoute) },
                             onEstimates = { go(EstimatesRoute) },
-                            onCoach = { go(CoachRoute) },
                             onGear = { go(GearRoute) },
                             onImport = { go(ImportRoute) },
                             onAccount = { go(SettingsSectionRoute("account")) },
@@ -514,6 +522,7 @@ fun AppShell(
                             push = push,
                             onImport = { go(ImportRoute) },
                             onGear = { go(GearRoute) },
+                            onSync = { go(SyncRoute) },
                             ai = {
                                 com.zankup.android.settings.basic.SettingsBody {
                                     com.zankup.android.settings.more.AiSection(onAssistants = { go(AssistantsRoute) })

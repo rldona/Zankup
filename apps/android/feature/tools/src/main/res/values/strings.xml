@@ -120,7 +120,10 @@
 
     <!-- Notifications -->
     <string name="tools_notifications_title">Notifications</string>
-    <string name="tools_notifications_empty">Nothing new for now. Records, estimates that go up and risky jumps in load show up here.</string>
+    <string name="tools_notifications_delete">Delete notification</string>
+    <string name="tools_notifications_menu">Notifications menu</string>
+    <string name="tools_notifications_delete_all">Delete all</string>
+    <string name="tools_notifications_empty">Nothing new for now. The activities you do, records, estimates that go up and risky jumps in load show up here.</string>
     <string name="tools_event_record">New %1$s record: %2$s</string>
     <string name="tools_event_estimate_up">Your estimated %1$s went up to %2$s</string>
     <string name="tools_event_ramp">Your fitness rose %1$s points this week: watch the load</string>

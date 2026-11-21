@@ -91,6 +91,7 @@ fun SettingsSectionScreen(
     push: PushControl,
     onImport: () -> Unit,
     onGear: () -> Unit,
+    onSync: () -> Unit,
     ai: @Composable () -> Unit,
     privacy: @Composable () -> Unit,
     account: @Composable () -> Unit
@@ -111,7 +112,7 @@ fun SettingsSectionScreen(
                 SettingsSection.NOTIFICATIONS -> NotificationsSection(push)
                 SettingsSection.AI -> ai()
                 SettingsSection.PRIVACY -> privacy()
-                SettingsSection.DATA -> DataSection(onImport = onImport, onGear = onGear)
+                SettingsSection.DATA -> DataSection(onImport = onImport, onGear = onGear, onSync = onSync)
                 SettingsSection.ACCOUNT -> account()
             }
         }

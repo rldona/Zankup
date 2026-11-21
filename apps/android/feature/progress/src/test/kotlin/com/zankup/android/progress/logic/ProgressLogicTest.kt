@@ -12,6 +12,7 @@ import java.time.YearMonth
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProgressLogicTest {
@@ -127,7 +128,22 @@ class ProgressLogicTest {
         assertEquals(42.0 * (41.0 / 42) * (41.0 / 42), out.last().ctl, 1e-9)
         assertEquals(Change(-23, 24, Direction.DOWN), fitnessChange(96.0, 73.0))
         assertEquals(listOf(0.0, 20.0, 40.0, 60.0, 80.0, 100.0, 120.0), fitnessScale(listOf(106.0)))
+        // As Strava's month: a line that tops at 80 gets 90, not 100, so its changes show.
+        assertEquals((0..90 step 10).map { it.toDouble() }, fitnessScale(listOf(79.0)))
         assertEquals(listOf(0, 7, 15, 22, 29), spreadDays(30))
+    }
+
+    @Test
+    fun loadCirclesGrowWithTheRelativeEffort() {
+        // Nothing without an activity; then proportional: a walk stays small, a 10 km run is bigger.
+        assertEquals(0f, loadRadius(0.0), 0f)
+        assertEquals(1.84f, loadRadius(20.0), 1e-4f)
+        assertEquals(2.8f, loadRadius(100.0), 1e-4f)
+        assertEquals(4f, loadRadius(200.0), 0f)
+        assertEquals(4f, loadRadius(500.0), 0f)
+        // A walk (or half an hour of gym) can never match a run.
+        assertTrue(loadRadius(30.0) < loadRadius(100.0))
+        assertTrue(loadRadius(100.0) < loadRadius(160.0))
     }
 
     @Test
