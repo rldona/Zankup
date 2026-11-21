@@ -13,6 +13,7 @@ from sqlalchemy import Engine
 from zankup import __version__
 from zankup.api.activities import router as activities_router
 from zankup.api.ai import router as ai_router
+from zankup.api.etags import ETagMiddleware
 from zankup.api.insights import router as insights_router
 from zankup.api.keys import instance_router
 from zankup.api.keys import router as keys_router
@@ -146,6 +147,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=False,
         max_age=3600,
     )
+    # Every JSON GET gets an ETag and revalidates with 304: the app's cache saves the body.
+    app.add_middleware(ETagMiddleware)
 
     @app.get("/api/health", operation_id="getHealth")
     def health(engine: Annotated[Engine, Depends(get_engine)]) -> Health:
