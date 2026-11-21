@@ -190,7 +190,19 @@ function useScrollMemory(main: RefObject<HTMLElement | null>) {
       left.set(at, { ...left.get(at), [name]: target.scrollTop });
     };
     column.addEventListener('scroll', save, { capture: true, passive: true });
-    return () => column.removeEventListener('scroll', save, { capture: true });
+    // A click can navigate before the browser has dispatched the scroll that set the place (a programmatic
+    // click in the tests, a very fast tap): save every scroller before the route changes.
+    const remember = () => {
+      for (const name of SCROLLERS) {
+        const box = scrollerOf(column, name);
+        if (box) left.set(here.current.key, { ...left.get(here.current.key), [name]: box.scrollTop });
+      }
+    };
+    document.addEventListener('click', remember, true);
+    return () => {
+      column.removeEventListener('scroll', save, { capture: true });
+      document.removeEventListener('click', remember, true);
+    };
   }, [main]);
 
   useLayoutEffect(() => {
