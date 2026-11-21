@@ -44,3 +44,6 @@ playwright-report/
 # Firebase service account keys (FCM_SERVICE_ACCOUNT lives in the server environment)
 *firebase-adminsdk*.json
 fcm-service-account.json
+
+# Tool artifacts (perf report, local sessions)
+.flupcode/

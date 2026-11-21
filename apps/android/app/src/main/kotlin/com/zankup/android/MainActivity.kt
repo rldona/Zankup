@@ -52,6 +52,7 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        Perf.install(window)
         link = intent.takeIf { it.opensSomething() }
         if (session.current.value == SessionState.Starting) {
             lifecycleScope.launch { session.unlock(Prompter(this@MainActivity)) }
@@ -83,6 +84,16 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.opensSomething()) link = intent
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Perf.setTracking(true)
+    }
+
+    override fun onPause() {
+        Perf.setTracking(false)
+        super.onPause()
     }
 
     /** A link (`zankup-next://…`) or a notification's web path. */

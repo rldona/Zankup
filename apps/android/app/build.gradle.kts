@@ -91,6 +91,8 @@ dependencies {
     // The startup and the main journeys compiled ahead of time (OS-1180), from :baselineprofile.
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":baselineprofile"))
+    // JankStats: the frames that miss, attributed to the screen (debug only).
+    debugImplementation(libs.androidx.metrics.performance)
     implementation(project(":core:designsystem"))
     implementation(project(":core:network"))
     implementation(project(":core:session"))
