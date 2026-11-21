@@ -58,7 +58,7 @@ fun YearsScreen(onBack: () -> Unit, model: YearsModel = hiltViewModel()) {
         val format = DateTimeFormatter.ofPattern("d MMM", f.locale)
         (0 until 366).map { format.format(LocalDate.of(2024, 1, 1).plusDays(it.toLong())).replace(".", "") }
     }
-    Scaffold(containerColor = colors.page, topBar = {
+    Scaffold(containerColor = colors.surface, topBar = {
         ZankupTopBar(stringResource(R.string.stats_progress), onBack = onBack) {
             InfoButton(stringResource(R.string.stats_progress_note))
         }

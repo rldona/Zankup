@@ -1,23 +1,29 @@
 package com.zankup.android.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,11 +34,13 @@ import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
+import kotlinx.coroutines.launch
 
 /**
  * Home (OS-1130): the ZANKUP wordmark with the Coach (when [coach]) and Notifications on the right, over
  * this week, the last day with activities, the metrics and the last seven days. The header stays put
- * while they scroll. [onOpen] opens an activity, which starts loading as the finger lands on it.
+ * while they scroll, in the tab bar's colour. [onOpen] opens an activity, which starts loading as the
+ * finger lands on it.
  */
 @Composable
 fun HomeScreen(
@@ -41,6 +49,7 @@ fun HomeScreen(
     onCoach: () -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
     model: HomeViewModel = hiltViewModel()
 ) {
     val ui by model.ui.collectAsStateWithLifecycle()
@@ -50,10 +59,12 @@ fun HomeScreen(
         coach = coach,
         onOpen = onOpen,
         onPress = model::prefetch,
-        onRetry = model::refresh,
+        refreshing = ui.refreshing,
+        onRefresh = model::pullRefresh,
         onCoach = onCoach,
         onNotifications = onNotifications,
-        modifier = modifier
+        modifier = modifier,
+        listState = listState
     )
 }
 
@@ -64,80 +75,94 @@ internal fun HomeContent(
     coach: Boolean,
     onOpen: (Long) -> Unit,
     onPress: (Long) -> Unit,
-    onRetry: () -> Unit,
+    /** Whether a fresh copy of the day's answers is on its way, for the pull-to-refresh. */
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
     onCoach: () -> Unit,
     onNotifications: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState()
 ) {
     val colors = ZankupTheme.colors
-    Scaffold(
-        modifier = modifier,
-        containerColor = colors.page,
-        topBar = {
-            TopAppBar(
-                title = { Wordmark(height = 15.dp) },
-                actions = {
-                    if (coach) {
-                        IconButton(onClick = onCoach) {
-                            ZankupIcon(ZIcon.Coach, contentDescription = stringResource(R.string.home_coach))
-                        }
+    val list = listState
+    val scope = rememberCoroutineScope()
+    val backToTop = stringResource(R.string.home_top)
+    // As Activities: the bar, then the list under it — the pull's indicator needs to be in sight, and
+    // inside a Scaffold the content starts at the screen's edge, behind the bar.
+    Column(modifier.fillMaxSize()) {
+        TopAppBar(
+            title = {
+                // A tap on the wordmark jumps back to the top of the day, as Android's own apps.
+                Box(
+                    Modifier
+                        .semantics { contentDescription = backToTop }
+                        .clickable(role = Role.Button) { scope.launch { list.animateScrollToItem(0) } }
+                ) { Wordmark(height = 15.dp) }
+            },
+            actions = {
+                if (coach) {
+                    IconButton(onClick = onCoach) {
+                        ZankupIcon(ZIcon.Coach, contentDescription = stringResource(R.string.home_coach))
                     }
-                    IconButton(onClick = onNotifications) {
-                        ZankupIcon(
-                            ZIcon.Notifications,
-                            contentDescription = stringResource(R.string.home_notifications)
-                        )
-                    }
-                },
-                colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = colors.page,
-                    titleContentColor = colors.fg,
-                    actionIconContentColor = colors.fg
-                )
+                }
+                IconButton(onClick = onNotifications) {
+                    ZankupIcon(
+                        ZIcon.Notifications,
+                        contentDescription = stringResource(R.string.home_notifications)
+                    )
+                }
+            },
+            colors =
+            TopAppBarDefaults.topAppBarColors(
+                // The tab bar's colour, so the two frames of the screen match.
+                containerColor = colors.surface,
+                titleContentColor = colors.fg,
+                actionIconContentColor = colors.fg
             )
-        }
-    ) { padding ->
-        val direction = LocalLayoutDirection.current
+        )
         val spacing = ZankupTheme.spacing
         val side = Modifier.padding(horizontal = spacing.gutter)
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding =
-            PaddingValues(
-                start = padding.calculateStartPadding(direction),
-                end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding() + spacing.xs,
-                bottom = padding.calculateBottomPadding() + spacing.l
-            ),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
+        // A pull from the top fetches everything again from the API (the kept copy is not asked for).
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
         ) {
-            item("week") {
-                val week = ui.week
-                when {
-                    week != null -> WeekSection(week, onOpen, onPress, side)
-                    ui.weekFailure != null ->
-                        ErrorState(onRetry, side, offline = ui.weekFailure is ApiResult.Offline)
-                    else -> WeekSkeleton(side)
-                }
-            }
-            val recent = ui.recent
-            when {
-                !ui.feedLoaded -> item("last-day") { CardSkeleton(side) }
-                ui.empty ->
-                    item("empty") {
-                        EmptyState(
-                            title = stringResource(R.string.home_empty),
-                            body = stringResource(R.string.home_empty_body),
-                            icon = ZIcon.Activities,
-                            modifier = side
-                        )
+            LazyColumn(
+                state = list,
+                modifier = Modifier.fillMaxSize(),
+                // The gutter is each card's own (`side`): here it would add up, and a card with double
+                // margin stops being read as full width and loses the bleed to the screen's edges.
+                contentPadding = PaddingValues(bottom = spacing.l),
+                verticalArrangement = Arrangement.spacedBy(spacing.s)
+            ) {
+                item("week") {
+                    val week = ui.week
+                    when {
+                        week != null -> WeekSection(week, onOpen, onPress, side)
+                        ui.weekFailure != null ->
+                            ErrorState(onRefresh, side, offline = ui.weekFailure is ApiResult.Offline)
+                        else -> WeekSkeleton(side)
                     }
-                recent != null -> item("last-day") { LastDaySection(recent, ui.today, onOpen, onPress) }
+                }
+                val recent = ui.recent
+                when {
+                    !ui.feedLoaded -> item("last-day") { CardSkeleton(side) }
+                    ui.empty ->
+                        item("empty") {
+                            EmptyState(
+                                title = stringResource(R.string.home_empty),
+                                body = stringResource(R.string.home_empty_body),
+                                icon = ZIcon.Activities,
+                                modifier = side
+                            )
+                        }
+                    recent != null -> item("last-day") { LastDaySection(recent, ui.today, onOpen, onPress) }
+                }
+                ui.dayHealth?.let { day -> item("day-health") { DayHealthCard(day, side) } }
+                item("metrics") { MetricsSection(ui.metrics, side) }
+                item("last-7") { LastSevenSection(ui, side) }
             }
-            ui.dayHealth?.let { day -> item("day-health") { DayHealthCard(day, side) } }
-            item("metrics") { MetricsSection(ui.metrics, side) }
-            item("last-7") { LastSevenSection(ui, side) }
         }
     }
 }

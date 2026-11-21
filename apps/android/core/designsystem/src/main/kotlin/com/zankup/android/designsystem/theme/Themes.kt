@@ -57,17 +57,17 @@ val Light =
 val Dark =
     Palette(
         isDark = true,
-        bg = c(0x0F1112),
-        page = c(0x0F1112),
-        surface = c(0x181B1D),
-        surface2 = c(0x1E2124),
-        fg = c(0xECEEED),
-        muted = c(0x9AA0A3),
-        line = c(0x2A2E31),
+        bg = c(0x080808),
+        page = c(0x080808),
+        surface = c(0x141414),
+        surface2 = c(0x1D1D1D),
+        fg = c(0xF2F2F2),
+        muted = c(0x9A9A9A),
+        line = c(0x242424),
         accent = c(0x20C997),
         accentFg = c(0x06221A),
-        accentSoft = c(0x13302A),
-        sport = SportColors(c(0xFF8A3D), c(0x4DABF7), c(0x9775FA), c(0x51CF66), c(0xF06595), c(0x3BC9DB), c(0x9AA0A3))
+        accentSoft = c(0x102A24),
+        sport = SportColors(c(0xFF8A3D), c(0x4DABF7), c(0x9775FA), c(0x51CF66), c(0xF06595), c(0x3BC9DB), c(0x9A9A9A))
     )
 
 val Oled =

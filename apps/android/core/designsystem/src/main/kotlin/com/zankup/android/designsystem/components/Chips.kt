@@ -2,12 +2,14 @@ package com.zankup.android.designsystem.components
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,15 +28,17 @@ fun ZankupChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     /** The feed's sport chips: the chosen one in the accent, the rest outlined on the card colour. */
-    accent: Boolean = false
+    accent: Boolean = false,
+    /** The Activities bar's smaller, squarer chips, rather than the fully round ones of a form. */
+    compact: Boolean = false
 ) {
     val colors = ZankupTheme.colors
     Surface(
         modifier =
         modifier
-            .heightIn(min = 36.dp)
+            .heightIn(min = if (compact) 30.dp else 36.dp)
             .selectable(selected = selected, onClick = onClick, role = Role.Tab),
-        shape = CircleShape,
+        shape = if (compact) RoundedCornerShape(8.dp) else CircleShape,
         color = when {
             accent && selected -> colors.accent
             accent -> colors.surface
@@ -48,8 +52,14 @@ fun ZankupChip(
         },
         border = if (accent && !selected) androidx.compose.foundation.BorderStroke(1.dp, colors.line) else null
     ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
+        Row(
+            Modifier.padding(horizontal = if (compact) 12.dp else 14.dp, vertical = if (compact) 5.dp else 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+            )
         }
     }
 }
@@ -62,16 +72,19 @@ fun <T> ChipPicker(
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
-    accent: Boolean = false
+    accent: Boolean = false,
+    compact: Boolean = false,
+    /** Space inside the scroll, so the chips start inset but still scroll under the screen's edge. */
+    contentPadding: PaddingValues = PaddingValues()
 ) {
     Row(
-        modifier.horizontalScroll(rememberScrollState()),
+        modifier.horizontalScroll(rememberScrollState()).padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
     ) {
         options.forEach { option ->
             ZankupChip(label = label(option), selected = option == selected, onClick = {
                 onSelect(option)
-            }, accent = accent)
+            }, accent = accent, compact = compact)
         }
     }
 }

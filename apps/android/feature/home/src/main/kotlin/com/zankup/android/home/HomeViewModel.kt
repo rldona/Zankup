@@ -24,6 +24,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,7 +62,9 @@ data class HomeUi(
     val sevenDays: List<SportTotals> = emptyList(),
     val avgSteps: Double? = null,
     val avgRestingHr: Double? = null,
-    val avgHrv: Double? = null
+    val avgHrv: Double? = null,
+    /** A pull from the top is on, with every answer on its way. */
+    val refreshing: Boolean = false
 )
 
 fun homeUi(
@@ -145,22 +148,48 @@ class HomeViewModel
 @Inject
 constructor(private val store: Store, private val prefetch: Prefetch) : ViewModel() {
     private val queries = MutableStateFlow(HomeQueries(store, LocalDate.now()))
+    private val pulling = MutableStateFlow(false)
 
     val ui: StateFlow<HomeUi> =
-        queries
-            .flatMapLatest { q ->
-                val first = combine(q.week.state, q.feed.state, q.health.state) { w, f, h -> Triple(w, f, h) }
-                val second = combine(q.estimates.state, q.fitness.state, q.me.state) { e, f, m -> Triple(e, f, m) }
-                combine(first, second) { (week, feed, health), (estimates, fitness, me) ->
-                    homeUi(q.today, ZoneId.systemDefault(), week, feed, health, estimates, fitness, me)
-                }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), HomeUi())
+        combine(
+            queries
+                .flatMapLatest { q ->
+                    val first = combine(q.week.state, q.feed.state, q.health.state) { w, f, h -> Triple(w, f, h) }
+                    val second = combine(q.estimates.state, q.fitness.state, q.me.state) { e, f, m -> Triple(e, f, m) }
+                    combine(first, second) { (week, feed, health), (estimates, fitness, me) ->
+                        homeUi(q.today, ZoneId.systemDefault(), week, feed, health, estimates, fitness, me)
+                    }
+                },
+            pulling
+        ) { ui, pulling -> ui.copy(refreshing = pulling) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), HomeUi())
 
     /** Fetches everything again, for today (a new day when the date has changed). */
     fun refresh() {
-        val today = LocalDate.now()
-        if (queries.value.today != today) queries.value = HomeQueries(store, today)
+        today()
         queries.value.all.forEach { query -> viewModelScope.launch { query.refresh() } }
+    }
+
+    /**
+     * A pull from the top: everything fetched again from the API, the indicator on until every answer is
+     * back (or failed).
+     */
+    fun pullRefresh() {
+        if (pulling.value) return
+        today()
+        viewModelScope.launch {
+            pulling.value = true
+            try {
+                coroutineScope { queries.value.all.forEach { query -> launch { query.refresh() } } }
+            } finally {
+                pulling.value = false
+            }
+        }
+    }
+
+    private fun today() {
+        val day = LocalDate.now()
+        if (queries.value.today != day) queries.value = HomeQueries(store, day)
     }
 
     /** Starts loading an activity as the finger lands on it. */

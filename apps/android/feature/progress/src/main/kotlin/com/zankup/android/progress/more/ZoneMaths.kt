@@ -25,7 +25,7 @@ internal fun zoneKinds(sport: Sport?): List<ZoneKind> = when (sport) {
 
 /** The zones a sport opens on: a run's pace, a ride's power, heart rate for the rest. */
 internal fun defaultZoneKind(sport: Sport?): ZoneKind = when (sport) {
-    Sport.RUN -> ZoneKind.PACE
+    Sport.RUN, Sport.WALK -> ZoneKind.PACE
     Sport.RIDE -> ZoneKind.POWER
     else -> ZoneKind.HR
 }

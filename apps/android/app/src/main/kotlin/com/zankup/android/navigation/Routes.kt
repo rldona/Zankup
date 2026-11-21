@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object YouRoute
 
 // Activities and the activity.
-@Serializable data class ActivityRoute(val id: Long)
+@Serializable data class ActivityRoute(val id: Long, val top: Boolean = false)
 
 @Serializable data class AnalysisRoute(val id: Long)
 

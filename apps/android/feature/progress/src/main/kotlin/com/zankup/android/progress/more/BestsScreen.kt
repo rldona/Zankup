@@ -224,7 +224,11 @@ fun BestsScreen(key: String, onBack: () -> Unit, onOpenActivity: (Long) -> Unit,
     }
 
     Scaffold(containerColor = colors.page, topBar = {
-        ZankupTopBar(bestName(picked), onBack = onBack) { InfoAction(stringResource(R.string.more_bests_info)) }
+        ZankupTopBar(
+            bestName(picked),
+            onBack = onBack,
+            containerColor = colors.page
+        ) { InfoAction(stringResource(R.string.more_bests_info)) }
     }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             Row(

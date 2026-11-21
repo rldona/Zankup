@@ -2,18 +2,25 @@ package com.zankup.android.map
 
 import android.content.Context
 import android.os.Bundle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -63,11 +70,15 @@ fun RouteMap(
 ) {
     val context = LocalContext.current
     val palette = ZankupTheme.colors
+    val density = LocalDensity.current
     val accent = colour ?: palette.accent
     val surface = palette.surface
     val view = remember { mapView(context) }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }
+    // The map is white until its first frame: keep it hidden over the page colour until the style is in.
+    var ready by remember { mutableStateOf(false) }
+    SideEffect { view.setBackgroundColor(palette.page.toArgb()) }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, view) {
@@ -92,6 +103,13 @@ fun RouteMap(
         }
     }
 
+    // The map's first frames are white (and its tiles take a moment): show it only once it is drawn.
+    DisposableEffect(view) {
+        val listener = MapView.OnDidFinishRenderingMapListener { fully -> if (fully) ready = true }
+        view.addOnDidFinishRenderingMapListener(listener)
+        onDispose { view.removeOnDidFinishRenderingMapListener(listener) }
+    }
+
     val styleUrl = if (palette.isDark) STYLE_DARK else STYLE_LIGHT
     LaunchedEffect(view, styleUrl) {
         view.getMapAsync { m ->
@@ -107,7 +125,7 @@ fun RouteMap(
             }
             m.setStyle(Style.Builder().fromUri(styleUrl)) { loaded ->
                 addRoute(loaded, route, accent, surface)
-                fit(m, route)
+                fit(m, route, with(density) { 64.dp.roundToPx() })
                 style = loaded
             }
         }
@@ -156,7 +174,12 @@ fun RouteMap(
         }
     }
 
-    AndroidView(factory = { view }, modifier = modifier)
+    Box(modifier.background(palette.page)) {
+        AndroidView(
+            factory = { view },
+            modifier = Modifier.fillMaxSize().alpha(if (ready) 1f else 0f)
+        )
+    }
 }
 
 private const val ROUTE = "route"
@@ -213,9 +236,9 @@ private fun addRoute(style: Style, route: Route, accent: Color, halo: Color) {
     )
 }
 
-private fun fit(map: MapLibreMap, route: Route) {
+private fun fit(map: MapLibreMap, route: Route, padding: Int) {
     if (!route.hasGps) return
     val bounds = LatLngBounds.Builder()
     route.drawn.forEach { bounds.include(LatLng(route.lat[it], route.lon[it])) }
-    runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 64)) }
+    runCatching { map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), padding)) }
 }

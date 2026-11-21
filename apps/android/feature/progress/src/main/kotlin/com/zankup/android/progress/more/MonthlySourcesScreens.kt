@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +49,7 @@ import com.zankup.android.api.model.HealthSourceStatus
 import com.zankup.android.api.model.SourceStatus
 import com.zankup.android.data.Store
 import com.zankup.android.designsystem.components.ErrorState
+import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
@@ -345,7 +345,7 @@ fun SourcesScreen(
                     Text(title, color = colors.fg, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     items.forEachIndexed { i, item ->
                         SourceLine(item, connected)
-                        if (i < items.lastIndex) HorizontalDivider(color = colors.line)
+                        if (i < items.lastIndex) RowDivider(inset = 0.dp)
                     }
                 }
             }

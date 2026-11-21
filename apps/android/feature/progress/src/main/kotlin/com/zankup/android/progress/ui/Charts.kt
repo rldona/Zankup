@@ -1,5 +1,10 @@
 package com.zankup.android.progress.ui
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -9,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -18,14 +24,16 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zankup.android.charts.ChartCursor
@@ -38,6 +46,7 @@ import com.zankup.android.progress.logic.fitnessScale
 import com.zankup.android.progress.logic.loadRadius
 import com.zankup.android.progress.logic.raceTime
 import com.zankup.android.progress.logic.spreadDays
+import com.zankup.android.progress.logic.timeTicks
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.max
@@ -54,10 +63,41 @@ private fun DrawScope.halo(center: Offset, outer: Float, inner: Float, color: Co
 }
 
 /**
+ * A tick for every ball under the finger, or crossed while sliding sideways, on the cards' small
+ * charts. A vertical swipe is left to the page, and the card's tap still works.
+ */
+internal fun Modifier.ballHaptics(count: Int, ballAt: (Offset, IntSize) -> Int?): Modifier = composed {
+    val view = LocalView.current
+    pointerInput(count) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            var last = ballAt(down.position, size)
+            last?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+            val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+            if (drag != null) {
+                val at = ballAt(drag.position, size)
+                if (at != last) {
+                    last = at
+                    at?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                }
+                horizontalDrag(drag.id) { change ->
+                    val now = ballAt(change.position, size)
+                    if (now != last) {
+                        last = now
+                        now?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    }
+                    change.consume()
+                }
+            }
+        }
+    }
+}
+
+/**
  * Volume over time as Strava's Progress draws it: a line over a solid fill, a ring on each point when
- * there are few, the axis on the right and months (or days) along the bottom; optionally the span
- * before as a second line. With a [cursor], touch or a sideways slide picks a point (a rule and a
- * filled dot), read only while drawing. New values slide into place.
+ * there are few, the axis on the left inside a frame and months (or days) along the bottom; optionally
+ * the span before as a second line. With a [cursor], touch or a sideways slide picks a point (a rule
+ * and a filled dot), read only while drawing. New values slide into place.
  */
 @Composable
 internal fun VolumeChart(
@@ -74,7 +114,7 @@ internal fun VolumeChart(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
     val count = values.size
     val rings = count <= 60
     val morph = rememberMorph(values.map { it.toFloat() })
@@ -82,6 +122,7 @@ internal fun VolumeChart(
     val pick by rememberUpdatedState(onPick)
     val style = TextStyle(color = colors.fg, fontSize = 12.sp)
     val max = (ticks.lastOrNull() ?: 1.0).takeIf { it > 0 } ?: 1.0
+    val axis = 44.dp
     Spacer(
         modifier
             .fillMaxWidth()
@@ -90,11 +131,12 @@ internal fun VolumeChart(
             .then(
                 if (cursor != null) {
                     Modifier.pickInput(values) { px ->
-                        val plot = size.width - 76.dp.toPx() - 8.dp.toPx()
+                        val left = 4.dp.toPx()
+                        val plot = size.width - axis.toPx() - left
                         val step = if (count > 1) plot / (count - 1) else 1f
-                        val i = ((px - 4.dp.toPx()) / step).roundToInt().coerceIn(0, (count - 1).coerceAtLeast(0))
+                        val i = ((px - left) / step).roundToInt().coerceIn(0, (count - 1).coerceAtLeast(0))
                         if (count > 0 && i != cursor.index) {
-                            if (rings) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            if (rings) view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                             cursor.index = i
                             pick(i)
                         }
@@ -103,28 +145,32 @@ internal fun VolumeChart(
                     Modifier
                 }
             ).drawWithCache {
-                val axis = 76.dp.toPx()
-                val plot = (size.width - axis - 8.dp.toPx()).coerceAtLeast(0f)
+                val axisW = axis.toPx()
+                val left = 4.dp.toPx()
+                val right = size.width - axisW
+                val plot = (right - left).coerceAtLeast(0f)
                 val top = 10.dp.toPx()
                 val base = size.height - 26.dp.toPx()
                 val step = if (count > 1) plot / (count - 1) else 0f
-                fun x(i: Int) = 4.dp.toPx() + i * step
+                fun x(i: Int) = left + i * step
+
+                // The extreme values sit on the axis' own lines (top and bottom), not inset from them.
                 fun y(v: Float) = base - (v.coerceAtMost(max.toFloat()) / max.toFloat()) * (base - top)
                 val tickTexts = ticks.map { measurer.measure(tickLabel(it), style) }
                 val labelTexts = labels.map { it to measurer.measure(it.text, style) }
                 onDrawBehind {
                     ticks.forEachIndexed { k, v ->
                         val ty = y(v.toFloat())
-                        drawLine(colors.line, Offset(0f, ty), Offset(plot + 8.dp.toPx(), ty), 1f)
+                        drawLine(colors.line, Offset(left, ty), Offset(right, ty), 1f)
                         val t = tickTexts[k]
                         drawText(t, topLeft = Offset(size.width - t.size.width, ty - t.size.height / 2f))
                     }
                     labelTexts.forEach { (label, t) ->
+                        val px = x(label.index)
+                        drawLine(colors.line, Offset(px, top), Offset(px, base), 1f)
                         val lx = (
-                            x(
-                                label.index
-                            ) - t.size.width / 2f
-                            ).coerceIn(0f, (plot - t.size.width).coerceAtLeast(0f))
+                            px - t.size.width / 2f
+                            ).coerceIn(left, (right - t.size.width).coerceAtLeast(left))
                         drawText(t, topLeft = Offset(lx, base + 8.dp.toPx()))
                     }
                     if (count == 0) return@onDrawBehind
@@ -136,6 +182,12 @@ internal fun VolumeChart(
                     }
                     drawPath(linePath(points), colors.accent, style = Stroke(3.dp.toPx(), join = StrokeJoin.Round))
                     if (rings) points.forEach { ring(it, 4.5.dp.toPx(), colors.surface, colors.accent, 2.dp.toPx()) }
+                    drawRect(
+                        colors.line,
+                        Offset(left, top),
+                        Size(plot, base - top),
+                        style = Stroke(1.5.dp.toPx())
+                    )
                     val at = cursor?.index?.takeIf { it in 0 until count } ?: return@onDrawBehind
                     val p = points[at]
                     drawLine(colors.fg, Offset(p.x, top), Offset(p.x, base), 2.dp.toPx())
@@ -164,7 +216,7 @@ internal fun FitnessChart(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
     val count = values.size
     val ticks = remember(values) { fitnessScale(values) }
     val max = ticks.last().toFloat().takeIf { it > 0 } ?: 1f
@@ -187,7 +239,7 @@ internal fun FitnessChart(
                 val now = if (cursor.index < 0) count - 1 else cursor.index
                 if (count > 0 && i != now) {
                     if (showLoads && loadRadius(loads.getOrElse(i) { 0.0 }, maxLoad) > 0) {
-                        haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     }
                     cursor.index = i
                     pick(i)
@@ -269,53 +321,89 @@ internal fun Sparkline(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
     val style = TextStyle(color = colors.muted, fontSize = 12.sp)
     if (values.isEmpty()) return
+    val leftPx = with(density) { (if (first != null) left else 6).dp.toPx() }
+    val padPx = with(density) { (if (inverted) 12 else 14).dp.toPx() }
+    val hitPx = with(density) { 18.dp.toPx() }
     Spacer(
-        modifier.size(width.dp, height.dp).drawWithCache {
-            val l = (if (first != null) left else 6).dp.toPx()
-            val pad = (if (inverted) 12 else 14).dp.toPx()
-            val lo = values.min()
-            val hi = values.max()
-            fun y(v: Double): Float {
+        modifier.size(width.dp, height.dp)
+            .ballHaptics(values.size) { at, size ->
+                val lo = values.min()
+                val hi = values.max()
                 val span = hi - lo
-                if (inverted) {
-                    return if (span >
-                        0
-                    ) {
-                        (pad + (v - lo) / span * (size.height - 2 * pad)).toFloat()
+                val step = if (values.size > 1) (size.width - leftPx - padPx) / (values.size - 1) else 0f
+                fun point(i: Int): Offset {
+                    val y = if (inverted) {
+                        if (span > 0) {
+                            padPx + (values[i] - lo) / span * (size.height - 2 * padPx)
+                        } else {
+                            size.height / 2f
+                        }
                     } else {
-                        size.height / 2
+                        padPx + (1 - (values[i] - lo) / (if (span > 0) span else 1.0)) *
+                            (size.height - 2 * padPx)
+                    }
+                    return Offset(leftPx + i * step, y.toFloat())
+                }
+                listOf(0, values.lastIndex).distinct().firstOrNull { i ->
+                    val p = point(i)
+                    val dx = at.x - p.x
+                    val dy = at.y - p.y
+                    dx * dx + dy * dy <= hitPx * hitPx
+                }
+            }
+            .drawWithCache {
+                val l = (if (first != null) left else 6).dp.toPx()
+                val pad = (if (inverted) 12 else 14).dp.toPx()
+                val lo = values.min()
+                val hi = values.max()
+                fun y(v: Double): Float {
+                    val span = hi - lo
+                    if (inverted) {
+                        return if (span >
+                            0
+                        ) {
+                            (pad + (v - lo) / span * (size.height - 2 * pad)).toFloat()
+                        } else {
+                            size.height / 2
+                        }
+                    }
+                    return (pad + (1 - (v - lo) / (if (span > 0) span else 1.0)) * (size.height - 2 * pad)).toFloat()
+                }
+                val step = if (values.size > 1) (size.width - l - pad) / (values.size - 1) else 0f
+                val points = values.mapIndexed { i, v -> Offset(l + i * step, y(v)) }
+                val label = first?.let { measurer.measure(it, style) }
+                onDrawBehind {
+                    val a = points.first()
+                    val b = points.last()
+                    if (fill) drawPath(areaPath(points, size.height), colors.accent.copy(alpha = 0.15f))
+                    if (guide) drawLine(colors.muted.copy(alpha = 0.6f), Offset(l, b.y), Offset(b.x, b.y), 1f)
+                    drawPath(
+                        linePath(points),
+                        colors.accent,
+                        style = Stroke((if (inverted) 3f else 2.5f).dp.toPx(), join = StrokeJoin.Round)
+                    )
+                    ring(a, 5.dp.toPx(), colors.surface, colors.accent, 2.5.dp.toPx())
+                    halo(
+                        b,
+                        (if (inverted) 12f else 11f).dp.toPx(),
+                        (if (inverted) 6f else 5.5f).dp.toPx(),
+                        colors.accent,
+                        0.25f
+                    )
+                    if (label != null) {
+                        drawText(
+                            label,
+                            topLeft = Offset(
+                                l - 8.dp.toPx() - label.size.width,
+                                a.y - label.size.height / 2f
+                            )
+                        )
                     }
                 }
-                return (pad + (1 - (v - lo) / (if (span > 0) span else 1.0)) * (size.height - 2 * pad)).toFloat()
             }
-            val step = if (values.size > 1) (size.width - l - pad) / (values.size - 1) else 0f
-            val points = values.mapIndexed { i, v -> Offset(l + i * step, y(v)) }
-            val label = first?.let { measurer.measure(it, style) }
-            onDrawBehind {
-                val a = points.first()
-                val b = points.last()
-                if (fill) drawPath(areaPath(points, size.height), colors.accent.copy(alpha = 0.15f))
-                if (guide) drawLine(colors.muted.copy(alpha = 0.6f), Offset(l, b.y), Offset(b.x, b.y), 1f)
-                drawPath(
-                    linePath(points),
-                    colors.accent,
-                    style = Stroke((if (inverted) 3f else 2.5f).dp.toPx(), join = StrokeJoin.Round)
-                )
-                ring(a, 5.dp.toPx(), colors.surface, colors.accent, 2.5.dp.toPx())
-                halo(
-                    b,
-                    (if (inverted) 12f else 11f).dp.toPx(),
-                    (if (inverted) 6f else 5.5f).dp.toPx(),
-                    colors.accent,
-                    0.25f
-                )
-                if (label != null) {
-                    drawText(label, topLeft = Offset(l - 8.dp.toPx() - label.size.width, a.y - label.size.height / 2f))
-                }
-            }
-        }
     )
 }
 
@@ -347,21 +435,37 @@ internal fun PredictionChart(
             val base = size.height - 30.dp.toPx()
             val lo = ticks.firstOrNull()?.toFloat() ?: 0f
             val hi = ticks.lastOrNull()?.toFloat() ?: 1f
-            fun y(v: Float) = top + (v - lo) / (if (hi > lo) hi - lo else 1f) * (base - top)
             fun x(d: Float) = 8.dp.toPx() + d / span * (plot - 16.dp.toPx())
             val tickTexts = ticks.map { measurer.measure(raceTime(it), tickStyle) }
             val labelTexts = labels.map { (d, text) ->
                 ChronoUnit.DAYS.between(from, d).toFloat() to measurer.measure(text, labelStyle)
             }
             onDrawBehind {
+                // Before the morph effect has taken the new values, draw the old line on its own scale:
+                // otherwise that first frame maps it against the new ticks and it snaps to 100 %.
+                val current = points.map { it.value.toFloat() }
+                val settled = morph.to == current
+                val t = if (settled) morph.progress.value.coerceIn(0f, 1f) else 0f
+                val old = if (morph.from.isEmpty()) {
+                    lo to hi
+                } else {
+                    val oldTicks = timeTicks(morph.from.min().toDouble(), morph.from.max().toDouble())
+                    (oldTicks.firstOrNull()?.toFloat() ?: lo) to (oldTicks.lastOrNull()?.toFloat() ?: hi)
+                }
+                val low = old.first + (lo - old.first) * t
+                val high = old.second + (hi - old.second) * t
+                fun y(v: Float) = top + (v - low) / (if (high > low) high - low else 1f) * (base - top)
                 ticks.forEachIndexed { k, v ->
                     val ty = y(v.toFloat())
                     drawLine(colors.line, Offset(0f, ty), Offset(plot, ty), 1f)
-                    val t = tickTexts[k]
-                    drawText(t, topLeft = Offset(size.width - t.size.width, ty - t.size.height / 2f))
+                    val text = tickTexts[k]
+                    drawText(text, topLeft = Offset(size.width - text.size.width, ty - text.size.height / 2f))
                 }
-                labelTexts.forEach { (d, t) ->
-                    drawText(t, topLeft = Offset(max(0f, x(d) - t.size.width / 2f), base + 8.dp.toPx()))
+                labelTexts.forEach { (d, text) ->
+                    drawText(
+                        text,
+                        topLeft = Offset(max(0f, x(d) - text.size.width / 2f), base + 8.dp.toPx())
+                    )
                 }
                 if (points.isEmpty()) return@onDrawBehind
                 val at = points.indices.map { Offset(x(days[it]), y(morph.at(it))) }
@@ -389,57 +493,83 @@ internal fun WeekSoFar(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
     val now = com.zankup.android.domain.cumulative(thisWeek, today)
     val before = com.zankup.android.domain.cumulative(lastWeek)
     val muted = TextStyle(color = colors.muted, fontSize = 12.sp)
     val strong = TextStyle(color = colors.fg, fontSize = 12.sp)
+    val leftPx = with(density) { 52.dp.toPx() }
+    val insetPx = with(density) { 4.dp.toPx() }
+    val rightPx = with(density) { 8.dp.toPx() }
+    val hitPx = with(density) { 18.dp.toPx() }
+    val topPx = with(density) { 8.dp.toPx() }
+    val bottomPx = with(density) { 24.dp.toPx() }
+    val most = listOfNotNull(1.0, range?.hi?.toDouble(), before.lastOrNull(), now.lastOrNull()).max() * 1.1
     Spacer(
-        modifier.size((132 + 52).dp, 104.dp).drawWithCache {
-            val left = 52.dp.toPx()
-            val width = size.width - left
-            val plot = width - 8.dp.toPx()
-            val top = 8.dp.toPx()
-            val base = size.height - 24.dp.toPx()
-            val most = listOfNotNull(1.0, range?.hi?.toDouble(), before.lastOrNull(), now.lastOrNull()).max() * 1.1
-            fun x(i: Int) = left + 4.dp.toPx() + i / 6f * (plot - 8.dp.toPx())
-            fun y(v: Double) = (base - v / most * (base - top)).toFloat()
-            val rangeText = range?.let { measurer.measure("${it.lo}-${it.hi}", muted) }
-            val letterTexts = letters.mapIndexed { i, l -> measurer.measure(l, if (i == today) strong else muted) }
-            onDrawBehind {
-                drawLine(colors.line, Offset(left, top), Offset(left + plot, top), 1f)
-                drawLine(colors.line, Offset(left, base), Offset(left + plot, base), 1f)
-                if (range != null) {
-                    val a = y(range.hi.toDouble())
-                    val b = y(range.lo.toDouble())
-                    drawRect(color.copy(alpha = 0.18f), Offset(left, a), Size(plot, b - a))
-                    rangeText?.let {
-                        drawText(
-                            it,
-                            topLeft = Offset(
-                                left - 6.dp.toPx() - it.size.width,
-                                (a + b) / 2 - it.size.height / 2
-                            )
-                        )
-                    }
+        modifier.size((132 + 52).dp, 104.dp)
+            .ballHaptics(7) { at, size ->
+                val width = size.width - leftPx
+                val plot = width - rightPx
+                val base = size.height - bottomPx
+                fun point(i: Int): Offset {
+                    val x = leftPx + insetPx + i / 6f * (plot - insetPx * 2)
+                    val y = base - now[i] / most * (base - topPx)
+                    return Offset(x, y.toFloat())
                 }
-                if (before.isNotEmpty()) {
-                    drawPath(
-                        linePath(before.mapIndexed { i, v -> Offset(x(i), y(v)) }),
-                        colors.muted,
-                        style = Stroke(2.5.dp.toPx(), join = StrokeJoin.Round)
-                    )
-                }
-                if (now.isNotEmpty()) {
-                    val pts = now.mapIndexed { i, v -> Offset(x(i), y(v)) }
-                    drawPath(linePath(pts), color, style = Stroke(3.dp.toPx(), join = StrokeJoin.Round))
-                    ring(pts.first(), 5.dp.toPx(), colors.surface, color, 2.5.dp.toPx())
-                    halo(pts.last(), 12.dp.toPx(), 6.dp.toPx(), color, 0.25f)
-                }
-                letterTexts.forEachIndexed { i, t ->
-                    drawText(t, topLeft = Offset(x(i) - t.size.width / 2f, base + 6.dp.toPx()))
+                listOf(0, now.lastIndex).distinct().firstOrNull { i ->
+                    if (i !in now.indices) return@firstOrNull false
+                    val p = point(i)
+                    val dx = at.x - p.x
+                    val dy = at.y - p.y
+                    dx * dx + dy * dy <= hitPx * hitPx
                 }
             }
-        }
+            .drawWithCache {
+                val left = 52.dp.toPx()
+                val width = size.width - left
+                val plot = width - 8.dp.toPx()
+                val top = 8.dp.toPx()
+                val base = size.height - 24.dp.toPx()
+                val most = listOfNotNull(1.0, range?.hi?.toDouble(), before.lastOrNull(), now.lastOrNull()).max() * 1.1
+                fun x(i: Int) = left + 4.dp.toPx() + i / 6f * (plot - 8.dp.toPx())
+                fun y(v: Double) = (base - v / most * (base - top)).toFloat()
+                val rangeText = range?.let { measurer.measure("${it.lo}-${it.hi}", muted) }
+                val letterTexts = letters.mapIndexed { i, l -> measurer.measure(l, if (i == today) strong else muted) }
+                onDrawBehind {
+                    drawLine(colors.line, Offset(left, top), Offset(left + plot, top), 1f)
+                    drawLine(colors.line, Offset(left, base), Offset(left + plot, base), 1f)
+                    if (range != null) {
+                        val a = y(range.hi.toDouble())
+                        val b = y(range.lo.toDouble())
+                        drawRect(color.copy(alpha = 0.18f), Offset(left, a), Size(plot, b - a))
+                        rangeText?.let {
+                            drawText(
+                                it,
+                                topLeft = Offset(
+                                    left - 6.dp.toPx() - it.size.width,
+                                    (a + b) / 2 - it.size.height / 2
+                                )
+                            )
+                        }
+                    }
+                    if (before.isNotEmpty()) {
+                        drawPath(
+                            linePath(before.mapIndexed { i, v -> Offset(x(i), y(v)) }),
+                            colors.muted,
+                            style = Stroke(2.5.dp.toPx(), join = StrokeJoin.Round)
+                        )
+                    }
+                    if (now.isNotEmpty()) {
+                        val pts = now.mapIndexed { i, v -> Offset(x(i), y(v)) }
+                        drawPath(linePath(pts), color, style = Stroke(3.dp.toPx(), join = StrokeJoin.Round))
+                        ring(pts.first(), 5.dp.toPx(), colors.surface, color, 2.5.dp.toPx())
+                        halo(pts.last(), 12.dp.toPx(), 6.dp.toPx(), color, 0.25f)
+                    }
+                    letterTexts.forEachIndexed { i, t ->
+                        drawText(t, topLeft = Offset(x(i) - t.size.width / 2f, base + 6.dp.toPx()))
+                    }
+                }
+            }
     )
 }
 

@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -172,13 +173,16 @@ fun SkillsScreen(onBack: () -> Unit, model: SkillsModel = hiltViewModel()) {
             if (span == Span.RECENT) add(RadarShape(recent, RADAR_RECENT, dots = true))
         }
 
-    Scaffold(containerColor = colors.page, topBar = {
+    Scaffold(containerColor = colors.surface, topBar = {
         ZankupTopBar(stringResource(R.string.more_skills), onBack = onBack) {
             InfoAction(stringResource(R.string.more_skills_info))
         }
     }) { padding ->
         Column(
-            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (pending) {
@@ -199,7 +203,7 @@ fun SkillsScreen(onBack: () -> Unit, model: SkillsModel = hiltViewModel()) {
                     }
                 }
             }
-            Segmented(Span.entries, span, { spanLabel(it) }, { span = it })
+            Segmented(Span.entries, span, { spanLabel(it) }, { span = it }, offColor = colors.page)
 
             Skill.entries.forEach { skill ->
                 val levels = skill.durations.map { levelAt(bests[it] ?: 0.0, it, weight) }
@@ -325,13 +329,18 @@ private fun SkillsRadar(shapes: List<RadarShape>, weight: Double, onPick: (Int) 
                 )
                 from = to + 1
             }
-            // Each duration's words on the ring, centred on its spoke.
+            // Each duration's words on the ring, turned with its spoke so they follow the circle.
             for (i in 0 until n) {
                 val text = durationLabel(SKILL_DURATIONS[i])
                 val colour = if (skillOf(i) == Skill.SPRINT) Color.White else Color(0xFF141414)
                 val layout = measurer.measure(text, ringText.copy(color = colour))
                 val p = at(i, outer)
-                drawText(layout, topLeft = Offset(p.x - layout.size.width / 2f, p.y - layout.size.height / 2f))
+                val degrees = Math.toDegrees((angle(i) + PI / 2).toDouble()).toFloat()
+                // Keep the words upright on the lower half.
+                val turn = if (degrees > 90f && degrees < 270f) degrees + 180f else degrees
+                rotate(turn, pivot = p) {
+                    drawText(layout, topLeft = Offset(p.x - layout.size.width / 2f, p.y - layout.size.height / 2f))
+                }
             }
             shapes.forEach { s ->
                 val path = Path()

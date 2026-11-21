@@ -163,7 +163,7 @@ fun SportBadge(
     size: Dp = 32.dp
 ) {
     Box(modifier.size(size).clip(CircleShape).background(family.color), contentAlignment = Alignment.Center) {
-        ZankupIcon(family.icon, contentDescription = null, tint = ZankupTheme.colors.page, size = size * 0.6f)
+        ZankupIcon(family.icon, contentDescription = null, tint = Color.White, size = size * 0.6f)
     }
 }
 

@@ -29,7 +29,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -75,6 +74,8 @@ import com.zankup.android.api.model.ZankupApiInsightsMedal
 import com.zankup.android.charts.ChartSection
 import com.zankup.android.charts.Curve
 import com.zankup.android.charts.CurveChart
+import com.zankup.android.designsystem.components.RowDivider
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -110,7 +111,10 @@ internal fun Block(
     gap: Int = 10,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    ZankupCard(Modifier.padding(horizontal = 16.dp)) {
+    ZankupCard(
+        Modifier.padding(horizontal = 16.dp),
+        onClick = if (link != null) onLink else null
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(gap.dp)) {
             if (title != null) CardTitle(title)
             content()
@@ -747,7 +751,7 @@ internal fun SplitsTable(a: ActivityDetail) {
                 modifier = Modifier.width(40.dp)
             )
         }
-        HorizontalDivider(color = colors.line, modifier = Modifier.padding(bottom = 6.dp))
+        SectionDivider(Modifier.padding(bottom = 6.dp))
         val cell = MaterialTheme.typography.bodyLarge.merge(Numbers.tabular).copy(fontSize = 15.sp)
         a.splits.forEachIndexed { i, s ->
             val v = speeds[i]
@@ -1099,7 +1103,7 @@ internal fun SetsBlock(a: ActivityDetail) {
             Stat(stringResource(R.string.rest), formats.duration(rest))
         }
         active.forEachIndexed { i, set ->
-            HorizontalDivider(color = ZankupTheme.colors.line)
+            RowDivider(inset = 0.dp)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("${i + 1}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))
                 Text(

@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -65,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.AiStatus
 import com.zankup.android.api.model.WeeklyOut
 import com.zankup.android.designsystem.components.ErrorState
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -275,7 +275,7 @@ private fun workingLabel(working: Working): String = stringResource(
 private fun Input(busy: Boolean, onSend: (String) -> Unit, onStop: () -> Unit) {
     val colors = ZankupTheme.colors
     var draft by rememberSaveable { mutableStateOf("") }
-    HorizontalDivider(color = colors.line)
+    SectionDivider()
     OutlinedTextField(
         value = draft,
         onValueChange = { if (it.length <= MAX_QUESTION) draft = it },

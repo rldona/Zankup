@@ -6,13 +6,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Cards are 14 dp round, chips fully round, sheets 28 dp at the top as Material's. */
+/** Cards are 10 dp round, chips fully round, sheets 28 dp at the top as Material's. */
 val ZankupShapes =
     Shapes(
         extraSmall = RoundedCornerShape(6.dp),
-        small = RoundedCornerShape(10.dp),
-        medium = RoundedCornerShape(14.dp),
-        large = RoundedCornerShape(20.dp),
+        small = RoundedCornerShape(8.dp),
+        medium = RoundedCornerShape(10.dp),
+        large = RoundedCornerShape(14.dp),
         extraLarge = RoundedCornerShape(28.dp)
     )
 

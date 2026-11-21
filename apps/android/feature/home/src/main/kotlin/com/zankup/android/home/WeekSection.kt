@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -130,7 +131,7 @@ private fun DayCircle(day: WeekDay, locale: Locale, onOpen: (Long) -> Unit, onPr
             ) {
                 val sport = day.first
                 if (sport != null) {
-                    ZankupIcon(sport.family.icon, contentDescription = null, tint = colors.page, size = 18.dp)
+                    ZankupIcon(sport.family.icon, contentDescription = null, tint = Color.White, size = 18.dp)
                 } else {
                     Text(
                         day.date.dayOfMonth.toString(),

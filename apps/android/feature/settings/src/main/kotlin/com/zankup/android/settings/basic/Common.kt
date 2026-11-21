@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -56,6 +55,7 @@ import com.zankup.android.api.model.SettingOut
 import com.zankup.android.data.CacheKeys
 import com.zankup.android.data.Store
 import com.zankup.android.data.UserSettings
+import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -249,7 +249,7 @@ fun SettingsGroup(modifier: Modifier = Modifier, rows: List<@Composable () -> Un
         Column {
             rows.forEachIndexed { i, row ->
                 if (i > 0) {
-                    HorizontalDivider(Modifier.padding(horizontal = ZankupTheme.spacing.m), 0.5.dp, colors.line)
+                    RowDivider()
                 }
                 row()
             }

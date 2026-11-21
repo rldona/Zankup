@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -25,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -32,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.IntOffset
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -100,6 +103,7 @@ import com.zankup.android.network.call
 import com.zankup.android.push.Push
 import com.zankup.android.session.Session
 import kotlin.reflect.KClass
+import kotlinx.coroutines.launch
 
 /** A tab of the bar, in the React Native app's order. */
 private enum class Tab(val route: Any, val routeClass: KClass<*>, val icon: ZIcon, val label: Int) {
@@ -164,6 +168,32 @@ fun AppShell(
     onLinkHandled: () -> Unit
 ) {
     val nav = rememberNavController()
+    val scope = rememberCoroutineScope()
+    // One avatar for every tab's bar: switching tabs no longer remounts it and flashes the fallback icon.
+    val avatarModel: com.zankup.android.you.AvatarModel = hiltViewModel()
+    val youMe by avatarModel.me.state.collectAsStateWithLifecycle(initialValue = null)
+    LaunchedEffect(Unit) { avatarModel.me.refresh() }
+    val youAvatar = youMe?.data?.avatarUrl
+    // Each tab's lists outlive the tab's composition: a detail's back keeps its place, a tab switch starts at the top.
+    val homeList = rememberLazyListState()
+    val feedList = rememberLazyListState()
+    val resultsList = rememberLazyListState()
+    val progressList = rememberLazyListState()
+    val healthList = rememberLazyListState()
+    val youList = rememberLazyListState()
+    val selectTab: (Tab) -> Unit = { target ->
+        when (target) {
+            Tab.HOME -> scope.launch { homeList.scrollToItem(0) }
+            Tab.ACTIVITIES -> scope.launch {
+                feedList.scrollToItem(0)
+                resultsList.scrollToItem(0)
+            }
+            Tab.PROGRESS -> scope.launch { progressList.scrollToItem(0) }
+            Tab.HEALTH -> scope.launch { healthList.scrollToItem(0) }
+            Tab.YOU -> scope.launch { youList.scrollToItem(0) }
+        }
+        goTab(nav, target.route)
+    }
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTab = destination?.isTab() == true
@@ -234,13 +264,14 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
-                    TabScreen(Tab.HOME, nav, unreachable) { fill ->
+                    TabScreen(Tab.HOME, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.home.HomeScreen(
                             coach = coach,
                             onOpen = { id -> go(ActivityRoute(id)) },
                             onCoach = { go(CoachRoute) },
                             onNotifications = { go(NotificationsRoute) },
-                            modifier = fill
+                            modifier = fill,
+                            listState = homeList
                         )
                     }
                 }
@@ -250,12 +281,15 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
-                    TabScreen(Tab.ACTIVITIES, nav, unreachable) { fill ->
+                    TabScreen(Tab.ACTIVITIES, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.feed.FeedScreen(
                             onOpen = { id -> go(ActivityRoute(id)) },
+                            onBack = back,
                             onSync = { go(SyncRoute) },
                             onCalendar = { go(CalendarRoute) },
-                            modifier = fill
+                            modifier = fill,
+                            feedScroll = feedList,
+                            resultsScroll = resultsList
                         )
                     }
                 }
@@ -265,7 +299,7 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
-                    TabScreen(Tab.PROGRESS, nav, unreachable) { fill ->
+                    TabScreen(Tab.PROGRESS, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.progress.ProgressScreen(
                             onVolume = { sport -> go(ProgressDetailRoute(sport)) },
                             onTrainingLog = { go(TrainingLogRoute) },
@@ -279,7 +313,8 @@ fun AppShell(
                             onMonthly = { go(MonthlyRoute) },
                             onSources = { go(SourcesRoute) },
                             onOpenActivity = { id -> go(ActivityRoute(id)) },
-                            modifier = fill
+                            modifier = fill,
+                            listState = progressList
                         )
                     }
                 }
@@ -289,13 +324,14 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
-                    TabScreen(Tab.HEALTH, nav, unreachable) { fill ->
+                    TabScreen(Tab.HEALTH, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.health.HealthScreen(
                             onWeight = { go(WeightRoute) },
                             onSettings = { go(SettingsSectionRoute("health")) },
                             onOpenActivity = { id -> go(ActivityRoute(id)) },
                             onConnect = { go(SettingsSectionRoute("health")) },
-                            modifier = fill
+                            modifier = fill,
+                            listState = healthList
                         )
                     }
                 }
@@ -305,7 +341,7 @@ fun AppShell(
                     popEnterTransition = tabEnter,
                     popExitTransition = tabExit
                 ) {
-                    TabScreen(Tab.YOU, nav, unreachable) { fill ->
+                    TabScreen(Tab.YOU, nav, unreachable, selectTab, youAvatar) { fill ->
                         com.zankup.android.you.YouScreen(
                             onStats = { go(StatsRoute) },
                             onEstimates = { go(EstimatesRoute) },
@@ -315,7 +351,8 @@ fun AppShell(
                             onAccount = { go(SettingsSectionRoute("account")) },
                             onSettings = { go(SettingsRoute) },
                             onOpenActivity = { id -> go(ActivityRoute(id)) },
-                            modifier = fill
+                            modifier = fill,
+                            listState = youList
                         )
                     }
                 }
@@ -324,8 +361,9 @@ fun AppShell(
                 composable<ActivityRoute>(
                     deepLinks = listOf(navDeepLink<ActivityRoute>(basePath = "$scheme://activity"))
                 ) {
+                    val route = it.toRoute<ActivityRoute>()
                     com.zankup.android.activity.ActivityScreen(
-                        it.toRoute<ActivityRoute>().id,
+                        route.id,
                         com.zankup.android.activity.ActivityLinks(
                             back = back,
                             open = { id -> go(ActivityRoute(id)) },
@@ -336,7 +374,8 @@ fun AppShell(
                             goals = { go(ObjectivesRoute) },
                             bests = { key -> go(BestsRoute(key ?: "10k")) }
                         ),
-                        aiAvailable = coach
+                        aiAvailable = coach,
+                        startAtTop = route.top
                     )
                 }
                 composable<AnalysisRoute> {
@@ -399,7 +438,7 @@ fun AppShell(
                     com.zankup.android.progress.more.BestsScreen(
                         it.toRoute<BestsRoute>().key,
                         back,
-                        onOpenActivity = { id -> go(ActivityRoute(id)) }
+                        onOpenActivity = { id -> go(ActivityRoute(id, top = true)) }
                     )
                 }
                 composable<MonthlyRoute> { com.zankup.android.progress.more.MonthlyScreen(back) }
@@ -532,16 +571,23 @@ private fun goTab(nav: NavHostController, route: Any) {
  * painted here too, so a tab arriving over another one is never seen through.
  */
 @Composable
-private fun TabScreen(tab: Tab, nav: NavHostController, offline: Boolean, content: @Composable (Modifier) -> Unit) {
+private fun TabScreen(
+    tab: Tab,
+    nav: NavHostController,
+    offline: Boolean,
+    onSelect: (Tab) -> Unit,
+    youAvatar: String?,
+    content: @Composable (Modifier) -> Unit
+) {
     Column(Modifier.fillMaxSize().background(ZankupTheme.colors.page)) {
         content(Modifier.weight(1f))
         if (offline) OfflineNotice()
-        TabBar(nav, tab)
+        TabBar(nav, tab, onSelect, youAvatar)
     }
 }
 
 @Composable
-private fun TabBar(nav: NavHostController, current: Tab) {
+private fun TabBar(nav: NavHostController, current: Tab, onSelect: (Tab) -> Unit, youAvatar: String?) {
     val colors = ZankupTheme.colors
     NavigationBar(containerColor = colors.surface) {
         Tab.entries.forEach { tab ->
@@ -549,10 +595,10 @@ private fun TabBar(nav: NavHostController, current: Tab) {
             NavigationBarItem(
                 modifier = Modifier.testTag("tab_" + tab.name.lowercase()),
                 selected = selected,
-                onClick = { goTab(nav, tab.route) },
+                onClick = { onSelect(tab) },
                 icon = {
                     if (tab == Tab.YOU) {
-                        com.zankup.android.you.YouTabIcon(selected)
+                        com.zankup.android.you.YouTabIcon(selected, youAvatar)
                     } else {
                         ZankupIcon(tab.icon, contentDescription = null, filled = selected)
                     }

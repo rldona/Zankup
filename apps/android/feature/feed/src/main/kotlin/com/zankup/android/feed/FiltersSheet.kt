@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -51,83 +52,87 @@ internal fun FiltersSheet(
     val f = sheet.draft
     val spacing = ZankupTheme.spacing
     ZankupSheet(onDismiss = onDismiss) {
-        Column(
-            Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.gutter),
-            verticalArrangement = Arrangement.spacedBy(spacing.m)
-        ) {
-            Text(stringResource(R.string.feed_filters), style = MaterialTheme.typography.titleLarge)
-            Section(R.string.feed_period) {
-                ChipPicker(
-                    options = Period.entries,
-                    selected = f.period,
-                    label = { stringResource(it.label) },
-                    onSelect = { p -> onChange { it.copy(period = p) } }
-                )
-            }
-            Section(stringResource(R.string.feed_distance, units.distanceUnit)) {
-                Range(
-                    low = f.distanceMin,
-                    high = f.distanceMax,
-                    onLow = { v -> onChange { it.copy(distanceMin = v) } },
-                    onHigh = { v -> onChange { it.copy(distanceMax = v) } }
-                )
-            }
-            Section(R.string.feed_duration) {
-                Range(
-                    low = f.durationMin,
-                    high = f.durationMax,
-                    onLow = { v -> onChange { it.copy(durationMin = v) } },
-                    onHigh = { v -> onChange { it.copy(durationMax = v) } }
-                )
-            }
-            Section(stringResource(R.string.feed_ascent, units.elevationUnit)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                    NumberField(
-                        f.ascentMin,
-                        { v -> onChange { it.copy(ascentMin = v) } },
-                        R.string.feed_min,
-                        Modifier.weight(1f)
+        // The sheet's height is fixed, not measured from the form: with a weighted, scrollable form
+        // inside, its height and the form's height fed each other and the sheet kept moving.
+        Column(Modifier.fillMaxHeight()) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = spacing.gutter),
+                verticalArrangement = Arrangement.spacedBy(spacing.m)
+            ) {
+                Text(stringResource(R.string.feed_filters), style = MaterialTheme.typography.titleLarge)
+                Section(R.string.feed_period) {
+                    ChipPicker(
+                        options = Period.entries,
+                        selected = f.period,
+                        label = { stringResource(it.label) },
+                        onSelect = { p -> onChange { it.copy(period = p) } }
                     )
-                    Spacer(Modifier.weight(1f))
+                }
+                Section(stringResource(R.string.feed_distance, units.distanceUnit)) {
+                    Range(
+                        low = f.distanceMin,
+                        high = f.distanceMax,
+                        onLow = { v -> onChange { it.copy(distanceMin = v) } },
+                        onHigh = { v -> onChange { it.copy(distanceMax = v) } }
+                    )
+                }
+                Section(R.string.feed_duration) {
+                    Range(
+                        low = f.durationMin,
+                        high = f.durationMax,
+                        onLow = { v -> onChange { it.copy(durationMin = v) } },
+                        onHigh = { v -> onChange { it.copy(durationMax = v) } }
+                    )
+                }
+                Section(stringResource(R.string.feed_ascent, units.elevationUnit)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                        NumberField(
+                            f.ascentMin,
+                            { v -> onChange { it.copy(ascentMin = v) } },
+                            R.string.feed_min,
+                            Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+                Column {
+                    SwitchRow(R.string.feed_with_record, f.withRecord) { v -> onChange { it.copy(withRecord = v) } }
+                    SwitchRow(R.string.feed_with_description, f.withDescription) { v ->
+                        onChange { it.copy(withDescription = v) }
+                    }
+                    SwitchRow(R.string.feed_with_gps, f.withGps) { v -> onChange { it.copy(withGps = v) } }
+                }
+                Section(R.string.feed_sort) {
+                    ChipPicker(
+                        options = SortBy.entries,
+                        selected = f.sort,
+                        label = { stringResource(it.label) },
+                        onSelect = { s -> onChange { it.copy(sort = s) } }
+                    )
+                    ChipPicker(
+                        options = Order.entries,
+                        selected = f.order,
+                        label = { stringResource(it.label) },
+                        onSelect = { o -> onChange { it.copy(order = o) } }
+                    )
                 }
             }
-            Column {
-                SwitchRow(R.string.feed_with_record, f.withRecord) { v -> onChange { it.copy(withRecord = v) } }
-                SwitchRow(R.string.feed_with_description, f.withDescription) { v ->
-                    onChange { it.copy(withDescription = v) }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = spacing.gutter, vertical = spacing.m),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm)
+            ) {
+                OutlinedButton(onClick = onClear, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.feed_clear))
                 }
-                SwitchRow(R.string.feed_with_gps, f.withGps) { v -> onChange { it.copy(withGps = v) } }
-            }
-            Section(R.string.feed_sort) {
-                ChipPicker(
-                    options = SortBy.entries,
-                    selected = f.sort,
-                    label = { stringResource(it.label) },
-                    onSelect = { s -> onChange { it.copy(sort = s) } }
-                )
-                ChipPicker(
-                    options = Order.entries,
-                    selected = f.order,
-                    label = { stringResource(it.label) },
-                    onSelect = { o -> onChange { it.copy(order = o) } }
-                )
-            }
-        }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = spacing.gutter, vertical = spacing.m),
-            horizontalArrangement = Arrangement.spacedBy(spacing.sm)
-        ) {
-            OutlinedButton(onClick = onClear, modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.feed_clear))
-            }
-            Button(onClick = onApply, modifier = Modifier.weight(2f)) {
-                Text(showLabel(sheet.count))
+                Button(onClick = onApply, modifier = Modifier.weight(2f)) {
+                    Text(showLabel(sheet.count))
+                }
             }
         }
     }

@@ -3,6 +3,7 @@
     <string name="loading">Cargando</string>
     <string name="back">Atrás</string>
     <string name="close">Cerrar</string>
+    <string name="info_title">Más información</string>
     <string name="offline_notice">Sin conexión: ves lo guardado</string>
     <string name="retry">Reintentar</string>
     <string name="error_title">Algo ha fallado</string>

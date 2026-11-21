@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -48,6 +47,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.CalendarActivity
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupChip
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -266,7 +266,7 @@ private fun Months(first: LocalDate, today: LocalDate, onPick: (LocalDate) -> Un
                 }
             }
             item(month.toString()) {
-                HorizontalDivider(color = colors.line)
+                SectionDivider()
                 val start = month.atDay(1)
                 Text(
                     name.format(month).replaceFirstChar { it.titlecase(locale) },
@@ -371,6 +371,6 @@ private fun WeekRow(
                 }
             }
         }
-        HorizontalDivider(color = colors.line)
+        SectionDivider()
     }
 }

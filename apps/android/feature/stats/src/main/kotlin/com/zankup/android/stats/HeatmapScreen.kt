@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -102,14 +103,16 @@ fun HeatmapScreen(onBack: () -> Unit, model: HeatmapModel = hiltViewModel()) {
                     modifier = Modifier.weight(1f).semantics { heading() }
                 )
             }
-            ChipPicker(
-                HEATMAP_SPORTS,
-                HEATMAP_SPORTS.firstOrNull { it?.key == sportKey },
-                { s -> if (s == null) stringResource(R.string.stats_all) else stringResource(sportName(s)) },
-                { model.setSport(it?.key) },
-                Modifier.padding(top = 12.dp),
-                accent = true
-            )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                ChipPicker(
+                    HEATMAP_SPORTS,
+                    HEATMAP_SPORTS.firstOrNull { it?.key == sportKey },
+                    { s -> if (s == null) stringResource(R.string.stats_all) else stringResource(sportName(s)) },
+                    { model.setSport(it?.key) },
+                    Modifier.padding(top = 12.dp),
+                    accent = true
+                )
+            }
         }
         if (count > 0) {
             val text = pluralStringResource(R.plurals.stats_heatmap_count, count, count)

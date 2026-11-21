@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -25,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +37,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -97,66 +104,96 @@ fun YouScreen(
     val settings by model.settings.collectAsStateWithLifecycle()
     val hidden by model.physicalHidden.collectAsStateWithLifecycle()
     var editing by rememberSaveable { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val barTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Scaffold(
         modifier = modifier,
-        // No title bar: the profile's header is the top of the tab, as in the React Native app.
-        containerColor = colors.page
+        containerColor = colors.page,
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         val direction = LocalLayoutDirection.current
         val spacing = ZankupTheme.spacing
         val side = Modifier.padding(horizontal = spacing.gutter)
         val person = me.data
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = padding.calculateStartPadding(direction),
-                end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding() + spacing.xs,
-                bottom = padding.calculateBottomPadding() + spacing.l
-            ),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
-        ) {
-            if (person == null) {
-                if (me.failure != null) {
-                    item("error") {
-                        ErrorState(
-                            onRetry = model::refresh,
-                            offline = me.failure is ApiResult.Offline,
-                            modifier = side
-                        )
-                    }
+        // Transparent at the top, solid black as the profile scrolls under the fixed bar.
+        val solid by remember(listState, density) {
+            derivedStateOf {
+                if (listState.firstVisibleItemIndex > 0) {
+                    1f
                 } else {
-                    item("skeleton") { Box(side) { YouSkeleton() } }
+                    (listState.firstVisibleItemScrollOffset / with(density) { YOU_BAR.toPx() }).coerceIn(0f, 1f)
                 }
-                return@LazyColumn
             }
-            item("header") { Header(person, onEdit = { editing = true }, modifier = side) }
-            item("menu") {
-                Menu(
-                    coach = ai.data?.available == true,
-                    onStats = onStats,
-                    onEstimates = onEstimates,
-                    onCoach = onCoach,
-                    onGear = onGear,
-                    onImport = onImport,
-                    onAccount = onAccount,
-                    onSettings = onSettings,
-                    modifier = side
-                )
-            }
-            val data = summary.data
-            when {
-                data != null -> {
-                    val hrMax = settings.data?.let { it.hrMax ?: it.hrMaxEstimate }
-                    item("physical") {
-                        Physical(person, hrMax, hidden, model::togglePhysical, side)
+        }
+        Box(Modifier.fillMaxSize()) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = padding.calculateStartPadding(direction),
+                    end = padding.calculateEndPadding(direction),
+                    // The profile's own item carries the bar's room and the hero's gradient.
+                    top = if (person != null) 0.dp else barTop + YOU_BAR + spacing.l,
+                    bottom = spacing.l
+                ),
+                verticalArrangement = Arrangement.spacedBy(spacing.s)
+            ) {
+                if (person == null) {
+                    if (me.failure != null) {
+                        item("error") {
+                            ErrorState(
+                                onRetry = model::refresh,
+                                offline = me.failure is ApiResult.Offline,
+                                modifier = side
+                            )
+                        }
+                    } else {
+                        item("skeleton") { Box(side) { YouSkeleton() } }
                     }
-                    summaryItems(data, onOpenActivity, side)
+                    return@LazyColumn
                 }
-                summary.failure != null -> item("summary-error") { ErrorLine(side) }
-                else -> item("summary-skeleton") { Box(side) { SummarySkeleton() } }
+                item("header") {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = spacing.gutter,
+                                end = spacing.gutter,
+                                top = barTop + YOU_BAR + spacing.xl,
+                                bottom = spacing.l
+                            )
+                    ) { Header(person) }
+                }
+                item("menu") {
+                    Menu(
+                        coach = ai.data?.available == true,
+                        onStats = onStats,
+                        onEstimates = onEstimates,
+                        onCoach = onCoach,
+                        onGear = onGear,
+                        onImport = onImport,
+                        modifier = side
+                    )
+                }
+                val data = summary.data
+                when {
+                    data != null -> {
+                        val hrMax = settings.data?.let { it.hrMax ?: it.hrMaxEstimate }
+                        item("physical") {
+                            Physical(person, hrMax, hidden, model::togglePhysical, side)
+                        }
+                        summaryItems(data, onOpenActivity, side)
+                    }
+                    summary.failure != null -> item("summary-error") { ErrorLine(side) }
+                    else -> item("summary-skeleton") { Box(side) { SummarySkeleton() } }
+                }
             }
+            YouBar(
+                solid = solid,
+                onEdit = { editing = true },
+                onAccount = onAccount,
+                onSettings = onSettings
+            )
         }
     }
     val person = me.data
@@ -190,8 +227,46 @@ private fun androidx.compose.foundation.lazy.LazyListScope.summaryItems(
 
 // --- the header ------------------------------------------------------------------------------------
 
+private val YOU_BAR = 56.dp
+
+/**
+ * The fixed bar over the profile: transparent at the top, black as the list scrolls under it, with the
+ * title fading in and the profile's actions on the right.
+ */
 @Composable
-private fun Header(me: Me, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+private fun YouBar(solid: Float, onEdit: () -> Unit, onAccount: () -> Unit, onSettings: () -> Unit) {
+    val colors = ZankupTheme.colors
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.page.copy(alpha = solid))
+            .padding(top = top)
+            .height(YOU_BAR)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.you_title),
+            Modifier.weight(1f).padding(start = 8.dp).alpha(solid),
+            style = MaterialTheme.typography.titleLarge,
+            color = colors.fg,
+            fontWeight = FontWeight.Bold
+        )
+        IconButton(onClick = onEdit) {
+            ZankupIcon(ZIcon.Edit, contentDescription = stringResource(R.string.you_edit), tint = colors.fg)
+        }
+        IconButton(onClick = onAccount) {
+            ZankupIcon(ZIcon.Account, contentDescription = stringResource(R.string.you_account), tint = colors.fg)
+        }
+        IconButton(onClick = onSettings) {
+            ZankupIcon(ZIcon.Settings, contentDescription = stringResource(R.string.you_settings), tint = colors.fg)
+        }
+    }
+}
+
+@Composable
+private fun Header(me: Me, modifier: Modifier = Modifier) {
     val colors = ZankupTheme.colors
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         val avatar = me.avatarUrl
@@ -226,9 +301,6 @@ private fun Header(me: Me, onEdit: () -> Unit, modifier: Modifier = Modifier) {
             // Only where you are: the watch belongs to each activity, Garmin to Account.
             me.location?.takeIf { it.isNotBlank() }?.let { Muted(it) }
         }
-        IconButton(onClick = onEdit, modifier = Modifier.align(Alignment.Top)) {
-            ZankupIcon(ZIcon.Edit, contentDescription = stringResource(R.string.you_edit), tint = colors.fg)
-        }
     }
 }
 
@@ -242,8 +314,6 @@ private fun Menu(
     onCoach: () -> Unit,
     onGear: () -> Unit,
     onImport: () -> Unit,
-    onAccount: () -> Unit,
-    onSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ZankupCard(modifier) {
@@ -251,9 +321,7 @@ private fun Menu(
         ListRow(stringResource(R.string.you_estimates), icon = ZIcon.Gauge, onClick = onEstimates, divider = true)
         if (coach) ListRow(stringResource(R.string.you_coach), icon = ZIcon.Coach, onClick = onCoach, divider = true)
         ListRow(stringResource(R.string.you_gear), icon = ZIcon.Steps, onClick = onGear, divider = true)
-        ListRow(stringResource(R.string.you_import), icon = ZIcon.Upload, onClick = onImport, divider = true)
-        ListRow(stringResource(R.string.you_account), icon = ZIcon.Account, onClick = onAccount, divider = true)
-        ListRow(stringResource(R.string.you_settings), icon = ZIcon.Settings, onClick = onSettings)
+        ListRow(stringResource(R.string.you_import), icon = ZIcon.Upload, onClick = onImport)
     }
 }
 

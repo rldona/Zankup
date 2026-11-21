@@ -148,7 +148,11 @@ fun ZonesScreen(onBack: () -> Unit, onHeartSettings: () -> Unit, model: ZonesMod
     val longDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)
 
     Scaffold(containerColor = colors.page, topBar = {
-        ZankupTopBar(stringResource(R.string.more_zones), onBack = onBack) {
+        ZankupTopBar(
+            stringResource(R.string.more_zones),
+            onBack = onBack,
+            containerColor = colors.page
+        ) {
             IconButton(onClick = onHeartSettings) {
                 ZankupIcon(ZIcon.Pencil, stringResource(R.string.more_edit_zones))
             }
