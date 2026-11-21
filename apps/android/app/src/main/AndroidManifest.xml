@@ -5,12 +5,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Predictive back off on purpose: the system's preview animates the window with a zoom-out, not the
+         push/pop the app draws for the back arrow, so the edge swipe and the arrow did not match. Off, the
+         gesture sends a plain back and the app plays its own transition. -->
     <application
         android:name=".ZankupApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
-        android:enableOnBackInvokedCallback="true"
+        android:enableOnBackInvokedCallback="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"

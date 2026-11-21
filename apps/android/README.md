@@ -65,6 +65,27 @@ cd apps/android
 
 CI runs all of them and the release build (`.github/workflows/android-native.yml`).
 
+## Motion
+
+The screen transitions are Strava's: measured on the S26, frame by frame, from a `screenrecord` of its
+own push, pop, tab change and back gesture, and kept in `app/src/main/kotlin/com/zankup/android/shell/AppShell.kt`.
+
+- **A screen stacked over a tab** comes in from the right, whole and undimmed, over the 400 ms of Strava's
+  push. The one underneath steps aside a quarter and darkens (to 80 % in the dark themes; in the light ones
+  it only slips away, since a fade there washes it out). Popping plays the same movement backwards. The
+  easing is a bezier fitted to Strava's own positions — off the mark at once, a long settle — not a linear-out.
+- **The tab bar belongs to the tab** (its screen and the bar are one composable, `TabScreen`), so it slides
+  and dims with it instead of vanishing before the push.
+- **Tabs swap in place**, with no movement, as Strava's do; only a stacked screen travels.
+- **The gate** (the splash's look, sign-in, the lock, the app) fades from one state into the next.
+- **The edge swipe back and the back arrow play the same transition.** The system's predictive-back preview
+  is off in the manifest (`enableOnBackInvokedCallback="false"`): it animates the window with a zoom-out that
+  has nothing to do with the push/pop the app draws, so the two gestures did not match.
+- With the system's animations off, every transition cuts instead of playing.
+
+Changing any of these means recording Strava again and comparing frames: the durations and the easing are
+numbers from that recording, not taste.
+
 ## Rules
 
 - **Nothing from `apps/mobile` or `packages/core`.** Only the OpenAPI document is read from there, and only

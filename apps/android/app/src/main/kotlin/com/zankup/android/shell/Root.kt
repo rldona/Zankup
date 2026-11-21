@@ -2,6 +2,11 @@ package com.zankup.android.shell
 
 import android.content.Intent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,20 +54,37 @@ fun Root(
     onLinkHandled: () -> Unit
 ) {
     val state by session.current.collectAsStateWithLifecycle()
-    when (val current = state) {
-        // The system splash's look while the session is decided (and the fingerprint asked for over it),
-        // drawn by the app so its first frame is not held back behind the prompt.
-        SessionState.Starting -> Box(
-            Modifier.fillMaxSize().background(colorResource(R.color.splash_background)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(painterResource(R.drawable.ic_splash), contentDescription = null, modifier = Modifier.size(240.dp))
+    // The gate fades from one state into the next (the splash's look into the app, sign-in into the tabs):
+    // it is the one moment with no screen to slide, so a cut there reads as a stutter.
+    AnimatedContent(
+        targetState = state,
+        modifier = Modifier.fillMaxSize(),
+        transitionSpec = { fadeIn(tween(GATE_MS)) togetherWith fadeOut(tween(GATE_MS)) },
+        contentKey = { it::class },
+        label = "gate"
+    ) { current ->
+        when (current) {
+            // The system splash's look while the session is decided (and the fingerprint asked for over it),
+            // drawn by the app so its first frame is not held back behind the prompt.
+            SessionState.Starting -> Box(
+                Modifier.fillMaxSize().background(colorResource(R.color.splash_background)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painterResource(R.drawable.ic_splash),
+                    contentDescription = null,
+                    modifier = Modifier.size(240.dp)
+                )
+            }
+            SessionState.SignedOut -> SignInScreen()
+            SessionState.Locked -> LockScreen(session)
+            is SessionState.SignedIn -> AppShell(current.api, session, reachability, settings, link, onLinkHandled)
         }
-        SessionState.SignedOut -> SignInScreen()
-        SessionState.Locked -> LockScreen(session)
-        is SessionState.SignedIn -> AppShell(current.api, session, reachability, settings, link, onLinkHandled)
     }
 }
+
+/** How long the gate takes to fade from one state into the next. */
+private const val GATE_MS = 250
 
 /** The token is on the phone but the fingerprint was not given: the wordmark and "Unlock". */
 @Composable

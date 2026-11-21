@@ -1,7 +1,19 @@
 package com.zankup.android.shell
 
+import android.animation.ValueAnimator
 import android.content.Intent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,7 +31,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -95,6 +110,48 @@ private enum class Tab(val route: Any, val routeClass: KClass<*>, val icon: ZIco
     YOU(YouRoute, YouRoute::class, ZIcon.You, R.string.nav_you)
 }
 
+/** Whether the destination is one of the five tabs, and not a screen stacked over them. */
+private fun NavDestination.isTab(): Boolean = hierarchy.any { node -> Tab.entries.any { node.hasRoute(it.routeClass) } }
+
+/** No movement at all: one tab taking another's place (as Strava's do), or the system's animations off. */
+private val StillEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+    { EnterTransition.None }
+private val StillExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+    { ExitTransition.None }
+
+/** How long a screen takes to come in from the right (or to leave to it): Strava's push, measured 400 ms. */
+private const val SLIDE_MS = 400
+
+/** A screen underneath gives way only a quarter: the depth that reads as a stack. */
+private const val PARALLAX = 4
+
+/** How faint the screen underneath gets in the dark themes, where the page behind it reads as a dim. */
+private const val DIM_DARK = 0.8f
+
+/**
+ * Strava's push, as measured frame by frame on the S26: off the mark at once and a long settle (a
+ * bezier fitted to its own movement, within 0.5 % at every frame), not a linear-out.
+ */
+private val Motion = CubicBezierEasing(0.2f, 0.6f, 0.05f, 1f)
+private val slide = tween<IntOffset>(SLIDE_MS, easing = Motion)
+private val dim = tween<Float>(SLIDE_MS, easing = Motion)
+
+/** The screen pushed on top comes in from the right over the one that was there, whole and undimmed. */
+private val PushEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+    { slideInHorizontally(slide) { it } }
+
+/** The screen that stays underneath steps aside a quarter and darkens, instead of sliding away whole. */
+private fun underneathExit(dimTo: Float): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+    { slideOutHorizontally(slide) { -it / PARALLAX } + fadeOut(dim, targetAlpha = dimTo) }
+
+/** Coming back, the two play the same movement backwards. */
+private val PopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+    { slideInHorizontally(slide) { -it / PARALLAX } }
+
+/** The stacked screen leaving on the way back slides away whole, darkening as the one underneath comes. */
+private fun leavingExit(dimTo: Float): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+    { slideOutHorizontally(slide) { it } + fadeOut(dim, targetAlpha = dimTo) }
+
 /** The signed-in app: the tab bar over the tabs, and every other screen stacked over them (OS-1112). */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -109,7 +166,7 @@ fun AppShell(
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
-    val onTab = Tab.entries.any { tab -> destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true }
+    val onTab = destination?.isTab() == true
     val coach by produceState(false, api) {
         val status = call { api.service<AiApi>().getAiStatus() }
         reachability.note(status)
@@ -120,6 +177,24 @@ fun AppShell(
     val units by settings.units.collectAsStateWithLifecycle(initialValue = com.zankup.android.domain.Units.METRIC)
     LaunchedEffect(api) { settings.query.refresh() }
     val formats = remember(units) { com.zankup.android.ui.Formats(units, java.util.Locale.getDefault()) }
+    // With the system's animations off (or reduced), screens cut instead of travelling: the transitions
+    // are skipped rather than played at once.
+    val still = !ValueAnimator.areAnimatorsEnabled()
+    // In the dark themes the screen underneath dims as it gives way; in the light ones it only slips away
+    // (fading it there would wash it towards the page instead of darkening it).
+    val palette = ZankupTheme.colors
+    val dimTo = remember(palette.isDark) { if (palette.isDark) DIM_DARK else 1f }
+    val exitUnder = remember(dimTo) { underneathExit(dimTo) }
+    val exitLeaving = remember(dimTo) { leavingExit(dimTo) }
+    // A tab swaps in place when another tab takes its place, as Strava's do; but when a detail is stacked
+    // over it the tab stays underneath until the detail has come in, and travels back with it when it pops.
+    val tabEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = remember(still) {
+        { if (still || initialState.destination.isTab()) StillEnter.invoke(this) else PopEnter.invoke(this) }
+    }
+    val tabExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+        remember(still, exitUnder) {
+            { if (still || targetState.destination.isTab()) StillExit.invoke(this) else exitUnder.invoke(this) }
+        }
     LaunchedEffect(link) {
         if (link != null) {
             // A notification carries the web path it is about; a link, the app's own address.
@@ -133,72 +208,116 @@ fun AppShell(
         Scaffold(
             // Test tags as resource ids, for the benchmarks' UI Automator (OS-1180).
             modifier = Modifier.semantics { testTagsAsResourceId = true },
-            containerColor = ZankupTheme.colors.page,
-            bottomBar = {
-                Column {
-                    if (unreachable) OfflineNotice()
-                    if (onTab) TabBar(nav, destination)
-                }
-            }
+            containerColor = palette.page,
+            // Each tab carries the bar itself (it is part of what slides with the tab), so the Scaffold
+            // leaves the window to the NavHost and only holds the offline notice of the stacked screens.
+            contentWindowInsets = WindowInsets(0),
+            bottomBar = { if (unreachable && !onTab) OfflineNotice() }
         ) { padding ->
             NavHost(
                 nav,
                 startDestination = HomeRoute,
-                modifier = Modifier.padding(bottom = padding.calculateBottomPadding())
+                modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
+                // As Strava: a screen comes in from the right over the one that was there, which steps
+                // aside a quarter and dims; the tab underneath stays put and travels back on the pop.
+                enterTransition = if (still) StillEnter else PushEnter,
+                exitTransition = if (still) StillExit else exitUnder,
+                popEnterTransition = if (still) StillEnter else PopEnter,
+                popExitTransition = if (still) StillExit else exitLeaving
             ) {
                 val back: () -> Unit = { nav.popBackStack() }
                 val go: (Any) -> Unit = { nav.navigate(it) }
 
-                composable<HomeRoute> {
-                    com.zankup.android.home.HomeScreen(
-                        coach = coach,
-                        onOpen = { id -> go(ActivityRoute(id)) },
-                        onCoach = { go(CoachRoute) },
-                        onNotifications = { go(NotificationsRoute) }
-                    )
+                composable<HomeRoute>(
+                    enterTransition = tabEnter,
+                    exitTransition = tabExit,
+                    popEnterTransition = tabEnter,
+                    popExitTransition = tabExit
+                ) {
+                    TabScreen(Tab.HOME, nav, unreachable) { fill ->
+                        com.zankup.android.home.HomeScreen(
+                            coach = coach,
+                            onOpen = { id -> go(ActivityRoute(id)) },
+                            onCoach = { go(CoachRoute) },
+                            onNotifications = { go(NotificationsRoute) },
+                            modifier = fill
+                        )
+                    }
                 }
-                composable<ActivitiesRoute> {
-                    com.zankup.android.feed.FeedScreen(
-                        onOpen = { id -> go(ActivityRoute(id)) },
-                        onSync = { go(SyncRoute) },
-                        onCalendar = { go(CalendarRoute) }
-                    )
+                composable<ActivitiesRoute>(
+                    enterTransition = tabEnter,
+                    exitTransition = tabExit,
+                    popEnterTransition = tabEnter,
+                    popExitTransition = tabExit
+                ) {
+                    TabScreen(Tab.ACTIVITIES, nav, unreachable) { fill ->
+                        com.zankup.android.feed.FeedScreen(
+                            onOpen = { id -> go(ActivityRoute(id)) },
+                            onSync = { go(SyncRoute) },
+                            onCalendar = { go(CalendarRoute) },
+                            modifier = fill
+                        )
+                    }
                 }
-                composable<ProgressRoute> {
-                    com.zankup.android.progress.ProgressScreen(
-                        onVolume = { sport -> go(ProgressDetailRoute(sport)) },
-                        onTrainingLog = { go(TrainingLogRoute) },
-                        onFitness = { go(FitnessRoute) },
-                        onEffort = { go(EffortRoute) },
-                        onPredictions = { go(PredictionsRoute) },
-                        onGoals = { go(ObjectivesRoute) },
-                        onZones = { go(ZonesRoute) },
-                        onSkills = { go(SkillsRoute) },
-                        onBests = { key -> go(BestsRoute(key ?: "10k")) },
-                        onMonthly = { go(MonthlyRoute) },
-                        onSources = { go(SourcesRoute) },
-                        onOpenActivity = { id -> go(ActivityRoute(id)) }
-                    )
+                composable<ProgressRoute>(
+                    enterTransition = tabEnter,
+                    exitTransition = tabExit,
+                    popEnterTransition = tabEnter,
+                    popExitTransition = tabExit
+                ) {
+                    TabScreen(Tab.PROGRESS, nav, unreachable) { fill ->
+                        com.zankup.android.progress.ProgressScreen(
+                            onVolume = { sport -> go(ProgressDetailRoute(sport)) },
+                            onTrainingLog = { go(TrainingLogRoute) },
+                            onFitness = { go(FitnessRoute) },
+                            onEffort = { go(EffortRoute) },
+                            onPredictions = { go(PredictionsRoute) },
+                            onGoals = { go(ObjectivesRoute) },
+                            onZones = { go(ZonesRoute) },
+                            onSkills = { go(SkillsRoute) },
+                            onBests = { key -> go(BestsRoute(key ?: "10k")) },
+                            onMonthly = { go(MonthlyRoute) },
+                            onSources = { go(SourcesRoute) },
+                            onOpenActivity = { id -> go(ActivityRoute(id)) },
+                            modifier = fill
+                        )
+                    }
                 }
-                composable<HealthRoute> {
-                    com.zankup.android.health.HealthScreen(
-                        onWeight = { go(WeightRoute) },
-                        onSettings = { go(SettingsSectionRoute("health")) },
-                        onOpenActivity = { id -> go(ActivityRoute(id)) },
-                        onConnect = { go(SettingsSectionRoute("health")) }
-                    )
+                composable<HealthRoute>(
+                    enterTransition = tabEnter,
+                    exitTransition = tabExit,
+                    popEnterTransition = tabEnter,
+                    popExitTransition = tabExit
+                ) {
+                    TabScreen(Tab.HEALTH, nav, unreachable) { fill ->
+                        com.zankup.android.health.HealthScreen(
+                            onWeight = { go(WeightRoute) },
+                            onSettings = { go(SettingsSectionRoute("health")) },
+                            onOpenActivity = { id -> go(ActivityRoute(id)) },
+                            onConnect = { go(SettingsSectionRoute("health")) },
+                            modifier = fill
+                        )
+                    }
                 }
-                composable<YouRoute> {
-                    com.zankup.android.you.YouScreen(
-                        onStats = { go(StatsRoute) },
-                        onEstimates = { go(EstimatesRoute) },
-                        onCoach = { go(CoachRoute) },
-                        onGear = { go(GearRoute) },
-                        onImport = { go(ImportRoute) },
-                        onAccount = { go(SettingsSectionRoute("account")) },
-                        onSettings = { go(SettingsRoute) },
-                        onOpenActivity = { id -> go(ActivityRoute(id)) }
-                    )
+                composable<YouRoute>(
+                    enterTransition = tabEnter,
+                    exitTransition = tabExit,
+                    popEnterTransition = tabEnter,
+                    popExitTransition = tabExit
+                ) {
+                    TabScreen(Tab.YOU, nav, unreachable) { fill ->
+                        com.zankup.android.you.YouScreen(
+                            onStats = { go(StatsRoute) },
+                            onEstimates = { go(EstimatesRoute) },
+                            onCoach = { go(CoachRoute) },
+                            onGear = { go(GearRoute) },
+                            onImport = { go(ImportRoute) },
+                            onAccount = { go(SettingsSectionRoute("account")) },
+                            onSettings = { go(SettingsRoute) },
+                            onOpenActivity = { id -> go(ActivityRoute(id)) },
+                            modifier = fill
+                        )
+                    }
                 }
 
                 val scheme = BuildConfig.LINK_SCHEME
@@ -407,12 +526,26 @@ private fun goTab(nav: NavHostController, route: Any) {
     }
 }
 
+/**
+ * A tab of the bar: its screen, then the bar. The bar belongs to the tab (as in Strava), so it is part of
+ * what slides away when a detail is stacked over the tab and comes back with it on the pop; the page is
+ * painted here too, so a tab arriving over another one is never seen through.
+ */
 @Composable
-private fun TabBar(nav: NavHostController, destination: androidx.navigation.NavDestination?) {
+private fun TabScreen(tab: Tab, nav: NavHostController, offline: Boolean, content: @Composable (Modifier) -> Unit) {
+    Column(Modifier.fillMaxSize().background(ZankupTheme.colors.page)) {
+        content(Modifier.weight(1f))
+        if (offline) OfflineNotice()
+        TabBar(nav, tab)
+    }
+}
+
+@Composable
+private fun TabBar(nav: NavHostController, current: Tab) {
     val colors = ZankupTheme.colors
     NavigationBar(containerColor = colors.surface) {
         Tab.entries.forEach { tab ->
-            val selected = destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
+            val selected = tab == current
             NavigationBarItem(
                 modifier = Modifier.testTag("tab_" + tab.name.lowercase()),
                 selected = selected,
