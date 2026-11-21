@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
 
 /** A section still loading: a bone of its height. */
 @Composable
-private fun Bone(height: Int = 168) {
+private fun Bone(height: Int = 200) {
     Skeleton(Modifier.fillMaxWidth(), height = height.dp)
 }
 

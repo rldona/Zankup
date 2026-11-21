@@ -104,7 +104,7 @@ fun CurveChart(
                     }
                     horizontalDrag(drag.id) { change ->
                         val now = at(change.position.x)
-                        if (now != picked) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                        if (now != picked) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         picked = now
                         change.consume()
                     }

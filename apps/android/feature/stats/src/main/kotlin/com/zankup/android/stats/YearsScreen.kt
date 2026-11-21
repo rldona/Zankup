@@ -1,6 +1,7 @@
 package com.zankup.android.stats
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -44,8 +49,7 @@ import kotlin.math.roundToInt
 
 /**
  * Year by year (OS-1141): each year's distance cumulative through it, one line per year, the chart
- * filling the height the years' list leaves. Not scrolled. A tap on a year makes it stand out (this
- * year at first).
+ * over the years as buttons. A tap on a year makes it stand out (this year at first).
  */
 @Composable
 fun YearsScreen(onBack: () -> Unit, model: YearsModel = hiltViewModel()) {
@@ -53,6 +57,7 @@ fun YearsScreen(onBack: () -> Unit, model: YearsModel = hiltViewModel()) {
     var selected by rememberSaveable { mutableIntStateOf(LocalDate.now().year) }
     val f = LocalFormats.current
     val colors = ZankupTheme.colors
+    val haptics = LocalHapticFeedback.current
     // The days of a leap year, written short: the same for every year's line.
     val days = remember(f.locale) {
         val format = DateTimeFormatter.ofPattern("d MMM", f.locale)
@@ -77,60 +82,84 @@ fun YearsScreen(onBack: () -> Unit, model: YearsModel = hiltViewModel()) {
             colors.sport.let { listOf(it.run, it.strength, it.row, it.ride, it.swim, it.walk) },
             colors.muted
         )
-        Surface(
-            Modifier.padding(padding).padding(16.dp).navigationBarsPadding().fillMaxSize(),
-            shape = MaterialTheme.shapes.medium,
-            color = colors.surface
+        // No card and no scroll around the chart, so nothing clips its bubble as it rises over the top;
+        // only the years scroll when they do not fit.
+        Column(
+            Modifier
+                .padding(padding)
+                .navigationBarsPadding()
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    LinesChart(
-                        lines = selectedLast(lines, { it.year }, selected).map { l ->
-                            ChartLine(
-                                l.year.toString(),
-                                l.cumulativeM.map { (it / scale).toFloat() },
-                                palette[l.year] ?: colors.muted,
-                                width = if (l.year == selected) 3.dp else 1.6.dp,
-                                alpha = if (l.year == selected) 1f else 0.5f
-                            )
-                        },
-                        xLabels = days,
-                        format = { "${it.roundToInt()} ${f.unit.distanceUnit}" },
-                        description = lines.joinToString(", ") {
-                            "${it.year}: ${lineTotal(it.cumulativeM, scale).roundToInt()} ${f.unit.distanceUnit}"
-                        },
-                        height = null,
-                        domain = 0f..top
-                    )
-                }
+            // The chart takes what the years leave.
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                LinesChart(
+                    lines = selectedLast(lines, { it.year }, selected).map { l ->
+                        ChartLine(
+                            l.year.toString(),
+                            l.cumulativeM.map { (it / scale).toFloat() },
+                            palette[l.year] ?: colors.muted,
+                            width = if (l.year == selected) 3.dp else 1.6.dp,
+                            alpha = if (l.year == selected) 1f else 0.5f
+                        )
+                    },
+                    xLabels = days,
+                    format = { "${it.roundToInt()} ${f.unit.distanceUnit}" },
+                    description = lines.joinToString(", ") {
+                        "${it.year}: ${lineTotal(it.cumulativeM, scale).roundToInt()} ${f.unit.distanceUnit}"
+                    },
+                    height = null,
+                    domain = 0f..top,
+                    smoothing = 2,
+                    interactive = false
+                )
+            }
+            // The years are buttons: each a rounded pill, the chosen one in its line's colour.
+            Column(
+                // The years take what they need at the bottom, at most half the screen (then they scroll).
+                Modifier.weight(1f, fill = false).padding(top = 24.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 lines.forEach { l ->
                     val on = l.year == selected
+                    val tint = palette[l.year] ?: colors.muted
+                    val shape = RoundedCornerShape(12.dp)
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .selectable(on, role = Role.RadioButton) { selected = l.year }
-                            .padding(vertical = 6.dp),
+                            .clip(shape)
+                            .background(if (on) tint.copy(alpha = 0.16f) else colors.surface2)
+                            .then(if (on) Modifier else Modifier.border(1.dp, colors.line, shape))
+                            .selectable(on, role = Role.RadioButton) {
+                                // The same buzz as the charts' bubble, when the year changes.
+                                if (!on) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                selected = l.year
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Box(
                             Modifier
-                                .size(10.dp)
+                                .size(12.dp)
                                 .alpha(if (on) 1f else 0.5f)
                                 .clip(CircleShape)
-                                .background(palette[l.year] ?: colors.muted)
+                                .background(tint)
                         )
                         Text(
                             l.year.toString(),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = if (on) FontWeight.Bold else FontWeight.Normal
                             ),
+                            color = colors.fg,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
                             "${formatNumber(lineTotal(l.cumulativeM, scale).roundToInt().toDouble(), f.locale)} " +
                                 f.unit.distanceUnit,
-                            style = MaterialTheme.typography.bodyLarge.merge(Numbers.tabular)
+                            style = MaterialTheme.typography.bodyLarge.merge(Numbers.tabular),
+                            color = colors.fg,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }

@@ -41,19 +41,25 @@ class ProgressQueries(private val store: Store, private val scope: CoroutineScop
     private fun <T> get(
         key: String,
         serializer: KSerializer<T>,
+        storeKey: String = "progress/$key",
         fetch: suspend (ZankupApi) -> ApiResult<T>
     ): StateFlow<Loadable<T>> {
         @Suppress("UNCHECKED_CAST")
         (made[key] as Made<T>?)?.let { return it.state }
-        val query = store.query("progress/$key", serializer, fetch)
+        val query = store.query(storeKey, serializer, fetch)
         val state = query.state.stateIn(scope, SharingStarted.Eagerly, Loadable())
         made[key] = Made(query, state)
-        scope.launch { query.refresh() }
+        scope.launch { query.refreshIfStale() }
         return state
     }
 
-    /** Fetches everything asked for so far again. */
-    fun refresh() = made.values.forEach { scope.launch { it.query.refresh() } }
+    /** Fetches everything asked for so far again, when what is kept is older than its time. */
+    fun refresh() = made.values.forEach { scope.launch { it.query.refreshIfStale() } }
+
+    /** Every query fetched again, returning when all have answered (or failed): a pull to refresh. */
+    suspend fun refreshAll() = kotlinx.coroutines.coroutineScope {
+        made.values.toList().forEach { launch { it.query.refresh() } }
+    }
 
     fun volume(range: DayRange, byDay: Boolean): StateFlow<Loadable<List<Bucket>>> {
         val unit = if (byDay) StatsApi.UnitGetVolume.DAY else StatsApi.UnitGetVolume.WEEK
@@ -77,7 +83,7 @@ class ProgressQueries(private val store: Store, private val scope: CoroutineScop
         }
 
     fun estimates(): StateFlow<Loadable<List<EstimateOut>>> =
-        get("estimates", ListSerializer(EstimateOut.serializer())) { api ->
+        get("estimates", ListSerializer(EstimateOut.serializer()), storeKey = "stats/estimates") { api ->
             call { api.service<StatsApi>().getEstimates() }
         }
 
@@ -104,7 +110,7 @@ class ProgressQueries(private val store: Store, private val scope: CoroutineScop
             }
         }
 
-    fun me(): StateFlow<Loadable<Me>> = get("me", Me.serializer()) { api ->
+    fun me(): StateFlow<Loadable<Me>> = get("me", Me.serializer(), storeKey = "auth/me") { api ->
         call { api.service<AuthApi>().getMe() }
     }
 

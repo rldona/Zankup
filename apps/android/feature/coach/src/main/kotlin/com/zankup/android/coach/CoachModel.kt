@@ -71,8 +71,8 @@ constructor(store: Store, private val source: ApiSource) : ViewModel() {
     private var answering: Job? = null
 
     fun refresh() {
-        viewModelScope.launch { statusQuery.refresh() }
-        viewModelScope.launch { weeklyQuery.refresh() }
+        viewModelScope.launch { statusQuery.refreshIfStale() }
+        viewModelScope.launch { weeklyQuery.refreshIfStale() }
     }
 
     fun ask(question: String) {
@@ -144,9 +144,29 @@ constructor(store: Store, private val source: ApiSource) : ViewModel() {
                 response.close()
                 throw IOException("HTTP ${response.code}")
             }
-            response.body.ndjsonLines().collect { line ->
-                parseEvent(line)?.let { event -> _chat.update { it.apply(event) } }
+            val pending = StringBuilder()
+            var flushedAt = System.currentTimeMillis()
+            fun flush() {
+                if (pending.isEmpty()) return
+                _chat.update { it.apply(CoachEvent.Text(pending.toString())) }
+                pending.setLength(0)
+                flushedAt = System.currentTimeMillis()
             }
+            response.body.ndjsonLines().collect { line ->
+                when (val event = parseEvent(line)) {
+                    null -> Unit
+                    is CoachEvent.Text -> {
+                        // Tokens do not redraw the text one by one: a few go together every TEXT_FLUSH_MS.
+                        pending.append(event.text)
+                        if (System.currentTimeMillis() - flushedAt >= TEXT_FLUSH_MS) flush()
+                    }
+                    else -> {
+                        flush()
+                        _chat.update { it.apply(event) }
+                    }
+                }
+            }
+            flush()
         } finally {
             cancelOnStop?.dispose()
         }
@@ -167,6 +187,9 @@ constructor(store: Store, private val source: ApiSource) : ViewModel() {
 
     private companion object {
         const val STREAM_READ_TIMEOUT_S = 120L
+
+        /** How long tokens are gathered before the answer is redrawn. */
+        const val TEXT_FLUSH_MS = 60L
     }
 }
 

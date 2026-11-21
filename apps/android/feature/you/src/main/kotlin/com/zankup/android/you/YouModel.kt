@@ -4,10 +4,8 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zankup.android.api.endpoints.AiApi
 import com.zankup.android.api.endpoints.AuthApi
 import com.zankup.android.api.endpoints.ProfileApi
-import com.zankup.android.api.model.AiStatus
 import com.zankup.android.api.model.Me
 import com.zankup.android.api.model.Preferences
 import com.zankup.android.api.model.ProfileSummary
@@ -57,15 +55,11 @@ constructor(
     private val summaryQuery = store.query("you/summary", ProfileSummary.serializer()) { api ->
         call { api.service<ProfileApi>().getProfileSummary() }
     }
-    private val aiQuery = store.query("you/ai-status", AiStatus.serializer()) { api ->
-        call { api.service<AiApi>().getAiStatus() }
-    }
     private val settingsQuery = settings.query
 
     val me: StateFlow<Loadable<Me>> = meQuery.state.stateIn(viewModelScope, SharingStarted.Eagerly, Loadable())
     val summary: StateFlow<Loadable<ProfileSummary>> =
         summaryQuery.state.stateIn(viewModelScope, SharingStarted.Eagerly, Loadable())
-    val ai: StateFlow<Loadable<AiStatus>> = aiQuery.state.stateIn(viewModelScope, SharingStarted.Eagerly, Loadable())
     val settings: StateFlow<Loadable<Preferences>> =
         settingsQuery.state.stateIn(viewModelScope, SharingStarted.Eagerly, Loadable())
 
@@ -82,10 +76,9 @@ constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch { meQuery.refresh() }
-        viewModelScope.launch { summaryQuery.refresh() }
-        viewModelScope.launch { aiQuery.refresh() }
-        viewModelScope.launch { settingsQuery.refresh() }
+        viewModelScope.launch { meQuery.refreshIfStale() }
+        viewModelScope.launch { summaryQuery.refreshIfStale() }
+        viewModelScope.launch { settingsQuery.refreshIfStale() }
     }
 
     /** `PATCH /api/auth/me` with [body]; the answer is kept as the profile. A new weight is today's weighing too. */

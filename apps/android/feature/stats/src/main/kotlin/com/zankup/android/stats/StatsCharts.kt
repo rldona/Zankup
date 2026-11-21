@@ -78,7 +78,7 @@ class Stack(val parts: List<Pair<Float, Color>>) {
 }
 
 /** Every chart of the stats is this tall, as the activity's charts. */
-internal val CHART_HEIGHT = 168.dp
+internal val CHART_HEIGHT = 200.dp
 
 // As the activity's charts (core/charts LineChart): the same grid, labels, band and bubble.
 private val GRID = Color(0xFF4A4A48)
@@ -130,7 +130,7 @@ private fun Modifier.scrubbing(
         picked.intValue = at(drag.position.x)
         horizontalDrag(drag.id) { change ->
             val now = at(change.position.x)
-            if (now != picked.intValue) haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+            if (now != picked.intValue) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             picked.intValue = now
             change.consume()
         }
@@ -138,11 +138,39 @@ private fun Modifier.scrubbing(
 }
 
 /**
+ * Each value averaged with its [radius] neighbours on both sides (fewer at the ends), gaps kept as gaps.
+ * A cumulative series drawn day by day reads as teeth; this rounds it without touching the figures.
+ */
+private fun smoothValues(values: List<Float?>, radius: Int): List<Float?> {
+    if (radius <= 0) return values
+    val out = ArrayList<Float?>(values.size)
+    for (i in values.indices) {
+        val v = values[i]
+        if (v == null) {
+            out += null
+            continue
+        }
+        var sum = 0f
+        var n = 0
+        for (k in (i - radius).coerceAtLeast(0)..(i + radius).coerceAtMost(values.lastIndex)) {
+            values[k]?.let {
+                sum += it
+                n++
+            }
+        }
+        out += if (n > 0) sum / n else v
+    }
+    return out
+}
+
+/**
  * Lines over x labels (days, durations), each value at the centre of its slot, drawn as the activity's
  * charts: a grid inside a frame, round values on the left, the dates underneath and a bubble in the
  * line's colour at the finger. With [bars] (form) the bars take the left axis and the lines a right one,
- * four steps each so both share the grid; alone, the lines get the tightest round axis. A null [height]
- * fills what the parent gives.
+ * four steps each so both share the grid; alone, the lines get the tightest round axis. [smoothing]
+ * averages each line with its neighbours so a cumulative series does not read as teeth (the bubble
+ * still shows the real value). Without [interactive] a chart only reads: no bubble nor finger marks.
+ * A null [height] fills what the parent gives.
  */
 @Composable
 internal fun LinesChart(
@@ -154,7 +182,9 @@ internal fun LinesChart(
     height: Dp? = CHART_HEIGHT,
     domain: ClosedFloatingPointRange<Float>? = null,
     bars: SignedBars? = null,
-    axis: Boolean = true
+    axis: Boolean = true,
+    smoothing: Int = 0,
+    interactive: Boolean = true
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
@@ -188,7 +218,7 @@ internal fun LinesChart(
     Canvas(
         sized
             .semantics { contentDescription = description }
-            .scrubbing(count, picked, plotLeft, plotWidth, haptics)
+            .then(if (interactive) Modifier.scrubbing(count, picked, plotLeft, plotWidth, haptics) else Modifier)
     ) {
         val left = leftAxisWidth
         val plot = size.width - left - (if (right) rightAxisWidth else RIGHT_GAP.toPx())
@@ -210,6 +240,8 @@ internal fun LinesChart(
             if (right) drawAxisLabels(measurer, labelStyle, rightTicks, format, y, left + plot)
         }
         drawXMarks(measurer, labelStyle, xLabels, ::x, topY, bottom)
+        // The frame first: the bars and the lines go over it, never under it.
+        drawFrame(left, topY, plot, bottom)
         // The form's bars, green above zero and red below.
         if (bars != null && barScale != null) {
             if (barScale.min < 0 && barScale.max > 0) {
@@ -219,6 +251,7 @@ internal fun LinesChart(
         }
         lines.forEach { line ->
             val stroke = line.width.toPx()
+            val values = smoothValues(line.values, smoothing)
             var path: Path? = null
             var points = 0
             var lastX = 0f
@@ -238,7 +271,7 @@ internal fun LinesChart(
                 path = null
                 points = 0
             }
-            line.values.forEachIndexed { i, v ->
+            values.forEachIndexed { i, v ->
                 if (v == null) {
                     flush()
                     return@forEachIndexed
@@ -254,9 +287,8 @@ internal fun LinesChart(
             }
             flush()
         }
-        drawFrame(left, topY, plot, bottom)
         val at = picked.intValue
-        if (at in 0 until count) {
+        if (interactive && at in 0 until count) {
             val shown = lines.mapNotNull { l -> l.values.getOrNull(at)?.let { l to it } }
             val text = buildList {
                 shown.forEach { (l, v) -> add(if (shown.size > 1) "${l.label} ${format(v)}" else format(v)) }
@@ -322,6 +354,8 @@ internal fun StackedBars(
         drawGrid(ticks, y, left, plot)
         drawAxisLabels(measurer, labelStyle, ticks, format, y, left, start = true)
         drawXMarks(measurer, labelStyle, xLabels, ::x, topY, bottom)
+        // The frame first, so the bars sit over it.
+        drawFrame(left, topY, plot, bottom)
         val at = picked.intValue
         // As the RN app's: every bar a touch lighter while one is read.
         val alpha = if (at < 0) 1f else 0.9f
@@ -336,7 +370,6 @@ internal fun StackedBars(
                 base += v
             }
         }
-        drawFrame(left, topY, plot, bottom)
         if (at in 0 until count) {
             val tint = stacks[at].parts.lastOrNull { it.first > 0f }?.second ?: colors.accent
             drawBubble(measurer, format(stacks[at].total), xLabels.getOrNull(at), x(at), topY, bottom, tint)

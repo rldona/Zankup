@@ -1,20 +1,27 @@
 package com.zankup.android.tools
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -27,6 +34,7 @@ import com.zankup.android.designsystem.components.ErrorState
 import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.color
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
 import com.zankup.android.tools.ui.ListSkeleton
@@ -35,6 +43,9 @@ import com.zankup.android.tools.ui.ToolsScaffold
 import com.zankup.android.tools.ui.mediumDate
 import com.zankup.android.tools.ui.warning
 import com.zankup.android.ui.LocalFormats
+import com.zankup.android.ui.family
+import com.zankup.android.ui.sportName
+import com.zankup.android.ui.sportOf
 
 /**
  * Notifications (OS-1163): what the engine noticed lately — a new record, an estimate going up, a risky
@@ -48,33 +59,37 @@ fun NotificationsScreen(
     model: EventsModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) { model.refresh() }
-    val events by model.events.collectAsStateWithLifecycle()
+    val ui by model.notices.collectAsStateWithLifecycle()
     val units = LocalFormats.current.units
-    val data = events.data
-    val list = remember(data, units) { data?.filter { eventShown(it.kind, it.payload, units) } }
-    ToolsScaffold(stringResource(R.string.tools_notifications_title), onBack, modifier) {
+    val notices = ui.data
+    val shown = notices.orEmpty().filter { n -> n.event?.let { eventShown(it.kind, it.payload, units) } ?: true }
+    LaunchedEffect(notices) { if (notices != null) model.markSeen() }
+    ToolsScaffold(
+        stringResource(R.string.tools_notifications_title),
+        onBack,
+        modifier,
+        actions = { NotificationsMenu(model::deleteAll) },
+        edgeToEdge = true
+    ) {
         when {
-            events.loading -> item("loading") { ListSkeleton() }
-            list == null -> item("error") {
-                ErrorState(onRetry = model::refresh, offline = events.failure is ApiResult.Offline)
+            ui.loading -> item("loading") { ListSkeleton() }
+            notices == null -> item("error") {
+                ErrorState(onRetry = model::refresh, offline = ui.failure is ApiResult.Offline)
             }
-            list.isEmpty() -> item("empty") {
+            notices.isEmpty() -> item("empty") {
                 EmptyState(stringResource(R.string.tools_notifications_empty), icon = ZIcon.Notifications)
             }
             else -> item("events") {
                 val colors = ZankupTheme.colors
-                // A card without padding above and below, as the React Native app's: the rows bring it.
                 Surface(
                     Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
                     color = colors.surface,
-                    contentColor = colors.fg,
-                    border = if (colors.line == colors.fg) BorderStroke(2.dp, colors.line) else null
+                    contentColor = colors.fg
                 ) {
-                    Column(Modifier.padding(horizontal = 14.dp)) {
-                        list.forEachIndexed { i, e ->
-                            EventRow(e, onOpenActivity)
-                            if (i < list.lastIndex) RowDivider(inset = 0.dp)
+                    Column {
+                        shown.forEachIndexed { i, n ->
+                            NoticeRow(n, onOpenActivity, model::markRead)
+                            if (i < shown.lastIndex) RowDivider(inset = 14.dp)
                         }
                     }
                 }
@@ -84,10 +99,47 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun EventRow(e: EventOut, onOpenActivity: (Long) -> Unit) {
+private fun NotificationsMenu(onDeleteAll: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val colors = ZankupTheme.colors
+    Box {
+        IconButton(onClick = { open = true }) {
+            ZankupIcon(ZIcon.More, contentDescription = stringResource(R.string.tools_notifications_menu))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.tools_notifications_delete_all), color = colors.formNegative) },
+                onClick = {
+                    open = false
+                    onDeleteAll()
+                },
+                leadingIcon = {
+                    ZankupIcon(ZIcon.Delete, contentDescription = null, tint = colors.formNegative)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun NoticeRow(notice: Notice, onOpenActivity: (Long) -> Unit, onRead: (Notice) -> Unit) {
+    val target = notice.activity?.id?.toLong() ?: notice.event?.let { eventActivity(it.payload) }
+    val open: () -> Unit = {
+        onRead(notice)
+        if (target != null) onOpenActivity(target)
+    }
+    val event = notice.event
+    val activity = notice.activity
+    when {
+        event != null -> EventRow(event, notice.read, open)
+        activity != null -> ActivityRow(activity, notice.read, open)
+    }
+}
+
+@Composable
+private fun EventRow(e: EventOut, read: Boolean, onClick: () -> Unit) {
     val colors = ZankupTheme.colors
     val formats = LocalFormats.current
-    val activity = eventActivity(e.payload)
     val icon = when (e.kind) {
         "record" -> ZIcon.Trophy
         "estimate_up" -> ZIcon.TrendingUp
@@ -97,22 +149,44 @@ private fun EventRow(e: EventOut, onOpenActivity: (Long) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .then(
-                if (activity !=
-                    null
-                ) {
-                    Modifier.clickable(role = Role.Button) { onOpenActivity(activity) }
-                } else {
-                    Modifier
-                }
-            )
-            .padding(vertical = 14.dp),
+            .background(if (read) Color.Transparent else colors.surface2)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         ZankupIcon(icon, contentDescription = null, tint = if (e.kind == "ramp") warning else colors.accent)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(eventText(eventWording(e.kind, e.payload, formats.unit)), color = colors.fg, fontSize = 15.sp)
             parseInstant(e.createdAt)?.let { Muted(mediumDate(it, formats.locale)) }
+        }
+    }
+}
+
+@Composable
+private fun ActivityRow(a: com.zankup.android.api.model.ActivitySummary, read: Boolean, onClick: () -> Unit) {
+    val colors = ZankupTheme.colors
+    val formats = LocalFormats.current
+    val sport = sportOf(a.sport)
+    val title = a.name ?: stringResource(sportName(sport))
+    val figures = listOfNotNull(
+        a.distanceM?.takeIf { it > 0 }?.let { formats.distance(it) },
+        formats.duration(a.movingS ?: a.durationS)
+    ).joinToString(" · ")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(if (read) Color.Transparent else colors.surface2)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        ZankupIcon(sport.family.icon, contentDescription = null, tint = sport.family.color)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, color = colors.fg, fontSize = 15.sp)
+            Muted(figures)
+            parseInstant(a.startUtc)?.let { Muted(mediumDate(it, formats.locale)) }
         }
     }
 }

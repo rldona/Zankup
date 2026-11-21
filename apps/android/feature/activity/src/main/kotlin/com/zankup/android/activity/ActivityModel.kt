@@ -83,8 +83,8 @@ constructor(
             store.query(CacheKeys.context(id), ActivityContext.serializer()) { api ->
                 call { api.service<ActivitiesApi>().getActivityContext(id.toInt()) }
             }
-        viewModelScope.launch { detail.refresh() }
-        viewModelScope.launch { activityContext.refresh() }
+        viewModelScope.launch { detail.refreshIfStale() }
+        viewModelScope.launch { activityContext.refreshIfStale() }
         viewModelScope.launch { streamsState.value = streams(id) }
         viewModelScope.launch {
             val api = source.api ?: return@launch

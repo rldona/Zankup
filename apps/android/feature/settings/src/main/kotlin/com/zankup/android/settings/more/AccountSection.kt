@@ -45,7 +45,8 @@ fun AccountSection(onSignedOut: () -> Unit, model: AccountModel = hiltViewModel(
     val me by model.me.state.collectAsStateWithLifecycle(initialValue = null)
     LaunchedEffect(Unit) { model.refresh() }
     var signingOut by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // The same gap between cards as every screen's.
+    Column(verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)) {
         val person = me?.data
         when {
             person != null -> SignInMethods(person, model)

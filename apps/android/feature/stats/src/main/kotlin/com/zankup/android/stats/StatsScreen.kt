@@ -78,11 +78,12 @@ fun StatsScreen(
             Modifier.padding(padding),
             contentPadding = PaddingValues(
                 start = ZankupTheme.spacing.gutter,
-                top = ZankupTheme.spacing.sm,
+                top = ZankupTheme.spacing.s,
                 end = ZankupTheme.spacing.gutter,
-                bottom = ZankupTheme.spacing.gutter
+                bottom = ZankupTheme.spacing.l
             ),
-            verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
+            // The same gap between cards as the tabs'.
+            verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
         ) {
             engine?.takeIf { it.running }?.let { e ->
                 item(key = "engine") { Muted(stringResource(R.string.stats_recomputing, e.done, e.total)) }

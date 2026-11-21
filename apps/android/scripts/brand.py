@@ -96,9 +96,12 @@ def main() -> None:
         if name == "default":
             continue
         colours = variant["background"]
-        band = 108 / len(colours)
+        # The launcher shows only the middle 72 of the 108 dp (the rest is masked), so the stripes share
+        # that part, the first and the last stretched to the edges: every colour stays in sight.
+        band = 72 / len(colours)
+        edges = [0.0] + [18 + band * i for i in range(1, len(colours))] + [108.0]
         rects = "\n".join(
-            f'    <path\n        android:pathData="M0,{i * band:g}h108v{band:g}h-108z"\n'
+            f'    <path\n        android:pathData="M0,{round(edges[i], 2):g}h108v{round(edges[i + 1] - edges[i], 2):g}h-108z"\n'
             f'        android:fillColor="{c.upper()}" />'
             for i, c in enumerate(colours)
         )

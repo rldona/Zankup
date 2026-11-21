@@ -32,7 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -284,21 +284,10 @@ private fun LogLine(label: String, value: String) {
 @Composable
 private fun Dots(days: List<Pair<LocalDate, List<CalendarActivity>>>, today: LocalDate) {
     val colors = ZankupTheme.colors
-    val density = LocalDensity.current
-    val hit = with(density) { 18.dp.toPx() }
     Row(
         Modifier
             .fillMaxWidth()
-            .height(28.dp)
-            .ballHaptics(days.size) { at, size ->
-                val slot = size.width / days.size.coerceAtLeast(1)
-                val centreY = size.height / 2f
-                days.indices.firstOrNull { i ->
-                    val dx = at.x - (i + 0.5f) * slot
-                    val dy = at.y - centreY
-                    dx * dx + dy * dy <= hit * hit
-                }
-            },
+            .height(28.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         days.forEach { (d, activities) ->
@@ -324,11 +313,17 @@ private fun Dots(days: List<Pair<LocalDate, List<CalendarActivity>>>, today: Loc
 internal fun FitnessCard(model: ProgressModel, onOpen: () -> Unit) {
     val fitness by model.fitness.collectAsStateWithLifecycle()
     if (fitness.loading) return CardSkeleton(3)
-    val values = untilToday(fitness.data.orEmpty(), model.today).map { it.ctl }
+    val values = remember(fitness.data, model.today) {
+        untilToday(fitness.data.orEmpty(), model.today).map { it.ctl }
+    }
     val now = values.lastOrNull()
     val title = stringResource(R.string.progress_fitness)
     val score = stringResource(R.string.progress_score)
-    ProgressCard(onClick = onOpen, description = "$title, $score ${now?.roundToInt() ?: "–"}") {
+    ProgressCard(
+        modifier = Modifier.testTag("fitness"),
+        onClick = onOpen,
+        description = "$title, $score ${now?.roundToInt() ?: "–"}"
+    ) {
         CardHeader(title, icon = ZIcon.Progress, note = stringResource(R.string.progress_last_month))
         if (now == null) {
             Muted(stringResource(R.string.progress_no_fitness), Modifier.padding(top = 12.dp))
@@ -359,7 +354,7 @@ internal fun EffortCard(model: ProgressModel, onOpen: () -> Unit) {
     val volume by model.effortWeeks.collectAsStateWithLifecycle()
     val daily by model.effortDays.collectAsStateWithLifecycle()
     if (volume.loading || daily.loading) return CardSkeleton(4)
-    val weeks = effortWeeks(volume.data.orEmpty())
+    val weeks = remember(volume.data) { effortWeeks(volume.data.orEmpty()) }
     val now = weeks.lastOrNull()
     val before = weeks.getOrNull(weeks.size - 2)
     val title = stringResource(R.string.progress_effort)
@@ -426,9 +421,11 @@ internal fun PredictionsCard(model: ProgressModel, onOpen: () -> Unit) {
     val estimates by model.estimates.collectAsStateWithLifecycle()
     if (estimates.loading) return CardSkeleton(3)
     val today = model.today
-    val history = histories(estimates.data.orEmpty())[Race.R5K.kind].orEmpty()
-    val line = series(history, today.minusDays(30), today)
-    val now = valueOn(history, today)
+    val history = remember(estimates.data) {
+        histories(estimates.data.orEmpty())[Race.R5K.kind].orEmpty()
+    }
+    val line = remember(history, today) { series(history, today.minusDays(30), today) }
+    val now = remember(history, today) { valueOn(history, today) }
     val before = line.firstOrNull()?.value
     val title = stringResource(R.string.progress_predictions)
     val race = stringResource(R.string.progress_race_race_5k)

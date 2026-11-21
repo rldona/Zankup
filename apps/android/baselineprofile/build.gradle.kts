@@ -2,6 +2,8 @@
 //   ./gradlew :app:generateReleaseBaselineProfile      (writes app/src/release/generated/baselineProfiles)
 //   ./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest \
 //     -Pandroid.testInstrumentationRunnerArguments.class=com.zankup.android.baselineprofile.Benchmarks
+//   ./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest \
+//     -Pandroid.testInstrumentationRunnerArguments.class=com.zankup.android.baselineprofile.Frames   (frame timings)
 plugins {
     alias(libs.plugins.android.test)
     alias(libs.plugins.baselineprofile)

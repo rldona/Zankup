@@ -70,12 +70,11 @@ fun RoutesScreen(onBack: () -> Unit, onOpen: (Long) -> Unit, model: RoutesModel 
             else -> LazyColumn(
                 Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = ZankupTheme.spacing.gutter,
                     top = ZankupTheme.spacing.gutter,
-                    end = ZankupTheme.spacing.gutter,
                     bottom = ZankupTheme.spacing.l
                 ),
-                verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
+                // The small gap the rest of the app's cards use, no line between them.
+                verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
             ) {
                 items(mostDone(routes) { it.count }, key = { it.id }) { r ->
                     val sport = sportOf(r.sport)
@@ -96,14 +95,13 @@ fun RoutesScreen(onBack: () -> Unit, onOpen: (Long) -> Unit, model: RoutesModel 
     }
 }
 
-/** A route as a card: its name and figures, and its shape on the right. */
+/** A route as a card: its name and figures, and its shape on the right. Full width, as Notifications. */
 @Composable
 private fun RouteRow(name: String, subtitle: String, sport: Sport, route: String?, onClick: () -> Unit) {
     val colors = ZankupTheme.colors
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
         color = colors.surface
     ) {
         Row(

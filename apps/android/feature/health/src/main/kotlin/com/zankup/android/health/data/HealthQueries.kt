@@ -49,12 +49,12 @@ internal class HealthQueries(
         val query = store.query("health/$key", serializer, fetch)
         val state = query.state.stateIn(scope, SharingStarted.Eagerly, Loadable())
         made[key] = Made(query, state)
-        scope.launch { query.refresh() }
+        scope.launch { query.refreshIfStale() }
         return state
     }
 
-    /** Fetches everything asked for so far again. */
-    fun refresh() = made.values.forEach { scope.launch { it.query.refresh() } }
+    /** Fetches everything asked for so far again, when what is kept is older than its time. */
+    fun refresh() = made.values.forEach { scope.launch { it.query.refreshIfStale() } }
 
     private fun refresh(prefix: String) =
         made.filterKeys { it.startsWith(prefix) }.values.forEach { scope.launch { it.query.refresh() } }

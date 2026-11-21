@@ -126,7 +126,10 @@
 
     <!-- Notifications -->
     <string name="tools_notifications_title">Notificaciones</string>
-    <string name="tools_notifications_empty">Nada nuevo por ahora. Aquí aparecen los récords, las estimaciones que mejoran y los saltos de carga arriesgados.</string>
+    <string name="tools_notifications_delete">Eliminar notificación</string>
+    <string name="tools_notifications_menu">Menú de notificaciones</string>
+    <string name="tools_notifications_delete_all">Eliminar todas</string>
+    <string name="tools_notifications_empty">Nada nuevo por ahora. Aquí aparecen las actividades que vas haciendo, los récords, las estimaciones que mejoran y los saltos de carga arriesgados.</string>
     <string name="tools_event_record">Nuevo récord de %1$s: %2$s</string>
     <string name="tools_event_estimate_up">Tu %1$s estimado ha subido a %2$s</string>
     <string name="tools_event_ramp">Tu forma ha subido %1$s puntos esta semana: vigila la carga</string>

@@ -30,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -66,6 +65,7 @@ import com.zankup.android.designsystem.components.ErrorState
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupPullToRefresh
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.domain.Sport
 import com.zankup.android.network.ApiResult
@@ -78,7 +78,7 @@ import com.zankup.android.ui.sportName
 private const val LOAD_AHEAD = 6
 
 /**
- * Activities (OS-1131): the search integrated in the bar, with back and its filters, sync and calendar,
+ * Activities (OS-1131): the search integrated in the bar, with back and its filters and calendar,
  * the sport chips under it, then the feed or the search's results. A card opens its activity, prefetched
  * as it is pressed.
  */
@@ -86,7 +86,6 @@ private const val LOAD_AHEAD = 6
 fun FeedScreen(
     onOpen: (Long) -> Unit,
     onBack: () -> Unit,
-    onSync: () -> Unit,
     onCalendar: () -> Unit,
     modifier: Modifier = Modifier,
     feedScroll: LazyListState = rememberLazyListState(),
@@ -126,7 +125,6 @@ fun FeedScreen(
                     model.openFilters()
                 }
             },
-            onSync = onSync,
             onCalendar = onCalendar
         )
         SportChips(ui.sport, model::choose)
@@ -148,7 +146,7 @@ fun FeedScreen(
 private val HEADER = 56.dp
 
 /**
- * The bar: back, the search field filling what is left, and its filters, sync and calendar on the right.
+ * The bar: back, the search field filling what is left, and its filters and calendar on the right.
  * The title is gone, as the React Native app's search screen.
  */
 @Composable
@@ -159,7 +157,6 @@ private fun FeedHeader(
     onType: (String) -> Unit,
     onClear: () -> Unit,
     onFilters: () -> Unit,
-    onSync: () -> Unit,
     onCalendar: () -> Unit
 ) {
     val colors = ZankupTheme.colors
@@ -187,11 +184,6 @@ private fun FeedHeader(
                 label = stringResource(if (filtersOn) R.string.feed_filters_on else R.string.feed_filters),
                 tint = if (filtersOn) colors.accent else colors.fg,
                 onClick = onFilters
-            )
-            HeaderAction(
-                icon = ZIcon.Sync,
-                label = stringResource(R.string.feed_sync),
-                onClick = onSync
             )
             HeaderAction(
                 icon = ZIcon.Calendar,
@@ -302,8 +294,8 @@ private fun ActivityList(ui: FeedUi, model: FeedViewModel, onOpen: (Long) -> Uni
         if (nearEnd && list.items.isNotEmpty()) model.loadMore()
     }
     val spacing = ZankupTheme.spacing
-    PullToRefreshBox(
-        isRefreshing = ui.refreshing,
+    ZankupPullToRefresh(
+        refreshing = ui.refreshing,
         onRefresh = model::refresh,
         modifier = Modifier.fillMaxSize()
     ) {

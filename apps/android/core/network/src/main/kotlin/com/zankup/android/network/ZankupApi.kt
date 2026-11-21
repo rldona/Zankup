@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.Authenticator
+import okhttp3.Cache
 import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -38,7 +39,9 @@ class ZankupApi(
     private val tokens: TokenStore,
     debug: Boolean = false,
     /** Called when the session cannot be renewed, so the app returns to sign-in. */
-    private val onSignedOut: () -> Unit = {}
+    private val onSignedOut: () -> Unit = {},
+    /** The HTTP cache (the app's, in its own directory): a 304 revalidates without the body. */
+    httpCache: Cache? = null
 ) {
     private val plain =
         OkHttpClient
@@ -46,7 +49,13 @@ class ZankupApi(
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(ClientHeader)
-            .apply { if (debug) addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)) }
+            .apply {
+                if (httpCache != null) cache(httpCache)
+                if (debug) {
+                    addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))
+                    addInterceptor(RequestCounter.interceptor)
+                }
+            }
             .build()
 
     /** The client every endpoint uses: [plain] with the token and the refresh. */
@@ -73,8 +82,8 @@ class ZankupApi(
         override fun intercept(chain: Interceptor.Chain): Response {
             val request = chain.request()
             if (request.header("Authorization") != null) return chain.proceed(request)
-            val access =
-                runBlocking { tokens.read()?.access }?.takeIf { it.isNotEmpty() } ?: return chain.proceed(request)
+            // The session keeps the access token in memory: no need to suspend a network thread for it.
+            val access = tokens.peek()?.access?.takeIf { it.isNotEmpty() } ?: return chain.proceed(request)
             return chain.proceed(request.newBuilder().header("Authorization", "Bearer $access").build())
         }
     }
@@ -87,7 +96,17 @@ class ZankupApi(
             ) {
                 return null
             }
-            val renewed = synchronized(this) { runBlocking { renew(response.request.header("Authorization")) } }
+            val sent = response.request.header("Authorization")
+            // Another request may have renewed it already: retry with that one instead of queueing.
+            tokens.peek()?.let { current ->
+                if (sent != null && sent != "Bearer ${current.access}") {
+                    return response.request
+                        .newBuilder()
+                        .header("Authorization", "Bearer ${current.access}")
+                        .build()
+                }
+            }
+            val renewed = synchronized(this) { runBlocking { renew(sent) } }
             if (renewed == null) {
                 onSignedOut()
                 return null

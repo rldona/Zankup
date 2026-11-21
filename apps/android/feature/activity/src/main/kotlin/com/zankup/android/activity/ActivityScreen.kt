@@ -81,6 +81,7 @@ import com.zankup.android.ui.family
 import com.zankup.android.ui.sportName
 import com.zankup.android.ui.sportOf
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /** Where the activity's links go: the app's navigation, which this module does not know. */
 class ActivityLinks(
@@ -180,6 +181,14 @@ fun ActivityScreen(
     // Kept pinned until the user drags: the map or cover arrives later and is inserted above the title, and
     // the list would otherwise stay anchored on the title.
     var pinnedTop by remember(id) { mutableStateOf(startAtTop) }
+    // The map waits for the push to finish: building MapLibre while the screen slides in is what used to
+    // cost the first frames.
+    var mapReady by remember(id) { mutableStateOf(false) }
+    LaunchedEffect(id) {
+        mapReady = false
+        delay(350)
+        mapReady = true
+    }
     LaunchedEffect(list) {
         list.interactionSource.interactions.collect { if (it is DragInteraction.Start) pinnedTop = false }
     }
@@ -220,7 +229,7 @@ fun ActivityScreen(
                     if (mapSlot) {
                         item("map") {
                             Box(Modifier.fillMaxWidth().height(MAP + header)) {
-                                if (drawn != null) {
+                                if (drawn != null && mapReady) {
                                     RouteMap(
                                         drawn.route,
                                         cursor,
@@ -229,6 +238,9 @@ fun ActivityScreen(
                                         colours = metric?.stops,
                                         colour = sport.family.color
                                     )
+                                } else {
+                                    // The map's own dark background while it is not there yet.
+                                    Box(Modifier.fillMaxSize().background(ZankupTheme.colors.surface))
                                 }
                                 if (drawn != null) {
                                     metric?.let { chosen ->
@@ -479,7 +491,7 @@ private fun ChartCard(
             // Every chart scaled as the React Native app's: outliers trimmed, four round steps.
             clip = true,
             color = chartColour(chart.kind),
-            height = 230.dp
+            height = 200.dp
         )
         val footer = chart.footer + extra
         if (footer.isNotEmpty()) {

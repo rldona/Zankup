@@ -27,6 +27,7 @@ import com.zankup.android.api.model.PrivacyZone
 import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.ErrorState
 import com.zankup.android.designsystem.components.Skeleton
+import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.network.ApiResult
 import com.zankup.android.settings.R
 import com.zankup.android.ui.decodePolyline
@@ -76,7 +77,8 @@ fun PrivacySection(model: PrivacyModel = hiltViewModel()) {
             busy = false
         }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // The same gap between cards as every screen's.
+    Column(verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)) {
         MoreCard(stringResource(R.string.setm_privacy_title)) {
             Note(stringResource(R.string.setm_privacy_help))
             if (ready) {

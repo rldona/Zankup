@@ -57,7 +57,7 @@ constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch { goals.refresh() }
+        viewModelScope.launch { goals.refreshIfStale() }
     }
 
     fun setOpen(id: Int, open: Boolean) {

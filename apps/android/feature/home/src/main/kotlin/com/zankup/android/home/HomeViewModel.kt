@@ -23,6 +23,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
@@ -128,8 +130,15 @@ private class HomeQueries(store: Store, val today: LocalDate) {
     val estimates = store.query("stats/estimates", ListSerializer(EstimateOut.serializer())) { api ->
         call { api.service<StatsApi>().getEstimates() }
     }
-    val fitness = store.query("stats/fitness", ListSerializer(FitnessDay.serializer())) { api ->
-        call { api.service<StatsApi>().getFitness() }
+
+    // Only the last week: Home reads the last day's form, not the whole history (the Fitness page does).
+    val fitness = store.query("stats/fitness/last7", ListSerializer(FitnessDay.serializer())) { api ->
+        call {
+            api.service<StatsApi>().getFitness(
+                from = today.minusDays(6).toString(),
+                to = today.plusDays(1).toString()
+            )
+        }
     }
     val me = store.query("auth/me", Me.serializer()) { api ->
         call { api.service<AuthApi>().getMe() }
@@ -162,12 +171,13 @@ constructor(private val store: Store, private val prefetch: Prefetch) : ViewMode
                 },
             pulling
         ) { ui, pulling -> ui.copy(refreshing = pulling) }
+            .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), HomeUi())
 
     /** Fetches everything again, for today (a new day when the date has changed). */
     fun refresh() {
         today()
-        queries.value.all.forEach { query -> viewModelScope.launch { query.refresh() } }
+        queries.value.all.forEach { query -> viewModelScope.launch { query.refreshIfStale() } }
     }
 
     /**

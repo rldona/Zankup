@@ -104,6 +104,8 @@
     <string name="set_import_note">FIT, TCX, GPX, una exportación de Garmin o todo tu historial de Strava</string>
     <string name="set_gear">Material</string>
     <string name="set_gear_note">Zapatillas y bicis, con su kilometraje</string>
+    <string name="set_sync">Sincronización</string>
+    <string name="set_sync_note">Sincroniza ahora con Garmin, carga tu historial y revisa las últimas ejecuciones</string>
     <string name="set_export_title">Exportar todos tus datos</string>
     <string name="set_export_help">Un ZIP con todos los archivos originales, tus fotos y todo lo demás en JSON. Queda disponible siete días.</string>
     <string name="set_export_start">Preparar exportación</string>

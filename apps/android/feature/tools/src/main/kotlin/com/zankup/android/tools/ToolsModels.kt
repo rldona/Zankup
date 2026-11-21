@@ -5,11 +5,14 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zankup.android.api.endpoints.ActivitiesApi
 import com.zankup.android.api.endpoints.LibraryApi
 import com.zankup.android.api.endpoints.StatsApi
 import com.zankup.android.api.endpoints.SyncApi
 import com.zankup.android.api.endpoints.TrainingApi
 import com.zankup.android.api.endpoints.TransfersApi
+import com.zankup.android.api.model.ActivityPage
+import com.zankup.android.api.model.ActivitySummary
 import com.zankup.android.api.model.Comparison
 import com.zankup.android.api.model.EventOut
 import com.zankup.android.api.model.GearIn
@@ -32,6 +35,7 @@ import com.zankup.android.tools.data.refreshAfterNewActivities
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.InputStream
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,6 +44,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,7 +96,7 @@ constructor(private val store: Store, private val source: ApiSource) : ViewModel
     val gear: StateFlow<Loadable<List<GearOut>>> = kept(query)
 
     fun refresh() {
-        viewModelScope.launch { query.refresh() }
+        viewModelScope.launch { query.refreshIfStale() }
     }
 
     /**
@@ -412,17 +417,105 @@ constructor(private val store: Store, private val source: ApiSource) : ViewModel
 
 // ---- Notifications ----
 
-/** Notifications (OS-1163): what the engine noticed lately, newest first. */
+/** One line of Notifications: an engine event or an activity just recorded. */
+data class Notice(
+    val key: String,
+    val at: Instant?,
+    val event: EventOut? = null,
+    val activity: ActivitySummary? = null,
+    val read: Boolean = false
+)
+
+data class NotificationsUi(
+    val data: List<Notice>? = null,
+    val loading: Boolean = true,
+    val failure: ApiResult.Failure? = null
+)
+
+/** Notifications (OS-1163): what the engine noticed and the activities done, newest first. */
 @HiltViewModel
 class EventsModel
 @Inject
-constructor(store: Store) : ViewModel() {
-    private val query = store.query("tools/events", ListSerializer(EventOut.serializer())) { api ->
+constructor(store: Store, private val seen: NotificationsSeen) : ViewModel() {
+    private val eventsQuery = store.query("tools/events", ListSerializer(EventOut.serializer())) { api ->
         call { api.service<TrainingApi>().listEvents() }
     }
-    val events: StateFlow<Loadable<List<EventOut>>> = kept(query)
+    private val activitiesQuery = store.query("tools/activities", ActivityPage.serializer()) { api ->
+        call { api.service<ActivitiesApi>().listActivities(limit = 20) }
+    }
+    val notices: StateFlow<NotificationsUi> =
+        combine(
+            eventsQuery.state,
+            activitiesQuery.state,
+            seen.hidden,
+            seen.opened,
+            seen.trackedSince
+        ) { events, activities, hidden, opened, since ->
+            val now = events.data?.map { e ->
+                Notice("event-${e.id}", parseInstant(e.createdAt), event = e)
+            }.orEmpty()
+            // Only the activities done from the first visit on count: the older ones are history.
+            val done = activities.data?.items.orEmpty()
+                .filter { a -> parseInstant(a.startUtc)?.toEpochMilli()?.let { it >= since } ?: false }
+                .map { a -> Notice("activity-${a.id}", parseInstant(a.startUtc), activity = a) }
+            val data =
+                if (events.data == null && activities.data == null) {
+                    null
+                } else {
+                    (now + done)
+                        .filterNot { it.key in hidden }
+                        .map { it.copy(read = it.key in opened) }
+                        .sortedByDescending { it.at }
+                }
+            NotificationsUi(
+                data = data,
+                loading = data == null && (events.loading || activities.loading),
+                failure = events.failure ?: activities.failure
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, NotificationsUi())
 
     fun refresh() {
-        viewModelScope.launch { query.refresh() }
+        viewModelScope.launch {
+            eventsQuery.refreshIfStale()
+            activitiesQuery.refreshIfStale()
+        }
+    }
+
+    fun markSeen() = seen.markSeen()
+
+    fun markRead(notice: Notice) = seen.markRead(notice.key)
+
+    fun delete(notice: Notice) = seen.delete(notice.key)
+
+    fun deleteAll() {
+        seen.delete(notices.value.data.orEmpty().map { it.key })
+    }
+}
+
+/** What the bell counts: events and activities that arrived after the last visit. */
+@HiltViewModel
+class NotificationsBadgeModel
+@Inject
+constructor(store: Store, seen: NotificationsSeen) : ViewModel() {
+    private val eventsQuery = store.query("tools/events", ListSerializer(EventOut.serializer())) { api ->
+        call { api.service<TrainingApi>().listEvents() }
+    }
+    private val activitiesQuery = store.query("tools/activities", ActivityPage.serializer()) { api ->
+        call { api.service<ActivitiesApi>().listActivities(limit = 20) }
+    }
+    val unread: StateFlow<Int> =
+        combine(eventsQuery.state, activitiesQuery.state, seen.seenAt, seen.hidden) { events, activities, at, hidden ->
+            val from = events.data?.map { "event-${it.id}" to parseInstant(it.createdAt) }.orEmpty() +
+                activities.data?.items?.map { "activity-${it.id}" to parseInstant(it.startUtc) }.orEmpty()
+            from.count { (key, instant) ->
+                key !in hidden && instant != null && instant.toEpochMilli() > at
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    fun refresh() {
+        viewModelScope.launch {
+            eventsQuery.refreshIfStale()
+            activitiesQuery.refreshIfStale()
+        }
     }
 }

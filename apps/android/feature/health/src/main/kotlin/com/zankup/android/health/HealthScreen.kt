@@ -19,8 +19,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,12 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +50,7 @@ import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupPullToRefresh
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -88,6 +87,7 @@ import kotlin.math.roundToInt
  * (sleep, heart, readiness and form). Sync and settings are in the header with the period. With no
  * data at all it offers [onConnect]. [listState] lets the tab bar scroll it back to the top.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthScreen(
     onWeight: () -> Unit,
@@ -111,22 +111,11 @@ fun HealthScreen(
         // The tab bar already holds the navigation inset; keep the content's end gap like Home's.
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            Box {
-                ZankupTopBar(stringResource(R.string.health_title)) {
-                    SyncButton(syncing, model::sync)
-                    IconButton(onClick = onSettings) {
-                        ZankupIcon(ZIcon.Settings, contentDescription = stringResource(R.string.health_settings))
-                    }
-                    PeriodMenu(period, model::setPeriod)
+            ZankupTopBar(stringResource(R.string.health_title)) {
+                IconButton(onClick = onSettings) {
+                    ZankupIcon(ZIcon.Settings, contentDescription = stringResource(R.string.health_settings))
                 }
-                // The sync runs under the bar's edge, in the theme's accent, not turning its icon.
-                if (syncing) {
-                    LinearProgressIndicator(
-                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp),
-                        color = colors.accent,
-                        trackColor = Color.Transparent
-                    )
-                }
+                PeriodMenu(period, model::setPeriod)
             }
         }
     ) { padding ->
@@ -138,55 +127,47 @@ fun HealthScreen(
         val lastNight = list.lastOrNull { it.sleep != null }
         val latest = list.lastOrNull()
         val nights = list.filter { it.sleep != null }
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = padding.calculateStartPadding(direction),
-                end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding() + spacing.s,
-                bottom = padding.calculateBottomPadding() + spacing.l
-            ),
-            verticalArrangement = Arrangement.spacedBy(spacing.s)
+        // As Home and Activities: a pull from the top syncs the watch's health again.
+        ZankupPullToRefresh(
+            refreshing = syncing,
+            onRefresh = model::sync,
+            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())
         ) {
-            if (syncFailed) item("sync-error") { ErrorLine(side) }
-            when {
-                days.loading -> item("skeleton") { Box(side) { HealthSkeleton() } }
-                days.data == null -> item("error") { ErrorLine(side) }
-                list.isEmpty() -> item("none") {
-                    ZankupCard(side) {
-                        Text(stringResource(R.string.health_none), color = colors.fg)
-                        Button(onClick = onConnect, Modifier.padding(top = spacing.sm)) {
-                            Text(stringResource(R.string.health_connect))
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = padding.calculateStartPadding(direction),
+                    end = padding.calculateEndPadding(direction),
+                    top = spacing.s,
+                    bottom = padding.calculateBottomPadding() + spacing.l
+                ),
+                verticalArrangement = Arrangement.spacedBy(spacing.s)
+            ) {
+                if (syncFailed) item("sync-error") { ErrorLine(side) }
+                when {
+                    days.loading -> item("skeleton") { Box(side) { HealthSkeleton() } }
+                    days.data == null -> item("error") { ErrorLine(side) }
+                    list.isEmpty() -> item("none") {
+                        ZankupCard(side) {
+                            Text(stringResource(R.string.health_none), color = colors.fg)
+                            Button(onClick = onConnect, Modifier.padding(top = spacing.sm)) {
+                                Text(stringResource(R.string.health_connect))
+                            }
                         }
                     }
                 }
-            }
-            lastNight?.sleep?.let { sleep ->
-                item("night") { Box(side) { LastNight(model, lastNight, sleep) } }
-            }
-            latest?.let { day -> item("today") { Box(side) { Today(day, model.today) } } }
-            weight.data?.let { w -> item("weight") { Box(side) { WeightCard(w, model.today, onWeight) } } }
-            if (list.isNotEmpty()) {
-                val span = healthSpan(list, range)
-                item("trends") { Box(side) { Trends(span, nights, latest) } }
+                lastNight?.sleep?.let { sleep ->
+                    item("night") { Box(side) { LastNight(model, lastNight, sleep) } }
+                }
+                latest?.let { day -> item("today") { Box(side) { Today(day, model.today) } } }
+                weight.data?.let { w -> item("weight") { Box(side) { WeightCard(w, model.today, onWeight) } } }
+                if (list.isNotEmpty()) {
+                    val span = healthSpan(list, range)
+                    item("trends") { Box(side) { Trends(span, nights, latest) } }
+                }
             }
         }
-    }
-}
-
-/** The sync button: it stays still and the bar's edge shows the progress while the sync runs. */
-@Composable
-private fun SyncButton(syncing: Boolean, onSync: () -> Unit) {
-    val colors = ZankupTheme.colors
-    val label = stringResource(R.string.health_sync)
-    val busy = stringResource(R.string.health_syncing)
-    IconButton(
-        onClick = onSync,
-        enabled = !syncing,
-        modifier = Modifier.semantics { if (syncing) stateDescription = busy }
-    ) {
-        ZankupIcon(ZIcon.Sync, contentDescription = label, tint = if (syncing) colors.accent else colors.fg)
     }
 }
 
@@ -406,7 +387,7 @@ private fun WeightCard(weighings: List<WeightOut>, today: LocalDate, onOpen: () 
                 ),
                 days = values.map { "" },
                 description = title,
-                height = 160.dp,
+                height = 200.dp,
                 legend = false
             )
         }

@@ -97,8 +97,14 @@ fun HealthSettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                // The settings' measures: the side gutter, 8 dp on top and between cards, 24 dp at the end.
+                .padding(
+                    start = ZankupTheme.spacing.gutter,
+                    top = ZankupTheme.spacing.s,
+                    end = ZankupTheme.spacing.gutter,
+                    bottom = ZankupTheme.spacing.l
+                ),
+            verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
         ) {
             History(model)
             HealthConnectCard(model)

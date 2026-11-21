@@ -141,7 +141,7 @@ constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
-        viewModelScope.launch { first.refresh() }
+        viewModelScope.launch { first.refreshIfStale() }
         viewModelScope.launch {
             first.state.map { it.data?.nextCursor }.distinctUntilChanged().collect { cursor ->
                 more.start(from = cursor, loadFirst = false, fetch = ::feedPage)

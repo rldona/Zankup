@@ -1,6 +1,8 @@
 package com.zankup.android.map
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -14,6 +16,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -30,10 +33,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.zankup.android.designsystem.theme.ZankupTheme
-import java.util.concurrent.atomic.AtomicBoolean
+import java.io.File
+import kotlin.coroutines.resume
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import org.maplibre.android.MapLibre
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -47,8 +57,9 @@ private val snapshots = object : LruCache<String, androidx.compose.ui.graphics.I
 
 /**
  * A route on its real map: a MapLibre snapshot with the line drawn on top, for the route list's
- * thumbnail. The bitmap is cached, and if the map cannot be loaded the line is drawn on the card colour
- * alone, so a route never disappears offline.
+ * thumbnail. The bitmap is cached in memory and on disk (so a restart does not render every route again),
+ * at most two snapshotters run at once, and if the map cannot be loaded the line is drawn on the card
+ * colour alone, so a route never disappears offline.
  */
 @Composable
 fun RouteSnapshot(
@@ -66,6 +77,7 @@ fun RouteSnapshot(
         "${points.size}:${points.hashCode()}:${colour.value}:$style:${width.value}:${height.value}:${density.density}"
     }
     var image by remember(key) { mutableStateOf(snapshots.get(key)) }
+    val scope = rememberCoroutineScope()
 
     DisposableEffect(key) {
         if (image != null || points.size < 2) return@DisposableEffect onDispose { }
@@ -80,22 +92,26 @@ fun RouteSnapshot(
             .withPixelRatio(density.density)
             .withLogo(false)
             .withAttribution(false)
-        MapLibre.getInstance(context)
-        val snapshotter = MapSnapshotter(context, options)
-        val cancelled = AtomicBoolean(false)
-        snapshotter.start({ snapshot ->
-            if (cancelled.get()) return@start
-            val rendered = snapshot.drawRoute(points, colour, density.density)
-            if (rendered != null) {
-                val bitmap = rendered.asImageBitmap()
-                snapshots.put(key, bitmap)
-                image = bitmap
+        val job = scope.launch {
+            // Disk first: a route seen before a restart does not pay for the map again.
+            val kept = withContext(Dispatchers.IO) { readSnapshot(context, key) }
+            if (kept != null) {
+                kept.asImageBitmap().also {
+                    snapshots.put(key, it)
+                    image = it
+                }
+                return@launch
             }
-        }, { if (!cancelled.get()) image = null })
-        onDispose {
-            cancelled.set(true)
-            snapshotter.cancel()
+            MapLibre.getInstance(context)
+            val rendered = renderGate.withPermit {
+                awaitSnapshot(context, options, points, colour, density.density)
+            } ?: return@launch
+            val bitmap = rendered.asImageBitmap()
+            snapshots.put(key, bitmap)
+            image = bitmap
+            withContext(Dispatchers.IO) { writeSnapshot(context, key, rendered) }
         }
+        onDispose { job.cancel() }
     }
 
     Box(modifier) {
@@ -107,6 +123,43 @@ fun RouteSnapshot(
                 contentScale = ContentScale.Crop
             )
         } ?: FallbackRoute(points, colour, Modifier.fillMaxSize())
+    }
+}
+
+/** At most this many snapshotters at once: a list of cards must not start one per route. */
+private val renderGate = Semaphore(2)
+
+private suspend fun awaitSnapshot(
+    context: Context,
+    options: MapSnapshotter.Options,
+    points: List<Pair<Double, Double>>,
+    colour: Color,
+    density: Float
+): Bitmap? = suspendCancellableCoroutine { cont ->
+    val snapshotter = MapSnapshotter(context, options)
+    snapshotter.start({ snapshot ->
+        if (cont.isActive) cont.resume(snapshot.drawRoute(points, colour, density))
+    }, { if (cont.isActive) cont.resume(null) })
+    cont.invokeOnCancellation { snapshotter.cancel() }
+}
+
+private fun snapshotFile(context: Context, key: String): File =
+    File(File(context.cacheDir, "route-snapshots").apply { mkdirs() }, "${key.hashCode().toString(16)}.webp")
+
+private fun readSnapshot(context: Context, key: String): Bitmap? {
+    val file = snapshotFile(context, key)
+    if (!file.exists()) return null
+    return runCatching { BitmapFactory.decodeFile(file.path) }.getOrNull()
+}
+
+private fun writeSnapshot(context: Context, key: String, bitmap: Bitmap) {
+    runCatching {
+        val file = snapshotFile(context, key)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP, 90, it) }
+        // A few hundred portraits are plenty; the oldest go first.
+        file.parentFile?.listFiles()?.takeIf { it.size > 200 }?.sortedBy { it.lastModified() }?.let { all ->
+            all.take(all.size - 200).forEach { it.delete() }
+        }
     }
 }
 

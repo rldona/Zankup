@@ -92,6 +92,7 @@ import com.zankup.android.ui.sportName
 import com.zankup.android.ui.sportOf
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 /** A card's title, as the React Native app's (17, bold). */
 @Composable
@@ -836,7 +837,7 @@ internal fun PowerCurveCard(a: ActivityDetail, model: ActivityModel) {
             durationLabel = ::durationLabel,
             axisFormat = { "%.0f".format(it) },
             unitLabel = "W",
-            height = 230.dp
+            height = 200.dp
         )
     }
 }
@@ -1134,10 +1135,7 @@ internal fun SetsBlock(a: ActivityDetail) {
 internal fun Photos(a: ActivityDetail, model: ActivityModel) {
     val context = LocalContext.current
     val http = model.http ?: return
-    val loader =
-        remember(http) {
-            ImageLoader.Builder(context).components { add(OkHttpNetworkFetcherFactory(callFactory = { http })) }.build()
-        }
+    val loader = remember(http) { PhotoLoader.of(context, http) }
     var open by remember { mutableStateOf<Int?>(null) }
     Block(stringResource(R.string.photos)) {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1156,7 +1154,13 @@ internal fun Photos(a: ActivityDetail, model: ActivityModel) {
         val photo = a.photoList.first { it.id == id }
         ZankupSheet(onDismiss = { open = null }) {
             AsyncImage(
-                model = model.photoUrl(id, thumb = false),
+                model =
+                coil3.request.ImageRequest
+                    .Builder(context)
+                    .data(model.photoUrl(id, thumb = false))
+                    // A phone's sheet never needs more than this: the original can be many times bigger.
+                    .size(1080, 1920)
+                    .build(),
                 imageLoader = loader,
                 contentDescription = photo.caption,
                 modifier = Modifier.fillMaxWidth().aspectRatio(photo.width.toFloat() / photo.height.coerceAtLeast(1))
@@ -1290,5 +1294,29 @@ internal fun SheetButtons(onCancel: () -> Unit, content: @Composable () -> Unit)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
         content()
+    }
+}
+
+/**
+ * One loader for every activity's photos: its memory cache lives across screens instead of being built
+ * and thrown away each time one opens. It is rebuilt when the session's client changes.
+ */
+private object PhotoLoader {
+    @Volatile private var client: OkHttpClient? = null
+
+    @Volatile private var loader: ImageLoader? = null
+
+    fun of(context: Context, http: OkHttpClient): ImageLoader {
+        loader?.takeIf { client === http }?.let { return it }
+        return synchronized(this) {
+            loader?.takeIf { client === http } ?: ImageLoader
+                .Builder(context)
+                .components { add(OkHttpNetworkFetcherFactory(callFactory = { http })) }
+                .build()
+                .also {
+                    loader = it
+                    client = http
+                }
+        }
     }
 }

@@ -199,7 +199,7 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                             ),
                             labels,
                             "$title ${weightText(fromUnit(shown.last(), formats.units))}",
-                            height = 160.dp,
+                            height = 200.dp,
                             legend = false,
                             format = { com.zankup.android.domain.formatNumber(it, formats.locale, 0, 1) }
                         )

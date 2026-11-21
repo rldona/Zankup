@@ -1,10 +1,5 @@
 package com.zankup.android.progress.ui
 
-import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -24,16 +18,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zankup.android.charts.ChartCursor
@@ -63,37 +55,6 @@ private fun DrawScope.halo(center: Offset, outer: Float, inner: Float, color: Co
 }
 
 /**
- * A tick for every ball under the finger, or crossed while sliding sideways, on the cards' small
- * charts. A vertical swipe is left to the page, and the card's tap still works.
- */
-internal fun Modifier.ballHaptics(count: Int, ballAt: (Offset, IntSize) -> Int?): Modifier = composed {
-    val view = LocalView.current
-    pointerInput(count) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            var last = ballAt(down.position, size)
-            last?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-            val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
-            if (drag != null) {
-                val at = ballAt(drag.position, size)
-                if (at != last) {
-                    last = at
-                    at?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                }
-                horizontalDrag(drag.id) { change ->
-                    val now = ballAt(change.position, size)
-                    if (now != last) {
-                        last = now
-                        now?.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                    }
-                    change.consume()
-                }
-            }
-        }
-    }
-}
-
-/**
  * Volume over time as Strava's Progress draws it: a line over a solid fill, a ring on each point when
  * there are few, the axis on the left inside a frame and months (or days) along the bottom; optionally
  * the span before as a second line. With a [cursor], touch or a sideways slide picks a point (a rule
@@ -114,7 +75,7 @@ internal fun VolumeChart(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val view = LocalView.current
+    val haptics = LocalHapticFeedback.current
     val count = values.size
     val rings = count <= 60
     val morph = rememberMorph(values.map { it.toFloat() })
@@ -136,7 +97,7 @@ internal fun VolumeChart(
                         val step = if (count > 1) plot / (count - 1) else 1f
                         val i = ((px - left) / step).roundToInt().coerceIn(0, (count - 1).coerceAtLeast(0))
                         if (count > 0 && i != cursor.index) {
-                            if (rings) view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             cursor.index = i
                             pick(i)
                         }
@@ -174,6 +135,13 @@ internal fun VolumeChart(
                         drawText(t, topLeft = Offset(lx, base + 8.dp.toPx()))
                     }
                     if (count == 0) return@onDrawBehind
+                    // The frame and the rule go under the line and its rings: nothing cuts them.
+                    drawRect(
+                        colors.line,
+                        Offset(left, top),
+                        Size(plot, base - top),
+                        style = Stroke(1.5.dp.toPx())
+                    )
                     val points = List(count) { Offset(x(it), y(morph.at(it))) }
                     drawPath(areaPath(points, base), colors.accent.copy(alpha = 0.3f))
                     if (previous != null && before.to.size > 1) {
@@ -181,17 +149,13 @@ internal fun VolumeChart(
                         drawPath(linePath(pts), colors.fatigue, style = Stroke(2.dp.toPx(), join = StrokeJoin.Round))
                     }
                     drawPath(linePath(points), colors.accent, style = Stroke(3.dp.toPx(), join = StrokeJoin.Round))
+                    val at = cursor?.index?.takeIf { it in 0 until count }
+                    if (at != null) {
+                        val p = points[at]
+                        drawLine(colors.fg, Offset(p.x, top), Offset(p.x, base), 2.dp.toPx())
+                    }
                     if (rings) points.forEach { ring(it, 4.5.dp.toPx(), colors.surface, colors.accent, 2.dp.toPx()) }
-                    drawRect(
-                        colors.line,
-                        Offset(left, top),
-                        Size(plot, base - top),
-                        style = Stroke(1.5.dp.toPx())
-                    )
-                    val at = cursor?.index?.takeIf { it in 0 until count } ?: return@onDrawBehind
-                    val p = points[at]
-                    drawLine(colors.fg, Offset(p.x, top), Offset(p.x, base), 2.dp.toPx())
-                    halo(p, 14.dp.toPx(), 7.dp.toPx(), colors.accent, 0.3f)
+                    at?.let { index -> halo(points[index], 14.dp.toPx(), 7.dp.toPx(), colors.accent, 0.3f) }
                 }
             }
     )
@@ -216,11 +180,10 @@ internal fun FitnessChart(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val view = LocalView.current
+    val haptics = LocalHapticFeedback.current
     val count = values.size
     val ticks = remember(values) { fitnessScale(values) }
     val max = ticks.last().toFloat().takeIf { it > 0 } ?: 1f
-    val maxLoad = loads.maxOrNull() ?: 0.0
     val morph = rememberMorph(values.map { it.toFloat() })
     val pick by rememberUpdatedState(onPick)
     val muted = TextStyle(color = colors.muted, fontSize = 11.sp)
@@ -238,9 +201,7 @@ internal fun FitnessChart(
                 val i = ((px - axis) / step).roundToInt().coerceIn(0, (count - 1).coerceAtLeast(0))
                 val now = if (cursor.index < 0) count - 1 else cursor.index
                 if (count > 0 && i != now) {
-                    if (showLoads && loadRadius(loads.getOrElse(i) { 0.0 }, maxLoad) > 0) {
-                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                    }
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     cursor.index = i
                     pick(i)
                 }
@@ -281,15 +242,16 @@ internal fun FitnessChart(
                         colors.accent,
                         style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
-                    if (showLoads) {
-                        points.forEachIndexed { i, p ->
-                            val r = loadRadius(loads.getOrElse(i) { 0.0 }, maxLoad)
-                            if (r > 0) ring(p, r.dp.toPx(), colors.bg, colors.accent, 2.dp.toPx())
-                        }
-                    }
+                    // The picked day's rule first, so its ring is not cut by it.
                     val at = (if (cursor.index < 0) count - 1 else cursor.index).coerceIn(0, count - 1)
                     val p = points[at]
                     drawLine(colors.accent, Offset(p.x, max(0f, p.y - 24.dp.toPx())), Offset(p.x, base), 1.5.dp.toPx())
+                    if (showLoads) {
+                        points.forEachIndexed { i, point ->
+                            val r = loadRadius(loads.getOrElse(i) { 0.0 })
+                            if (r > 0) ring(point, r.dp.toPx(), colors.bg, colors.accent, 1.5.dp.toPx())
+                        }
+                    }
                     halo(p, 15.dp.toPx(), 7.dp.toPx(), colors.accent, 0.25f)
                     val badge = measurer.measure(values[at].roundToInt().toString(), badgeStyle)
                     val w = 48.dp.toPx()
@@ -321,39 +283,10 @@ internal fun Sparkline(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
     val style = TextStyle(color = colors.muted, fontSize = 12.sp)
     if (values.isEmpty()) return
-    val leftPx = with(density) { (if (first != null) left else 6).dp.toPx() }
-    val padPx = with(density) { (if (inverted) 12 else 14).dp.toPx() }
-    val hitPx = with(density) { 18.dp.toPx() }
     Spacer(
         modifier.size(width.dp, height.dp)
-            .ballHaptics(values.size) { at, size ->
-                val lo = values.min()
-                val hi = values.max()
-                val span = hi - lo
-                val step = if (values.size > 1) (size.width - leftPx - padPx) / (values.size - 1) else 0f
-                fun point(i: Int): Offset {
-                    val y = if (inverted) {
-                        if (span > 0) {
-                            padPx + (values[i] - lo) / span * (size.height - 2 * padPx)
-                        } else {
-                            size.height / 2f
-                        }
-                    } else {
-                        padPx + (1 - (values[i] - lo) / (if (span > 0) span else 1.0)) *
-                            (size.height - 2 * padPx)
-                    }
-                    return Offset(leftPx + i * step, y.toFloat())
-                }
-                listOf(0, values.lastIndex).distinct().firstOrNull { i ->
-                    val p = point(i)
-                    val dx = at.x - p.x
-                    val dy = at.y - p.y
-                    dx * dx + dy * dy <= hitPx * hitPx
-                }
-            }
             .drawWithCache {
                 val l = (if (first != null) left else 6).dp.toPx()
                 val pad = (if (inverted) 12 else 14).dp.toPx()
@@ -493,37 +426,13 @@ internal fun WeekSoFar(
 ) {
     val colors = ZankupTheme.colors
     val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
     val now = com.zankup.android.domain.cumulative(thisWeek, today)
     val before = com.zankup.android.domain.cumulative(lastWeek)
     val muted = TextStyle(color = colors.muted, fontSize = 12.sp)
     val strong = TextStyle(color = colors.fg, fontSize = 12.sp)
-    val leftPx = with(density) { 52.dp.toPx() }
-    val insetPx = with(density) { 4.dp.toPx() }
-    val rightPx = with(density) { 8.dp.toPx() }
-    val hitPx = with(density) { 18.dp.toPx() }
-    val topPx = with(density) { 8.dp.toPx() }
-    val bottomPx = with(density) { 24.dp.toPx() }
     val most = listOfNotNull(1.0, range?.hi?.toDouble(), before.lastOrNull(), now.lastOrNull()).max() * 1.1
     Spacer(
         modifier.size((132 + 52).dp, 104.dp)
-            .ballHaptics(7) { at, size ->
-                val width = size.width - leftPx
-                val plot = width - rightPx
-                val base = size.height - bottomPx
-                fun point(i: Int): Offset {
-                    val x = leftPx + insetPx + i / 6f * (plot - insetPx * 2)
-                    val y = base - now[i] / most * (base - topPx)
-                    return Offset(x, y.toFloat())
-                }
-                listOf(0, now.lastIndex).distinct().firstOrNull { i ->
-                    if (i !in now.indices) return@firstOrNull false
-                    val p = point(i)
-                    val dx = at.x - p.x
-                    val dy = at.y - p.y
-                    dx * dx + dy * dy <= hitPx * hitPx
-                }
-            }
             .drawWithCache {
                 val left = 52.dp.toPx()
                 val width = size.width - left

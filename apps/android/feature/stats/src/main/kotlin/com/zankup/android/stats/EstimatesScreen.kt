@@ -52,8 +52,14 @@ fun EstimatesScreen(onBack: () -> Unit, onOpenActivity: (Long) -> Unit, model: E
                 val races = RACES.mapNotNull { by[it] }
                 LazyColumn(
                     Modifier.padding(padding),
-                    contentPadding = PaddingValues(ZankupTheme.spacing.gutter),
-                    verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
+                    contentPadding = PaddingValues(
+                        start = ZankupTheme.spacing.gutter,
+                        top = ZankupTheme.spacing.s,
+                        end = ZankupTheme.spacing.gutter,
+                        bottom = ZankupTheme.spacing.l
+                    ),
+                    // The same gap between cards as the tabs'.
+                    verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
                 ) {
                     items(main, key = { it.kind }) { EstimateCard(it, onOpenActivity) }
                     if (races.isNotEmpty()) item(key = "races") { RacesCard(races) }
@@ -68,7 +74,8 @@ fun EstimatesScreen(onBack: () -> Unit, onOpenActivity: (Long) -> Unit, model: E
 private fun EstimateCard(e: EstimateOut, onOpenActivity: (Long) -> Unit) {
     val f = LocalFormats.current
     val name = estimateName(e.kind)
-    ZankupCard {
+    // Not clipped: the chart's bubble rises over the title, as in the other stats cards.
+    ZankupCard(clip = false) {
         Row(
             Modifier.fillMaxWidth().padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -83,10 +90,10 @@ private fun EstimateCard(e: EstimateOut, onOpenActivity: (Long) -> Unit) {
         if (e.history.size > 1) {
             LinesChart(
                 lines = listOf(ChartLine(name, e.history.map { it.value.toFloat() }, ZankupTheme.colors.accent)),
-                xLabels = emptyList(),
+                xLabels = e.history.map { dayLabel(it.day, f) },
                 format = { estimateValue(e.kind, it.toDouble(), f) },
                 description = name,
-                height = 48.dp
+                height = CHART_HEIGHT
             )
         }
         FlowRow(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.Center) {

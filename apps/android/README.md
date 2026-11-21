@@ -65,6 +65,27 @@ cd apps/android
 
 CI runs all of them and the release build (`.github/workflows/android-native.yml`).
 
+## Performance
+
+The debug build carries two tools that only log (they cost nothing in release):
+
+- **Requests** (`adb logcat -s ZankupNet`): one line per API call with its place in the session, how many
+  times that same call was made and the session's totals — `#13 GET /api/auth/me (2×) total=13 repeated=2`.
+  It shows duplicated calls and whether a screen revalidates more than it should.
+- **Frames** (`adb logcat -s ZankupJank`): the frames that miss their deadline, with the screen drawing
+  when they did — `screen=ActivityRoute/{id} frame=105.9ms`. It comes from JankStats, in the debug source set.
+
+The frame timings of the journeys are measured on the phone with the Baseline Profile on:
+
+```bash
+./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.zankup.android.baselineprofile.Frames
+```
+
+`Frames` covers the cold start, the feed's scroll, push/pop of an activity, Progress's scroll and the
+Training chart's scrub. The journeys are in `baselineprofile/.../Journeys.kt` and use the screens'
+`testTag`s (`feed`, `activity`, `progress`, `fitness`, `fitness_chart`), which the shell exposes as resource ids.
+
 ## Motion
 
 The screen transitions are Strava's: measured on the S26, frame by frame, from a `screenrecord` of its

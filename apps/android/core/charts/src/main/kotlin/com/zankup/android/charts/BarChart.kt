@@ -114,7 +114,7 @@ fun BarChart(
                     horizontalDrag(drag.id) { change ->
                         val index = barAt(change.position.x)
                         if (index != last) {
-                            haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             last = index
                             select(index)
                         }
