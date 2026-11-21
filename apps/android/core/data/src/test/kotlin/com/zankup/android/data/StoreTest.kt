@@ -4,10 +4,14 @@ import androidx.room.Room
 import com.zankup.android.network.ApiResult
 import com.zankup.android.network.MemoryTokenStore
 import com.zankup.android.network.ZankupApi
+import com.zankup.android.network.ZankupJson
 import com.zankup.android.session.ApiSource
 import java.io.IOException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -15,6 +19,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,5 +96,60 @@ class StoreTest {
         val query = store.query("week", Totals.serializer()) { ApiResult.Ok(Totals(0.0)) }
         assertNull(query.state.first { it.data == null }.data)
         assertNull(store.streams(1, Totals.serializer()))
+    }
+
+    @Test
+    fun oneKeyIsOneQueryAndOneFetch() = runBlocking {
+        var calls = 0
+        val first = store.query("week", Totals.serializer()) {
+            calls++
+            delay(100)
+            ApiResult.Ok(Totals(12.0))
+        }
+        val second = store.query("week", Totals.serializer()) {
+            calls++
+            ApiResult.Ok(Totals(99.0))
+        }
+        assertSame(first, second)
+        coroutineScope {
+            launch { first.refresh() }
+            launch { second.refresh() }
+        }
+        assertEquals(1, calls)
+        assertEquals(Totals(12.0), first.state.first { it.data == Totals(12.0) }.data)
+    }
+
+    @Test
+    fun aFreshAnswerIsNotFetchedWhenAScreenOpens() = runBlocking {
+        var calls = 0
+        store.put("week", Totals.serializer(), Totals(10.0))
+        val query = store.query("week", Totals.serializer()) {
+            calls++
+            ApiResult.Ok(Totals(12.0))
+        }
+        query.refreshIfStale()
+        assertEquals(0, calls)
+        query.refresh()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun anOldAnswerIsFetchedWhenAScreenOpens() = runBlocking {
+        var calls = 0
+        val old = System.currentTimeMillis() - 11 * 60_000L
+        database.answers().put(Answer("week", ZankupJson.encodeToString(Totals.serializer(), Totals(10.0)), old))
+        val query = store.query("week", Totals.serializer()) {
+            calls++
+            ApiResult.Ok(Totals(12.0))
+        }
+        query.refreshIfStale()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun theFeedGoesStaleSoonerThanTheProfile() {
+        assertEquals(2 * 60_000L, Store.ttlFor(CacheKeys.FEED_FIRST))
+        assertTrue(Store.ttlFor("auth/me") > Store.ttlFor("stats/estimates"))
+        assertEquals(5 * 60_000L, Store.ttlFor("something/else"))
     }
 }

@@ -15,8 +15,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Starts loading an activity — itself, its context and its series — as the finger lands on its card,
- * so the screen opens with them already kept. Each part is fetched once at a time.
+ * Starts loading an activity — itself, its context and its series — as the finger lands on it, so the
+ * screen opens with them already kept. It goes through the same [Query] the screen uses, so the screen
+ * opening waits for this one instead of asking again. Each part is fetched once at a time.
  */
 @Singleton
 class Prefetch
@@ -31,16 +32,14 @@ constructor(private val store: Store, private val source: ApiSource) {
         scope.launch {
             try {
                 val activities = api.service<ActivitiesApi>()
-                launch {
-                    (call { activities.getActivity(id.toInt()) } as? ApiResult.Ok)?.let {
-                        store.put(CacheKeys.activity(id), ActivityDetail.serializer(), it.value)
-                    }
+                val detail = store.query(CacheKeys.activity(id), ActivityDetail.serializer()) {
+                    call { it.service<ActivitiesApi>().getActivity(id.toInt()) }
                 }
-                launch {
-                    (call { activities.getActivityContext(id.toInt()) } as? ApiResult.Ok)?.let {
-                        store.put(CacheKeys.context(id), ActivityContext.serializer(), it.value)
-                    }
+                val context = store.query(CacheKeys.context(id), ActivityContext.serializer()) {
+                    call { it.service<ActivitiesApi>().getActivityContext(id.toInt()) }
                 }
+                launch { detail.refresh() }
+                launch { context.refresh() }
                 if (!store.hasStreams(id)) {
                     (call { activities.getActivityStreams(id.toInt()) } as? ApiResult.Ok)?.let {
                         store.putStreams(id, ActivityStreams.serializer(), it.value)

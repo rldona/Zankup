@@ -47,8 +47,10 @@ import kotlinx.serialization.builtins.serializer
 
 private const val STOP_AFTER_MS = 5_000L
 
-/** The engine is asked again this often while it recomputes. */
+/** The engine is asked again this often while it recomputes, waiting longer each time up to a cap. */
 internal const val ENGINE_POLL_MS = 3_000L
+internal const val ENGINE_POLL_STEP_MS = 2_000L
+internal const val ENGINE_POLL_MAX_MS = 10_000L
 
 /**
  * The kept answer for each [keys] value, refreshed as it is first shown: a new period, month or sport
@@ -59,12 +61,12 @@ internal fun <K, T> ViewModel.follow(keys: Flow<K>, query: (K) -> Query<T>): Sta
     .distinctUntilChanged()
     .flatMapLatest { key ->
         val q = query(key)
-        q.state.onStart { viewModelScope.launch { q.refresh() } }
+        q.state.onStart { viewModelScope.launch { q.refreshIfStale() } }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), Loadable())
 
-/** One fixed query, refreshed each time the screen opens. */
+/** One fixed query, refreshed each time the screen opens when what is kept is older than its time. */
 internal fun <T> ViewModel.once(query: Query<T>): StateFlow<Loadable<T>> = query.state
-    .onStart { viewModelScope.launch { query.refresh() } }
+    .onStart { viewModelScope.launch { query.refreshIfStale() } }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), Loadable())
 
 private fun Period.key() = "$from/$to"
@@ -146,15 +148,17 @@ constructor(private val store: Store, private val source: ApiSource) : ViewModel
 
     /** Called when the screen opens: the years, and the engine until it is idle. */
     fun open() {
-        viewModelScope.launch { years.refresh() }
+        viewModelScope.launch { years.refreshIfStale() }
         if (polling?.isActive == true) return
         polling = viewModelScope.launch {
+            var wait = ENGINE_POLL_MS
             while (true) {
                 val api = source.api ?: break
                 val status = (call { api.service<TrainingApi>().getEngine() } as? ApiResult.Ok)?.value
                 engineState.value = status
                 if (status?.running != true) break
-                delay(ENGINE_POLL_MS)
+                delay(wait)
+                wait = (wait + ENGINE_POLL_STEP_MS).coerceAtMost(ENGINE_POLL_MAX_MS)
             }
         }
     }
@@ -261,7 +265,7 @@ constructor(private val store: Store) : ViewModel() {
                 }
                 call { api.service<StatsApi>().getReview(p, value) }
             }
-            q.state.onStart { viewModelScope.launch { q.refresh() } }
+            q.state.onStart { viewModelScope.launch { q.refreshIfStale() } }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_AFTER_MS), Loadable())
 
     /** The period the screen was opened on, this month or this year; kept once moved. */

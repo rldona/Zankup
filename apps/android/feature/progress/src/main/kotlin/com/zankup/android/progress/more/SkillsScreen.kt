@@ -106,9 +106,9 @@ constructor(store: Store) : ViewModel() {
         }
 
     init {
-        viewModelScope.launch { recent.refresh() }
-        viewModelScope.launch { all.refresh() }
-        viewModelScope.launch { me.refresh() }
+        viewModelScope.launch { recent.refreshIfStale() }
+        viewModelScope.launch { all.refreshIfStale() }
+        viewModelScope.launch { me.refreshIfStale() }
     }
 }
 

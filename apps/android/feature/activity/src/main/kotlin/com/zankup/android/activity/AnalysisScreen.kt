@@ -79,7 +79,7 @@ fun AnalysisScreen(id: Long, onBack: () -> Unit, model: ActivityModel = hiltView
                     }
                 }
             }
-            itemsIndexed(a.splits) { i, s ->
+            itemsIndexed(a.splits, key = { i, _ -> i }) { i, s ->
                 Row(
                     Modifier
                         .fillMaxWidth()

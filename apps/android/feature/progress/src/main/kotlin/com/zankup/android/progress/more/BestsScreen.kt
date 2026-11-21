@@ -104,7 +104,7 @@ constructor(private val store: Store) : ViewModel() {
     internal fun bests(key: String): Query<List<BestOut>> = queries.getOrPut(key) {
         store.query("more/bests/$key", ListSerializer(BestOut.serializer())) { api ->
             call { api.service<StatsApi>().getBests(key) }
-        }.also { q -> viewModelScope.launch { q.refresh() } }
+        }.also { q -> viewModelScope.launch { q.refreshIfStale() } }
     }
 }
 

@@ -19,8 +19,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zankup.android.designsystem.components.ZankupPullToRefresh
 import com.zankup.android.designsystem.components.ZankupSheet
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -63,6 +67,7 @@ fun ProgressScreen(
 ) {
     LaunchedEffect(Unit) { model.refresh() }
     var series by rememberSaveable { mutableStateOf(false) }
+    val refreshing by model.refreshing.collectAsStateWithLifecycle()
     val colors = ZankupTheme.colors
     Scaffold(
         modifier = modifier,
@@ -74,30 +79,37 @@ fun ProgressScreen(
         val direction = LocalLayoutDirection.current
         val spacing = ZankupTheme.spacing
         val side = Modifier.padding(horizontal = spacing.gutter)
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = padding.calculateStartPadding(direction),
-                end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding() + spacing.l
-            ),
-            verticalArrangement = Arrangement.spacedBy(spacing.s)
+        // As Home and Activities: a pull from the top fetches every card again.
+        ZankupPullToRefresh(
+            refreshing = refreshing,
+            onRefresh = model::pullRefresh,
+            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())
         ) {
-            item("volume") { Padded(side) { VolumeCard(model, onVolume) } }
-            item("series-log") {
-                Padded(side) { SeriesAndLog(model, onSeries = { series = true }, onLog = onTrainingLog) }
+            LazyColumn(
+                Modifier.fillMaxSize().testTag("progress"),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = padding.calculateStartPadding(direction),
+                    end = padding.calculateEndPadding(direction),
+                    top = 0.dp,
+                    bottom = padding.calculateBottomPadding() + spacing.l
+                ),
+                verticalArrangement = Arrangement.spacedBy(spacing.s)
+            ) {
+                item("volume") { Padded(side) { VolumeCard(model, onVolume) } }
+                item("series-log") {
+                    Padded(side) { SeriesAndLog(model, onSeries = { series = true }, onLog = onTrainingLog) }
+                }
+                item("fitness") { Padded(side) { FitnessCard(model, onFitness) } }
+                item("effort") { Padded(side) { EffortCard(model, onEffort) } }
+                item("predictions") { Padded(side) { PredictionsCard(model, onPredictions) } }
+                item("goals") { Padded(side) { GoalsCard(model, onGoals) } }
+                item("zones") { Padded(side) { ZonesCard(model, onZones) } }
+                item("skills") { Padded(side) { SkillsCard(model, onSkills) } }
+                item("bests") { Padded(side) { BestsCard(model) { onBests(null) } } }
+                item("monthly") { Padded(side) { MonthlyCard(model, onMonthly) } }
+                item("sources") { Padded(side) { DataSourcesCard(model, onSources) } }
             }
-            item("fitness") { Padded(side) { FitnessCard(model, onFitness) } }
-            item("effort") { Padded(side) { EffortCard(model, onEffort) } }
-            item("predictions") { Padded(side) { PredictionsCard(model, onPredictions) } }
-            item("goals") { Padded(side) { GoalsCard(model, onGoals) } }
-            item("zones") { Padded(side) { ZonesCard(model, onZones) } }
-            item("skills") { Padded(side) { SkillsCard(model, onSkills) } }
-            item("bests") { Padded(side) { BestsCard(model) { onBests(null) } } }
-            item("monthly") { Padded(side) { MonthlyCard(model, onMonthly) } }
-            item("sources") { Padded(side) { DataSourcesCard(model, onSources) } }
         }
     }
     if (series) {

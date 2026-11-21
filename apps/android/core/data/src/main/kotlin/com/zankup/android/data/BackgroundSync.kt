@@ -21,6 +21,8 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Background sync (OS-1121): every ~30 minutes, with a network, Android lets the app refresh the feed's
@@ -48,10 +50,14 @@ constructor(
         (call { api.service<ProfileApi>().getWeek(today) } as? ApiResult.Ok)?.let {
             store.put(CacheKeys.week(today), Week.serializer(), it.value)
         }
-        for (item in page.value.items.take(LATEST)) {
-            if (!item.hasGps || store.hasStreams(item.id.toLong())) continue
-            (call { activities.getActivityStreams(item.id) } as? ApiResult.Ok)?.let {
-                store.putStreams(item.id.toLong(), ActivityStreams.serializer(), it.value)
+        coroutineScope {
+            page.value.items.take(LATEST).forEach { item ->
+                if (!item.hasGps || store.hasStreams(item.id.toLong())) return@forEach
+                launch {
+                    (call { activities.getActivityStreams(item.id) } as? ApiResult.Ok)?.let {
+                        store.putStreams(item.id.toLong(), ActivityStreams.serializer(), it.value)
+                    }
+                }
             }
         }
         hooks.forEach { runCatching { it.afterSync(api) } }

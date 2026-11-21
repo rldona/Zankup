@@ -26,8 +26,8 @@ constructor(store: Store, userSettings: UserSettings, private val service: Servi
     }
 
     suspend fun refresh() {
-        settings.refresh()
-        latest.refresh()
+        settings.refreshIfStale()
+        latest.refreshIfStale()
     }
 
     suspend fun save(zones: List<PrivacyZone>): ApiResult<Preferences> =

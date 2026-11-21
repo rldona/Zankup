@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -156,18 +157,21 @@ fun FitnessScreen(
                     }
                     val short = range == FitnessRange.M1 || range == FitnessRange.M3
                     val todayWord = stringResource(R.string.progress_today)
-                    val labels = days.map { d ->
-                        val at = day(d.day) ?: today
-                        when {
-                            at == today -> todayWord
-                            short -> date(at, "d MMM")
-                            else -> date(at, "MMM")
+                    val locale = com.zankup.android.ui.LocalFormats.current.locale
+                    val labels = remember(days, today, short, todayWord, locale) {
+                        val pattern = if (short) "d MMM" else "MMM"
+                        val formatter = java.time.format.DateTimeFormatter.ofPattern(pattern, locale)
+                        days.map { d ->
+                            val at = day(d.day) ?: today
+                            if (at == today) todayWord else formatter.format(at)
                         }
                     }
-                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                    val values = remember(days) { days.map { it.ctl } }
+                    val loads = remember(days) { days.map { it.load } }
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().testTag("fitness_chart")) {
                         FitnessChart(
-                            values = days.map { it.ctl },
-                            loads = days.map { it.load },
+                            values = values,
+                            loads = loads,
                             labels = labels,
                             cursor = cursor,
                             showLoads = range == FitnessRange.M1,

@@ -13,6 +13,9 @@ interface TokenStore {
     suspend fun save(tokens: Tokens)
 
     suspend fun clear()
+
+    /** The tokens in memory, read without suspending: every request asks for them. */
+    fun peek(): Tokens? = null
 }
 
 class MemoryTokenStore(private var tokens: Tokens? = null) : TokenStore {
@@ -25,4 +28,6 @@ class MemoryTokenStore(private var tokens: Tokens? = null) : TokenStore {
     override suspend fun clear() {
         tokens = null
     }
+
+    override fun peek() = tokens
 }

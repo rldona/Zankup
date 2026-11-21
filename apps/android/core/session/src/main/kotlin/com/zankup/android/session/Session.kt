@@ -10,6 +10,7 @@ import com.zankup.android.network.Tokens
 import com.zankup.android.network.ZankupApi
 import com.zankup.android.network.call
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -25,6 +26,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import okhttp3.Cache
 import okhttp3.HttpUrl
 
 /** Where the app is: deciding, signed out, locked behind the fingerprint, or in. */
@@ -67,6 +70,9 @@ constructor(
     private val mutex = Mutex()
     val current: StateFlow<SessionState> = state.asStateFlow()
 
+    /** The HTTP cache: the API's answers with an ETag are revalidated with a 304, no body. */
+    private val httpCache = Cache(File(context.cacheDir, "http"), 20L * 1024 * 1024)
+
     override val api: ZankupApi? get() = (state.value as? SessionState.SignedIn)?.api
 
     override val signedOut: Flow<Boolean> = state.map { it is SessionState.SignedOut }.distinctUntilChanged()
@@ -86,6 +92,8 @@ constructor(
                 tokens = null
                 scope.launch { forget() }
             }
+
+            override fun peek() = tokens
         }
 
     val deviceName: String
@@ -95,7 +103,7 @@ constructor(
     fun parseInstance(input: String): HttpUrl? = Instance.parse(input, allowHttp = debug)
 
     /** A client with no session, for the steps before signing in. */
-    fun anonymous(instance: HttpUrl) = ZankupApi(instance, TokenStoreNone, debug)
+    fun anonymous(instance: HttpUrl) = ZankupApi(instance, TokenStoreNone, debug, httpCache = httpCache)
 
     suspend fun savedInstance(): HttpUrl? = prefs.instance()?.let(::parseInstance)
 
@@ -235,7 +243,12 @@ constructor(
         val sealed = prefs.sealed()?.takeIf { it.protection == Protection.DEVICE } ?: return null
         val refresh =
             runCatching { Vault.open(Vault.cipherFor(Protection.DEVICE, sealed.iv), sealed) }.getOrNull() ?: return null
-        return ZankupApi(instance, com.zankup.android.network.MemoryTokenStore(Tokens("", refresh)), debug)
+        return ZankupApi(
+            instance,
+            com.zankup.android.network.MemoryTokenStore(Tokens("", refresh)),
+            debug,
+            httpCache = httpCache
+        )
     }
 
     /** Signs this phone out on the server too (its device row goes), then forgets everything here. */
@@ -253,9 +266,16 @@ constructor(
         memory.tokens = null
         prefs.setSealed(null)
         runCatching { Vault.destroy() }
+        withContext(Dispatchers.IO) { runCatching { httpCache.evictAll() } }
     }
 
-    private fun client(instance: HttpUrl) = ZankupApi(instance, memory, debug) { scope.launch { forget() } }
+    private fun client(instance: HttpUrl) = ZankupApi(
+        instance,
+        memory,
+        debug,
+        onSignedOut = { scope.launch { forget() } },
+        httpCache = httpCache
+    )
 
     private fun set(next: SessionState): SessionState {
         state.value = next
