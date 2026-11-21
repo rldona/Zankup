@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.EventOut
 import com.zankup.android.designsystem.components.EmptyState
 import com.zankup.android.designsystem.components.ErrorState
+import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -74,7 +74,7 @@ fun NotificationsScreen(
                     Column(Modifier.padding(horizontal = 14.dp)) {
                         list.forEachIndexed { i, e ->
                             EventRow(e, onOpenActivity)
-                            if (i < list.lastIndex) HorizontalDivider(color = colors.line)
+                            if (i < list.lastIndex) RowDivider(inset = 0.dp)
                         }
                     }
                 }

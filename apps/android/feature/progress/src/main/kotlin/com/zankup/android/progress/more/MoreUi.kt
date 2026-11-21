@@ -18,11 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupInfoButton
 import com.zankup.android.designsystem.components.ZankupSheet
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -61,24 +59,10 @@ internal fun sportIconOf(key: String?): ZIcon = if (key == null) ZIcon.Progress 
 internal fun sportLabel(sport: Sport?): String =
     if (sport == null) stringResource(R.string.more_all_sports) else stringResource(sportName(sport))
 
-/**
- * The header's (i): opens a short explanation.
- */
+/** The header's (i): the shared explanation dialog. */
 @Composable
 internal fun InfoAction(text: String) {
-    var open by remember { mutableStateOf(false) }
-    val label = stringResource(R.string.more_info)
-    IconButton(onClick = { open = true }) {
-        ZankupIcon(ZIcon.Info, contentDescription = label, tint = ZankupTheme.colors.fg)
-    }
-    if (open) {
-        AlertDialog(
-            onDismissRequest = { open = false },
-            text = { Text(text) },
-            title = { Text(label) },
-            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.more_close)) } }
-        )
-    }
+    ZankupInfoButton(text)
 }
 
 /** Progress's range picker: the chosen one a filled accent pill, the rest accent words. */
@@ -119,7 +103,13 @@ internal fun rangeLabel(r: ProgressRange) = when (r) {
 
 /** Two options side by side in a rounded outline, the chosen one shaded with a tick (Skills' span). */
 @Composable
-internal fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onPick: (T) -> Unit) {
+internal fun <T> Segmented(
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onPick: (T) -> Unit,
+    offColor: Color = Color.Transparent
+) {
     val colors = ZankupTheme.colors
     Row(
         Modifier.fillMaxWidth().clip(CircleShape).border(1.dp, colors.line, CircleShape)
@@ -129,7 +119,7 @@ internal fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T)
             Row(
                 Modifier
                     .weight(1f)
-                    .background(if (on) colors.surface2 else Color.Transparent)
+                    .background(if (on) colors.surface2 else offColor)
                     .selectable(on, role = Role.RadioButton) { onPick(o) }
                     .padding(vertical = 10.dp),
                 horizontalArrangement = Arrangement.Center,

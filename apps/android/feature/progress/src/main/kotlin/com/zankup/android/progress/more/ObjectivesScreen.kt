@@ -1,5 +1,10 @@
 package com.zankup.android.progress.more
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -107,9 +113,12 @@ fun ObjectivesScreen(
             list.isEmpty() ->
                 EmptyState(stringResource(R.string.more_no_goals), Modifier.padding(padding), icon = ZIcon.Goal)
             else ->
-                LazyColumn(Modifier.padding(padding).fillMaxSize()) {
-                    items(list, key = { it.id }) { goal ->
-                        GoalBlock(goal, goal.id.toString() in open, model, onEdit)
+                LazyColumn(
+                    Modifier.padding(padding).fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    itemsIndexed(list, key = { _, goal -> goal.id }) { index, goal ->
+                        GoalBlock(goal, goal.id.toString() in open, model, onEdit, last = index == list.lastIndex)
                     }
                 }
         }
@@ -117,7 +126,13 @@ fun ObjectivesScreen(
 }
 
 @Composable
-private fun GoalBlock(goal: ZankupApiTrainingGoalOut, open: Boolean, model: ObjectivesModel, onEdit: (Long) -> Unit) {
+private fun GoalBlock(
+    goal: ZankupApiTrainingGoalOut,
+    open: Boolean,
+    model: ObjectivesModel,
+    onEdit: (Long) -> Unit,
+    last: Boolean
+) {
     val colors = ZankupTheme.colors
     val formats = LocalFormats.current
     val imperial = formats.units == Units.IMPERIAL
@@ -163,25 +178,33 @@ private fun GoalBlock(goal: ZankupApiTrainingGoalOut, open: Boolean, model: Obje
                 "month" -> R.string.more_last_12_months
                 else -> R.string.more_see_progress
             }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .background(if (open) colors.surface2 else colors.surface)
-                .clickable(role = Role.Button) { model.setOpen(goal.id, !open) }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                if (open) "" else stringResource(foldLabel),
-                color = colors.fg,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
-            )
-            ZankupIcon(if (open) ZIcon.ArrowUp else ZIcon.ArrowDown, null, tint = colors.fg, size = 26.dp)
+        if (!open) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(colors.surface)
+                    .clickable(role = Role.Button) { model.setOpen(goal.id, true) }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(foldLabel),
+                    color = colors.fg,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                ZankupIcon(ZIcon.ArrowDown, null, tint = colors.fg, size = 26.dp)
+            }
         }
-        if (open) GoalFold(goal, model)
-        Spacer(Modifier.fillMaxWidth().height(6.dp).background(colors.bg))
+        AnimatedVisibility(
+            visible = open,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            GoalFold(goal, model)
+        }
+        Spacer(Modifier.fillMaxWidth().height(if (last) 0.dp else 6.dp).background(colors.bg))
     }
 
     if (menu) {
@@ -242,21 +265,34 @@ private fun GoalFold(goal: ZankupApiTrainingGoalOut, model: ObjectivesModel) {
     val totals = if (goal.period == "year") buckets.map(::of) else listOf(buckets.lastOrNull()?.let(::of))
     fun sum(m: String) = totals.sumOf { metricOf(it, m) }
     val values = buckets.map { metricOf(of(it), goal.metric) }
+    val summary =
+        listOf(
+            volumeValue("distance", sum("distance"), imperial, formats.locale, 1),
+            volumeValue("time", sum("time"), imperial, formats.locale),
+            volumeValue("ascent", sum("ascent"), imperial, formats.locale),
+            pluralStringResource(R.plurals.more_activities_count, sum("count").toInt(), sum("count").toInt())
+        ).joinToString("  ")
     Column(
         Modifier.fillMaxWidth().background(colors.surface2).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text(
-            listOf(
-                volumeValue("distance", sum("distance"), imperial, formats.locale, 1),
-                volumeValue("time", sum("time"), imperial, formats.locale),
-                volumeValue("ascent", sum("ascent"), imperial, formats.locale),
-                pluralStringResource(R.plurals.more_activities_count, sum("count").toInt(), sum("count").toInt())
-            ).joinToString("  "),
-            color = colors.fg,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold
-        )
+        // The fold's own row: its totals where the closed row's label was, and the arrow to close it.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button) { model.setOpen(goal.id, false) }
+                .padding(top = 14.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                summary,
+                color = colors.fg,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            ZankupIcon(ZIcon.ArrowUp, null, tint = colors.fg, size = 26.dp)
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(metricShort(goal.metric)),
@@ -352,7 +388,7 @@ internal fun GoalRing(goal: ZankupApiTrainingGoalOut, size: Dp) {
 internal fun GoalChart(period: String, target: Double, starts: List<LocalDate>, values: List<Double>) {
     val colors = ZankupTheme.colors
     val locale = LocalFormats.current.locale
-    val height = 150.dp
+    val height = 180.dp
     val year = period == "year"
     val shown = if (year) listOf(0.0) + runningTotal(values) else values
     val slots = if (year) 13 else max(1, shown.size)
@@ -374,10 +410,11 @@ internal fun GoalChart(period: String, target: Double, starts: List<LocalDate>, 
         fun x(i: Int) = pad + i.toFloat() / max(1, slots - 1) * (widthPx - 2 * pad)
         fun y(v: Double) = basePx - (min(v, most) / most).toFloat() * (basePx - topPx)
         Canvas(Modifier.fillMaxSize()) {
+            val axis = colors.muted.copy(alpha = 0.55f)
             val hair = 1.dp.toPx()
-            drawLine(colors.line, Offset(0f, topPx), Offset(size.width, topPx), hair)
-            drawLine(colors.line, Offset(0f, basePx), Offset(size.width, basePx), hair)
-            for (i in 0 until slots) drawLine(colors.line, Offset(x(i), topPx), Offset(x(i), basePx), hair)
+            drawLine(axis, Offset(0f, topPx), Offset(size.width, topPx), 1.5.dp.toPx())
+            drawLine(axis, Offset(0f, basePx), Offset(size.width, basePx), 1.5.dp.toPx())
+            for (i in 0 until slots) drawLine(axis, Offset(x(i), topPx), Offset(x(i), basePx), hair)
             val dot = 6.dp.toPx()
             if (year) {
                 drawLine(colors.muted, Offset(x(0), y(0.0)), Offset(x(12), y(target)), 2.dp.toPx())

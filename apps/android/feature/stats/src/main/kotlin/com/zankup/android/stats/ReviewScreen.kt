@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -24,6 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,10 +44,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.Review
 import com.zankup.android.api.model.ReviewActivity
-import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.EmptyState
 import com.zankup.android.designsystem.components.Skeleton
+import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
+import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -77,21 +84,13 @@ fun ReviewScreen(
                     if (p == ReviewPeriod.YEAR) R.string.stats_review_year_title else R.string.stats_review_month_title,
                     heading
                 ),
-                onBack = onBack
-            )
+                onBack = onBack,
+                containerColor = ZankupTheme.colors.page
+            ) {
+                ReviewPeriodMenu(p, model::switchTo)
+            }
             Column(Modifier.padding(horizontal = ZankupTheme.spacing.gutter).padding(bottom = 8.dp)) {
-                ChipPicker(
-                    ReviewPeriod.entries,
-                    p,
-                    {
-                        stringResource(
-                            if (it == ReviewPeriod.MONTH) R.string.stats_review_month else R.string.stats_review_year
-                        )
-                    },
-                    model::switchTo,
-                    accent = true
-                )
-                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { model.shift(-1) }, modifier = Modifier.weight(1f)) {
                         Text("← ${periodTitle(p, shiftPeriod(p, value, -1), f.locale)}", maxLines = 1)
                     }
@@ -114,6 +113,45 @@ fun ReviewScreen(
                 contentPadding = PaddingValues(ZankupTheme.spacing.gutter),
                 verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
             ) { reviewCards(data, f, onOpenActivity) }
+        }
+    }
+}
+
+/** The review's month or year behind the header's three dots. */
+@Composable
+private fun ReviewPeriodMenu(current: ReviewPeriod, onPick: (ReviewPeriod) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val colors = ZankupTheme.colors
+    Box {
+        IconButton(onClick = { open = true }) {
+            ZankupIcon(ZIcon.More, contentDescription = stringResource(R.string.stats_period))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            ReviewPeriod.entries.forEach { period ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(
+                                if (period == ReviewPeriod.MONTH) {
+                                    R.string.stats_review_month
+                                } else {
+                                    R.string.stats_review_year
+                                }
+                            ),
+                            color = if (period == current) colors.accent else colors.fg
+                        )
+                    },
+                    onClick = {
+                        open = false
+                        onPick(period)
+                    },
+                    trailingIcon = {
+                        if (period == current) {
+                            ZankupIcon(ZIcon.Check, contentDescription = null, tint = colors.accent)
+                        }
+                    }
+                )
+            }
         }
     }
 }

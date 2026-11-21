@@ -1,6 +1,5 @@
 package com.zankup.android.progress.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,18 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,15 +31,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import com.zankup.android.designsystem.components.Skeleton
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupInfoButton
 import com.zankup.android.designsystem.components.color
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -172,42 +163,10 @@ internal fun ChartSkeleton(height: Int = 160) {
     }
 }
 
-/** The (i) of a header: a tap opens [text] under it, and a tap anywhere closes it. */
+/** The (i) of a header: its explanation in the shared centred dialog. */
 @Composable
 internal fun InfoButton(text: String, tint: Color = ZankupTheme.colors.fg) {
-    var open by remember { mutableStateOf(false) }
-    val colors = ZankupTheme.colors
-    Box {
-        IconButton(onClick = { open = !open }) {
-            InfoGlyph(tint, stringResource(R.string.progress_common_more_info))
-        }
-        if (open) {
-            Popup(
-                alignment = Alignment.TopEnd,
-                offset = IntOffset(0, 120),
-                onDismissRequest = { open = false },
-                properties = PopupProperties(focusable = true)
-            ) {
-                Surface(
-                    modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 360.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = colors.surface2,
-                    contentColor = colors.fg,
-                    border = BorderStroke(1.dp, colors.line),
-                    shadowElevation = 6.dp,
-                    onClick = { open = false }
-                ) {
-                    Text(text, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-    }
-}
-
-/** The header's (i). */
-@Composable
-private fun InfoGlyph(tint: Color, description: String) {
-    ZankupIcon(ZIcon.Info, contentDescription = description, tint = tint)
+    ZankupInfoButton(text, tint)
 }
 
 /** The left chevron. */

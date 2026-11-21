@@ -11,7 +11,6 @@
     <string name="health_error">Algo ha fallado. Inténtalo de nuevo.</string>
     <string name="health_none">Aún no hay datos de salud. Conecta Google Health, usa un Garmin que registre el sueño o lee Health Connect desde la app de Android.</string>
     <string name="health_connect">Conectar una fuente</string>
-    <string name="health_last_night">Anoche</string>
     <string name="health_night_of">Sueño del %1$s</string>
     <string name="health_today">Hoy, %1$s</string>
     <string name="health_yesterday">Ayer, %1$s</string>

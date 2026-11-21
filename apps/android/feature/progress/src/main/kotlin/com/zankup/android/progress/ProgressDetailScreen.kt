@@ -63,7 +63,6 @@ import com.zankup.android.progress.logic.weekTitle
 import com.zankup.android.progress.logic.yearsBack
 import com.zankup.android.progress.ui.BigFigure
 import com.zankup.android.progress.ui.BucketSheet
-import com.zankup.android.progress.ui.ChartSkeleton
 import com.zankup.android.progress.ui.DatedActivity
 import com.zankup.android.progress.ui.Dot
 import com.zankup.android.progress.ui.Figure
@@ -130,9 +129,14 @@ fun ProgressDetailScreen(
     val before by remember(against, span.byDay) {
         model.queries.volume(against, span.byDay)
     }.collectAsStateWithLifecycle()
+    // Keep the last values on screen while another range loads: the chart animates into the new ones.
+    var shownBuckets by remember { mutableStateOf<List<Bucket>>(emptyList()) }
+    var shownEarlier by remember { mutableStateOf<List<Bucket>>(emptyList()) }
+    LaunchedEffect(now.data) { now.data?.let { shownBuckets = it } }
+    LaunchedEffect(before.data) { before.data?.let { shownEarlier = it } }
     val streak by model.streak.collectAsStateWithLifecycle()
-    val buckets = now.data.orEmpty()
-    val earlier = before.data.orEmpty()
+    val buckets = now.data ?: shownBuckets
+    val earlier = before.data ?: shownEarlier
     val values = buckets.map { bucketValue(it, metric, chosen) }
     val previousValues = earlier.map { bucketValue(it, metric, chosen) }
     val total = values.sum()
@@ -225,43 +229,39 @@ fun ProgressDetailScreen(
                 }
             }
 
-            if (now.loading) {
-                ChartSkeleton(260)
-            } else {
-                PickedBox(cursor, buckets.size) { index ->
-                    val bucket = buckets[index]
-                    Row(
-                        Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(colors.surface2)
-                            .border(1.dp, colors.line, RoundedCornerShape(10.dp))
-                            .clickable(role = Role.Button) { sheet = DetailSheet.BUCKET }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Column {
-                            Figure(format.value(metric, bucketValue(bucket, metric, chosen), 1))
-                            Muted(periodOf(bucket), style = SmallText)
-                        }
-                        ZankupIcon(ZIcon.Chevron, stringResource(R.string.progress_week_detail), tint = colors.muted)
+            PickedBox(cursor, buckets.size) { index ->
+                val bucket = buckets[index]
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.surface2)
+                        .border(1.dp, colors.line, RoundedCornerShape(10.dp))
+                        .clickable(role = Role.Button) { sheet = DetailSheet.BUCKET }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column {
+                        Figure(format.value(metric, bucketValue(bucket, metric, chosen), 1))
+                        Muted(periodOf(bucket), style = SmallText)
                     }
+                    ZankupIcon(ZIcon.Chevron, stringResource(R.string.progress_week_detail), tint = colors.muted)
                 }
-                VolumeChart(
-                    values = values,
-                    previous = if (compare != null) previousValues else null,
-                    ticks = format.ticks(
-                        (values + if (compare != null) previousValues else emptyList()).maxOrNull() ?: 0.0,
-                        metric,
-                        3
-                    ),
-                    tickLabel = { format.tick(metric, it) },
-                    labels = rangeLabels(range, buckets.mapNotNull { day(it.start) }, locale),
-                    description = "${metricTotal(metric)}: ${format.value(metric, total, 1)}",
-                    cursor = cursor,
-                    height = 260
-                )
             }
+            VolumeChart(
+                values = values,
+                previous = if (compare != null) previousValues else null,
+                ticks = format.ticks(
+                    (values + if (compare != null) previousValues else emptyList()).maxOrNull() ?: 0.0,
+                    metric,
+                    3
+                ),
+                tickLabel = { format.tick(metric, it) },
+                labels = rangeLabels(range, buckets.mapNotNull { day(it.start) }, locale),
+                description = "${metricTotal(metric)}: ${format.value(metric, total, 1)}",
+                cursor = cursor,
+                height = 260
+            )
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 ProgressRange.entries.forEach { r ->

@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +34,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.api.model.FitnessDay
 import com.zankup.android.charts.ChartCursor
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupIcon
 import com.zankup.android.designsystem.components.ZankupTopBar
@@ -176,7 +177,14 @@ fun FitnessScreen(
                             height = maxOf(240, maxHeight.value.toInt())
                         )
                     }
-                    Box(Modifier.navigationBarsPadding()) {
+                    // Pinned to the bottom with just the room one activity needs: the chart keeps the rest.
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .heightIn(min = 72.dp),
+                        contentAlignment = Alignment.BottomStart
+                    ) {
                         DayActivities(model, day(chosen.day) ?: today, onOpenActivity)
                     }
                 }
@@ -232,7 +240,7 @@ private fun RangeTabs(range: FitnessRange, onPick: (FitnessRange) -> Unit) {
                 }
             }
         }
-        HorizontalDivider(color = colors.line)
+        SectionDivider()
     }
 }
 

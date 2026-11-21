@@ -23,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
@@ -93,7 +93,7 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
     val today = model.today
     val weight by model.weight.collectAsStateWithLifecycle()
     val weighings = weight.data.orEmpty()
-    var range by rememberSaveable { mutableStateOf(WeightRange.M3) }
+    var range by rememberSaveable { mutableStateOf(WeightRange.M1) }
     var editing by remember { mutableStateOf<Editing?>(null) }
     var deleting by remember { mutableStateOf<LocalDate?>(null) }
     var deleteFailed by remember { mutableStateOf(false) }
@@ -105,7 +105,11 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
         modifier = modifier,
         containerColor = colors.page,
         topBar = {
-            ZankupTopBar(stringResource(R.string.health_weight_title), onBack = onBack) {
+            ZankupTopBar(
+                stringResource(R.string.health_weight_title),
+                onBack = onBack,
+                containerColor = colors.page
+            ) {
                 IconButton(onClick = { editing = fresh() }) {
                     ZankupIcon(ZIcon.Add, contentDescription = stringResource(R.string.health_weight_add))
                 }
@@ -182,7 +186,7 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                         generateSequence(from) { it.plusDays(1) }.takeWhile { it <= today }
                             .map { dayText(it, "dMMM", formats.locale) }.toList()
                     }
-                    ZankupCard(side) {
+                    ZankupCard(side, clip = false) {
                         TrendChart(
                             listOf(
                                 LineLayer(
@@ -195,7 +199,7 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                             ),
                             labels,
                             "$title ${weightText(fromUnit(shown.last(), formats.units))}",
-                            height = 200.dp,
+                            height = 160.dp,
                             legend = false,
                             format = { com.zankup.android.domain.formatNumber(it, formats.locale, 0, 1) }
                         )
@@ -244,7 +248,7 @@ fun WeightScreen(onBack: () -> Unit, modifier: Modifier = Modifier, model: Weigh
                                     color = colors.fg
                                 )
                             }
-                            if (i < rows.lastIndex) HorizontalDivider(color = colors.line)
+                            if (i < rows.lastIndex) RowDivider(inset = 0.dp)
                         }
                     }
                 }

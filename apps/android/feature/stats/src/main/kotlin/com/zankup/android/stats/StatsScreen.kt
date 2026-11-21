@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,8 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.zankup.android.designsystem.components.ChipPicker
 import com.zankup.android.designsystem.components.ListRow
+import com.zankup.android.designsystem.components.RowDivider
 import com.zankup.android.designsystem.components.SectionHeader
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
@@ -60,19 +59,29 @@ fun StatsScreen(
         containerColor = ZankupTheme.colors.page,
         topBar = {
             Column {
-                ZankupTopBar(stringResource(R.string.stats_title), onBack = onBack) {
+                ZankupTopBar(
+                    stringResource(R.string.stats_title),
+                    onBack = onBack,
+                    containerColor = ZankupTheme.colors.page
+                ) {
                     ReviewsMenu(onReview)
                     IconButton(onClick = onHeatmap) {
                         ZankupIcon(ZIcon.Layers, contentDescription = stringResource(R.string.stats_heatmap))
                     }
+                    PeriodMenu(period.mode, model::setMode)
                 }
-                PeriodToolbar(period, model::setMode, model::setPeriod)
+                PeriodToolbar(period, model::setPeriod)
             }
         }
     ) { padding ->
         LazyColumn(
             Modifier.padding(padding),
-            contentPadding = PaddingValues(ZankupTheme.spacing.gutter),
+            contentPadding = PaddingValues(
+                start = ZankupTheme.spacing.gutter,
+                top = ZankupTheme.spacing.sm,
+                end = ZankupTheme.spacing.gutter,
+                bottom = ZankupTheme.spacing.gutter
+            ),
             verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
         ) {
             engine?.takeIf { it.running }?.let { e ->
@@ -118,28 +127,15 @@ private fun ReviewsMenu(onReview: (String) -> Unit) {
 }
 
 @Composable
-private fun PeriodToolbar(period: StatsPeriod, onMode: (StatsMode) -> Unit, onPeriod: (StatsPeriod) -> Unit) {
+private fun PeriodToolbar(period: StatsPeriod, onPeriod: (StatsPeriod) -> Unit) {
+    if (period.mode != StatsMode.YEAR && period.mode != StatsMode.MONTHS) return
     val locale = LocalFormats.current.locale
     Column(
-        Modifier.padding(horizontal = ZankupTheme.spacing.gutter).padding(bottom = ZankupTheme.spacing.s),
+        Modifier
+            .padding(horizontal = ZankupTheme.spacing.gutter)
+            .padding(top = ZankupTheme.spacing.xs),
         verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.xs)
     ) {
-        ChipPicker(
-            StatsMode.entries,
-            period.mode,
-            {
-                stringResource(
-                    when (it) {
-                        StatsMode.LAST12 -> R.string.stats_mode_last12
-                        StatsMode.YEAR -> R.string.stats_mode_year
-                        StatsMode.MONTHS -> R.string.stats_mode_month
-                        StatsMode.ALL -> R.string.stats_mode_all
-                    }
-                )
-            },
-            onMode,
-            accent = true
-        )
         when (period.mode) {
             StatsMode.YEAR -> Stepper(
                 period.year.toString(),
@@ -172,6 +168,46 @@ private fun PeriodToolbar(period: StatsPeriod, onMode: (StatsMode) -> Unit, onPe
     }
 }
 
+/** The period's modes behind the header's three dots. */
+@Composable
+private fun PeriodMenu(current: StatsMode, onMode: (StatsMode) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val colors = ZankupTheme.colors
+    Box {
+        IconButton(onClick = { open = true }) {
+            ZankupIcon(ZIcon.More, contentDescription = stringResource(R.string.stats_period))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            StatsMode.entries.forEach { mode ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(
+                                when (mode) {
+                                    StatsMode.LAST12 -> R.string.stats_mode_last12
+                                    StatsMode.YEAR -> R.string.stats_mode_year
+                                    StatsMode.MONTHS -> R.string.stats_mode_month
+                                    StatsMode.ALL -> R.string.stats_mode_all
+                                }
+                            ),
+                            color = if (mode == current) colors.accent else colors.fg
+                        )
+                    },
+                    onClick = {
+                        open = false
+                        onMode(mode)
+                    },
+                    trailingIcon = {
+                        if (mode == current) {
+                            ZankupIcon(ZIcon.Check, contentDescription = null, tint = colors.accent)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun MoreLinks(onRoutes: () -> Unit, onSegments: () -> Unit, onYears: () -> Unit) {
     Column {
@@ -179,9 +215,9 @@ private fun MoreLinks(onRoutes: () -> Unit, onSegments: () -> Unit, onYears: () 
         ZankupCard {
             Column(Modifier.fillMaxWidth().padding(vertical = 0.dp)) {
                 ListRow(stringResource(R.string.stats_routes), icon = ZIcon.Route, onClick = onRoutes)
-                HorizontalDivider(color = ZankupTheme.colors.line)
+                RowDivider()
                 ListRow(stringResource(R.string.stats_segments), icon = ZIcon.Timeline, onClick = onSegments)
-                HorizontalDivider(color = ZankupTheme.colors.line)
+                RowDivider()
                 ListRow(stringResource(R.string.stats_progress), icon = ZIcon.LineChart, onClick = onYears)
             }
         }

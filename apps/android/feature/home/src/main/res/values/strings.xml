@@ -3,6 +3,8 @@
     <string name="home_coach">Coach</string>
     <string name="home_notifications">Notifications</string>
     <string name="home_week">This week</string>
+
+    <string name="home_top">Back to top</string>
     <plurals name="home_streak">
         <item quantity="one">%d week in a row</item>
         <item quantity="other">%d weeks in a row</item>

@@ -1,20 +1,17 @@
 package com.zankup.android.health
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -23,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,7 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -110,13 +108,25 @@ fun HealthScreen(
     Scaffold(
         modifier = modifier,
         containerColor = colors.page,
+        // The tab bar already holds the navigation inset; keep the content's end gap like Home's.
+        contentWindowInsets = WindowInsets(0),
         topBar = {
-            ZankupTopBar(stringResource(R.string.health_title)) {
-                SyncButton(syncing, model::sync)
-                IconButton(onClick = onSettings) {
-                    ZankupIcon(ZIcon.Settings, contentDescription = stringResource(R.string.health_settings))
+            Box {
+                ZankupTopBar(stringResource(R.string.health_title)) {
+                    SyncButton(syncing, model::sync)
+                    IconButton(onClick = onSettings) {
+                        ZankupIcon(ZIcon.Settings, contentDescription = stringResource(R.string.health_settings))
+                    }
+                    PeriodMenu(period, model::setPeriod)
                 }
-                PeriodMenu(period, model::setPeriod)
+                // The sync runs under the bar's edge, in the theme's accent, not turning its icon.
+                if (syncing) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp),
+                        color = colors.accent,
+                        trackColor = Color.Transparent
+                    )
+                }
             }
         }
     ) { padding ->
@@ -134,10 +144,10 @@ fun HealthScreen(
             contentPadding = PaddingValues(
                 start = padding.calculateStartPadding(direction),
                 end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding() + spacing.xs,
+                top = padding.calculateTopPadding() + spacing.s,
                 bottom = padding.calculateBottomPadding() + spacing.l
             ),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
+            verticalArrangement = Arrangement.spacedBy(spacing.s)
         ) {
             if (syncFailed) item("sync-error") { ErrorLine(side) }
             when {
@@ -165,7 +175,7 @@ fun HealthScreen(
     }
 }
 
-/** The sync button: it turns while the sync runs. */
+/** The sync button: it stays still and the bar's edge shows the progress while the sync runs. */
 @Composable
 private fun SyncButton(syncing: Boolean, onSync: () -> Unit) {
     val colors = ZankupTheme.colors
@@ -176,23 +186,7 @@ private fun SyncButton(syncing: Boolean, onSync: () -> Unit) {
         enabled = !syncing,
         modifier = Modifier.semantics { if (syncing) stateDescription = busy }
     ) {
-        if (syncing) {
-            val angle by rememberInfiniteTransition(label = "sync").animateFloat(
-                initialValue = 0f,
-                targetValue = -360f,
-                animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Restart),
-                label = "angle"
-            )
-            // The angle is read in the layer only: the turn redraws the icon and nothing else.
-            ZankupIcon(
-                ZIcon.Sync,
-                contentDescription = label,
-                tint = colors.accent,
-                modifier = Modifier.graphicsLayer { rotationZ = angle }
-            )
-        } else {
-            ZankupIcon(ZIcon.Sync, contentDescription = label, tint = colors.fg)
-        }
+        ZankupIcon(ZIcon.Sync, contentDescription = label, tint = if (syncing) colors.accent else colors.fg)
     }
 }
 
@@ -237,6 +231,17 @@ private fun sources(v: Value) = HealthSource.of(v.source.value) to v.others.map 
 
 private fun sources(n: Night) = HealthSource.of(n.source.value) to n.others.map { HealthSource.of(it.value) }
 
+/** A block's heading, with the same gap as the widgets: the list's spacing already separates it. */
+@Composable
+private fun HealthHeader(title: String) {
+    Text(
+        title,
+        modifier = Modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+        color = ZankupTheme.colors.fg
+    )
+}
+
 /** Last night (or the night of the last day with one): the score and hours, then the stages. */
 @Composable
 private fun LastNight(model: HealthModel, day: HealthDay, sleep: Night) {
@@ -244,14 +249,12 @@ private fun LastNight(model: HealthModel, day: HealthDay, sleep: Night) {
     val night by remember(day.day) { model.night(day.day) }.collectAsStateWithLifecycle()
     val (source, others) = sources(sleep)
     val from = fromText(source, others)
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionHeader(
-            if (relativeDay(date, model.today) == RelativeDay.TODAY) {
-                stringResource(R.string.health_last_night)
-            } else {
-                stringResource(R.string.health_night_of, longDay(date))
-            }
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)) {
+        // The current night is always the last one recorded; the card already dates it. Only an older
+        // night needs a heading saying which one it is.
+        if (relativeDay(date, model.today) != RelativeDay.TODAY) {
+            HealthHeader(stringResource(R.string.health_night_of, longDay(date)))
+        }
         SleepTiles(sleep, from) { SourceIcon(source) }
         ZankupCard {
             Box(Modifier.fillMaxWidth()) {
@@ -303,8 +306,9 @@ private fun Today(day: HealthDay, today: LocalDate) {
         ).joinToString(" · ")
     } ?: stringResource(R.string.health_no_readiness)
     val zankup = stringResource(R.string.health_zankup_score)
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column {
         SectionHeader(dayTitle(LocalDate.parse(day.day), today))
+        Spacer(Modifier.height(ZankupTheme.spacing.s))
         ZankupCard {
             Box(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(end = 24.dp)) {
@@ -325,7 +329,9 @@ private fun Today(day: HealthDay, today: LocalDate) {
                 Box(Modifier.align(Alignment.TopEnd).semantics { contentDescription = zankup }) { ZankupMark() }
             }
         }
-        figures.chunked(2).forEach { pair ->
+        figures.chunked(2).forEachIndexed { index, pair ->
+            // After the full-width readiness card the grid starts at 8 dp; its own rows stay 12 dp apart.
+            Spacer(Modifier.height(if (index == 0) ZankupTheme.spacing.s else ZankupTheme.spacing.sm))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 pair.forEach { f ->
                     val label = fromText(f.source.first, f.source.second)
@@ -400,7 +406,7 @@ private fun WeightCard(weighings: List<WeightOut>, today: LocalDate, onOpen: () 
                 ),
                 days = values.map { "" },
                 description = title,
-                height = 90.dp,
+                height = 160.dp,
                 legend = false
             )
         }
@@ -415,14 +421,14 @@ private fun Trends(span: List<Pair<LocalDate, HealthDay?>>, nights: List<HealthD
     val labels = remember(span, locale) { span.map { dayText(it.first, "dMMM", locale) } }
     val days = span.map { it.second }
     val format: (Double) -> String = { formatNumber(it, locale, 0, 1) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)) {
         if (nights.size > 1) {
             val last = nights.last().sleep
             val sleepColors = colors.sleep
             val deep = days.map { hours(it?.sleep?.deepS) }
             val rem = days.map { hours(it?.sleep?.remS) }
             val sleep = stringResource(R.string.health_sleep)
-            ZankupCard {
+            ZankupCard(clip = false) {
                 CardTitle(sleep)
                 TrendChart(
                     listOf(
@@ -466,7 +472,7 @@ private fun Trends(span: List<Pair<LocalDate, HealthDay?>>, nights: List<HealthD
         if (days.count { it != null } > 1) {
             val hrv = stringResource(R.string.health_hrv)
             val resting = stringResource(R.string.health_resting_hr)
-            ZankupCard {
+            ZankupCard(clip = false) {
                 CardTitle(stringResource(R.string.health_heart))
                 val lastHrv = latest?.hrv?.value?.roundToInt()?.toString() ?: "–"
                 val lastHr = latest?.restingHr?.value?.roundToInt()?.toString() ?: "–"
@@ -482,7 +488,7 @@ private fun Trends(span: List<Pair<LocalDate, HealthDay?>>, nights: List<HealthD
             }
             val form = stringResource(R.string.health_form)
             val readiness = stringResource(R.string.health_readiness)
-            ZankupCard {
+            ZankupCard(clip = false) {
                 CardTitle(
                     stringResource(R.string.health_readiness_and_form),
                     stringResource(R.string.health_readiness_note)

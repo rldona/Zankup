@@ -3,7 +3,6 @@ package com.zankup.android.stats
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -12,16 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupInfoButton
 import com.zankup.android.designsystem.components.color
 import com.zankup.android.designsystem.theme.Numbers
 import com.zankup.android.designsystem.theme.ZankupTheme
@@ -59,20 +53,24 @@ internal fun StatCard(
     right: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    ZankupCard(modifier) {
+    ZankupCard(modifier, clip = false) {
         Row(
-            Modifier.fillMaxWidth().padding(bottom = ZankupTheme.spacing.s),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.xs)
+            Modifier.fillMaxWidth().padding(bottom = ZankupTheme.spacing.m),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                title,
-                style = HeadingStyle,
-                color = ZankupTheme.colors.fg,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-            if (info != null) InfoButton(info)
-            Box(Modifier.weight(1f))
+            Row(
+                Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.xs)
+            ) {
+                Text(
+                    title,
+                    style = HeadingStyle,
+                    color = ZankupTheme.colors.fg,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (info != null) InfoButton(info)
+            }
             right?.invoke(this)
         }
         content()
@@ -85,22 +83,10 @@ internal val HeadingStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.
 /** A figure's value, as the RN app's statValue: 17 sp, bold, tabular. */
 internal val StatValueStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold).merge(Numbers.tabular)
 
-/** The (i) that opens a short explanation (in a dialog, Android's way). */
+/** The (i): the shared centred explanation dialog. */
 @Composable
 internal fun InfoButton(text: String) {
-    var open by remember { mutableStateOf(false) }
-    val label = stringResource(R.string.stats_more_info)
-    IconButton(onClick = { open = true }, modifier = Modifier.semantics { contentDescription = label }) {
-        ZankupIcon(ZIcon.Info, contentDescription = null, tint = ZankupTheme.colors.fg, size = 22.dp)
-    }
-    if (open) {
-        AlertDialog(
-            onDismissRequest = { open = false },
-            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.stats_close)) } },
-            text = { Text(text) },
-            containerColor = ZankupTheme.colors.surface
-        )
-    }
+    ZankupInfoButton(text)
 }
 
 /** An arrow of a stepper: left or right, dimmed and disabled at the end of the history. */

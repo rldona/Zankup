@@ -368,7 +368,9 @@ internal fun TrendChart(
                                 padX * 2
                         val h = rows.sumOf { it.second.size.height } + where.size.height + padY * 2
                         val bx = (px - w / 2f).coerceIn(0f, (size.width - w).coerceAtLeast(0f))
-                        val by = maxOf(top - h - 6.dp.toPx(), -40.dp.toPx())
+                        // Above the chart, as tall as it needs: the card does not clip, so it rises over the
+                        // title and the card above.
+                        val by = top - h - 6.dp.toPx()
                         drawLine(Color.White, Offset(px, by + h), Offset(px, floorY), 2.dp.toPx())
                         drawRoundRect(tint, Offset(bx, by), Size(w, h), CornerRadius(10.dp.toPx()))
                         var ty = by + padY

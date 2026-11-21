@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
 
 /** A section still loading: a bone of its height. */
 @Composable
-private fun Bone(height: Int = 160) {
+private fun Bone(height: Int = 168) {
     Skeleton(Modifier.fillMaxWidth(), height = height.dp)
 }
 
@@ -92,7 +92,7 @@ internal fun SummarySection(model: StatsModel, range: Period) {
     StatCard(stringResource(R.string.stats_summary_title), info = stringResource(R.string.stats_summary_note)) {
         rows.forEach { row ->
             val cmp = compare(row.now, row.before)
-            Column(Modifier.padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -177,9 +177,9 @@ internal fun FitnessSection(model: StatsModel) {
                     format = { it.roundToInt().toString() },
                     description = "$ctl ${last.ctl.roundToInt()}, $atl ${last.atl.roundToInt()}, " +
                         "$tsb ${last.tsb.roundToInt()}",
-                    height = 180.dp,
+                    height = CHART_HEIGHT,
                     domain = 0f..top,
-                    bars = SignedBars(days.map { it.tsb.toFloat() }, colors.formPositive, colors.formNegative)
+                    bars = SignedBars(days.map { it.tsb.toFloat() }, colors.formPositive, colors.formNegative, tsb)
                 )
                 // In the RN app's order: the form's two colours, then fitness and fatigue.
                 Legend(
@@ -238,7 +238,7 @@ internal fun VolumeSection(model: StatsModel) {
             },
             style = StatValueStyle,
             color = ZankupTheme.colors.fg,
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.padding(top = ZankupTheme.spacing.xs, bottom = ZankupTheme.spacing.sm)
         )
         val pattern = when (unit) {
             VolumeUnit.YEAR -> "yyyy"
@@ -252,7 +252,8 @@ internal fun VolumeSection(model: StatsModel) {
             },
             xLabels = buckets.map { runCatching { format.format(LocalDate.parse(it.start)) }.getOrDefault(it.start) },
             format = { formatNumber(it.toDouble(), f.locale, 0, if (it < 10) 1 else 0) },
-            description = stringResource(R.string.stats_volume)
+            description = stringResource(R.string.stats_volume),
+            height = CHART_HEIGHT
         )
         Legend(
             sports.map {
@@ -282,12 +283,12 @@ internal fun EfficiencySection(model: StatsModel) {
     }) {
         LinesChart(
             lines = listOf(ChartLine(title, values.map { it.toFloat() }, ZankupTheme.colors.sport.run)),
-            xLabels = emptyList(),
+            xLabels = points.map { dayLabel(it.day, f) },
             format = { formatNumber(it.toDouble(), f.locale, 0, 2) },
             description = title,
-            height = 120.dp
+            height = CHART_HEIGHT
         )
-        Muted(stringResource(R.string.stats_efficiency_note), Modifier.padding(top = 8.dp))
+        Muted(stringResource(R.string.stats_efficiency_note), Modifier.padding(top = 12.dp))
     }
 }
 
@@ -334,7 +335,8 @@ internal fun CurvesSection(model: StatsModel) {
                         }
                     ),
                     format = { show(it.toDouble()) },
-                    durationLabel = { durationLabel(it.roundToInt()) }
+                    durationLabel = { durationLabel(it.roundToInt()) },
+                    height = CHART_HEIGHT
                 )
                 val periodColour = if (kind == CurveKind.POWER) colors.sport.ride else colors.sport.run
                 Legend(
@@ -344,7 +346,7 @@ internal fun CurvesSection(model: StatsModel) {
                     ),
                     Modifier.padding(top = 18.dp)
                 )
-                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     durations.filter { it in listOf(60, 300, 1200, 3600) }.forEach { d ->
                         Stat(durationLabel(d), mine[d]?.let(show) ?: "–")
                     }
@@ -367,7 +369,7 @@ internal fun RecordsSection(model: StatsModel, onBests: (String?) -> Unit, onOpe
     StatCard(stringResource(R.string.stats_period_bests)) {
         if (bests.isEmpty()) Muted(stringResource(R.string.stats_no_period_bests))
         bests.forEach { r ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     effortName(r.distanceKey),
                     style = MaterialTheme.typography.bodyMedium,
@@ -382,7 +384,7 @@ internal fun RecordsSection(model: StatsModel, onBests: (String?) -> Unit, onOpe
             }
         }
         Row(
-            Modifier.padding(top = 8.dp).clickable(role = Role.Button) { onBests(null) },
+            Modifier.padding(top = 12.dp).clickable(role = Role.Button) { onBests(null) },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {

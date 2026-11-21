@@ -14,23 +14,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -40,11 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zankup.android.designsystem.components.Skeleton
-import com.zankup.android.designsystem.components.ZIcon
-import com.zankup.android.designsystem.components.ZankupIcon
+import com.zankup.android.designsystem.components.ZankupInfoButton
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.ZankupTheme
-import com.zankup.android.tools.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -147,22 +138,10 @@ internal fun Bar(value: Float, label: String, modifier: Modifier = Modifier, col
     )
 }
 
-/** The (i): its explanation in a dialog. */
+/** The (i): the shared centred explanation dialog. */
 @Composable
 internal fun InfoButton(text: String) {
-    var open by remember { mutableStateOf(false) }
-    val label = stringResource(R.string.tools_more_info)
-    IconButton(onClick = { open = true }, modifier = Modifier.size(32.dp)) {
-        ZankupIcon(ZIcon.Info, contentDescription = label, tint = ZankupTheme.colors.muted, size = 20.dp)
-    }
-    if (open) {
-        AlertDialog(
-            onDismissRequest = { open = false },
-            title = { Text(label) },
-            text = { Text(text) },
-            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.tools_close)) } }
-        )
-    }
+    ZankupInfoButton(text, modifier = Modifier.size(32.dp))
 }
 
 /** A list's shape while its first answer loads. */

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +36,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.zankup.android.designsystem.components.RowDivider
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.components.ZIcon
 import com.zankup.android.designsystem.components.ZankupCard
 import com.zankup.android.designsystem.components.ZankupIcon
@@ -124,7 +125,7 @@ internal fun FigureCard(figures: List<Figure>, modifier: Modifier = Modifier) {
     val colors = ZankupTheme.colors
     ZankupCard(modifier) {
         figures.forEachIndexed { i, figure ->
-            if (i > 0) HorizontalDivider(color = colors.line)
+            if (i > 0) RowDivider(inset = 0.dp)
             Row(
                 Modifier.fillMaxWidth().padding(vertical = ZankupTheme.spacing.s),
                 verticalAlignment = Alignment.CenterVertically,
@@ -181,7 +182,7 @@ internal fun Ring(
     showTrack: Boolean = true,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
-    val track = ZankupTheme.colors.line
+    val track = ZankupTheme.colors.muted.copy(alpha = 0.45f)
     val done = ZankupTheme.colors.sport.ride
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(size)) {
@@ -207,7 +208,7 @@ internal fun Ring(
 
 private const val GAUGE_START = -135f
 private const val GAUGE_SWEEP = 270f
-private const val GAUGE_GAP = 8f
+private const val GAUGE_GAP = 0f
 
 /**
  * A 270° gauge in coloured bands, a dot at the value in its band's colour, and the figure (and its
@@ -243,7 +244,7 @@ internal fun Gauge(
                         false,
                         topLeft,
                         arc,
-                        style = Stroke(8.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(8.dp.toPx())
                     )
                 }
             }
@@ -264,10 +265,7 @@ internal fun Gauge(
 /** A hairline across a card, between its parts. */
 @Composable
 internal fun CardDivider() {
-    HorizontalDivider(
-        color = ZankupTheme.colors.line,
-        modifier = Modifier.padding(vertical = ZankupTheme.spacing.sm)
-    )
+    SectionDivider(Modifier.padding(vertical = ZankupTheme.spacing.sm))
 }
 
 @Composable

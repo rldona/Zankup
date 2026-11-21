@@ -24,7 +24,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -53,6 +52,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zankup.android.designsystem.brand.Mark
 import com.zankup.android.designsystem.brand.Wordmark
+import com.zankup.android.designsystem.components.SectionDivider
 import com.zankup.android.designsystem.theme.ZankupTheme
 import com.zankup.android.session.Prompter
 import kotlinx.coroutines.launch
@@ -177,13 +177,13 @@ private fun ColumnScope.PasswordStep(ui: SignInUi, vm: SignInViewModel, onGoogle
         Text(stringResource(R.string.signin_passkey))
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        HorizontalDivider(Modifier.weight(1f), color = ZankupTheme.colors.line)
+        SectionDivider(Modifier.weight(1f))
         Text(
             stringResource(R.string.signin_or),
             color = ZankupTheme.colors.muted,
             modifier = Modifier.padding(horizontal = ZankupTheme.spacing.m)
         )
-        HorizontalDivider(Modifier.weight(1f), color = ZankupTheme.colors.line)
+        SectionDivider(Modifier.weight(1f))
     }
     Field(
         value = ui.email,

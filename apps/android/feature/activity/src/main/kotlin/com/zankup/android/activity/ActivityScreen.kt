@@ -2,6 +2,7 @@ package com.zankup.android.activity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -108,6 +109,7 @@ fun ActivityScreen(
     id: Long,
     links: ActivityLinks,
     aiAvailable: Boolean,
+    startAtTop: Boolean = false,
     model: ActivityModel = hiltViewModel(key = "activity-$id")
 ) {
     // Opened during composition: the screen reads its queries right below.
@@ -168,8 +170,22 @@ fun ActivityScreen(
         a?.let { musclesFor(musclesWorked(it.sets), it.workoutType) }.orEmpty()
     }
     val muscleCover = a != null && !a.hasGps && !routeMap && muscles.isNotEmpty()
-    val hasMap = routeMap || muscleCover
-    val list = rememberLazyListState()
+    // The map's room is kept from the first frame when the activity has GPS, before its streams arrive: a
+    // map inserted later above the title would leave the list opened halfway down.
+    val mapSlot = routeMap || (a?.hasGps == true && drawn == null)
+    val hasMap = mapSlot || muscleCover
+    // Each activity its own scroll, and kept when a screen is stacked over it and popped back.
+    val list = rememberSaveable(id, saver = LazyListState.Saver) { LazyListState() }
+    // A record opened from Bests is a fresh visit: start at the top even if that activity was scrolled before.
+    // Kept pinned until the user drags: the map or cover arrives later and is inserted above the title, and
+    // the list would otherwise stay anchored on the title.
+    var pinnedTop by remember(id) { mutableStateOf(startAtTop) }
+    LaunchedEffect(list) {
+        list.interactionSource.interactions.collect { if (it is DragInteraction.Start) pinnedTop = false }
+    }
+    LaunchedEffect(pinnedTop, hasMap, a != null) {
+        if (pinnedTop) list.scrollToItem(0)
+    }
     val density = LocalDensity.current
     // The header fills in over the last 48 dp before the map leaves it.
     val solid by remember(hasMap, header) {
@@ -201,20 +217,24 @@ fun ActivityScreen(
                     if (muscleCover) {
                         item("cover") { MuscleCover(muscles, top = header, height = MAP + header) }
                     }
-                    if (routeMap) {
+                    if (mapSlot) {
                         item("map") {
                             Box(Modifier.fillMaxWidth().height(MAP + header)) {
-                                RouteMap(
-                                    drawn!!.route,
-                                    cursor,
-                                    section,
-                                    Modifier.fillMaxWidth().height(MAP + header),
-                                    colours = metric?.stops,
-                                    colour = sport.family.color
-                                )
-                                metric?.let { chosen ->
-                                    MapControls(drawn.route, cursor, drawn.metrics, chosen, top = header) {
-                                        metric = it
+                                if (drawn != null) {
+                                    RouteMap(
+                                        drawn.route,
+                                        cursor,
+                                        section,
+                                        Modifier.fillMaxWidth().height(MAP + header),
+                                        colours = metric?.stops,
+                                        colour = sport.family.color
+                                    )
+                                }
+                                if (drawn != null) {
+                                    metric?.let { chosen ->
+                                        MapControls(drawn.route, cursor, drawn.metrics, chosen, top = header) {
+                                            metric = it
+                                        }
                                     }
                                 }
                             }

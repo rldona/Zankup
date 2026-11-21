@@ -10,19 +10,31 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.zankup.android.designsystem.R
 import com.zankup.android.designsystem.theme.ZankupTheme
+import kotlinx.coroutines.launch
 
-/** A stacked screen's bar: back, its title and its actions, on the page colour. */
+/**
+ * A stacked screen's bar: back, its title and its actions. The tab bar's colour, as Home's, so the two
+ * frames of a screen match.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZankupTopBar(
     title: String,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    /** The bar's colour: the surface, or the page where the screen is all one dark colour. */
+    containerColor: Color = ZankupTheme.colors.surface,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val colors = ZankupTheme.colors
@@ -41,8 +53,9 @@ fun ZankupTopBar(
         actions = actions,
         colors =
         TopAppBarDefaults.topAppBarColors(
-            containerColor = colors.page,
-            scrolledContainerColor = colors.surface,
+            // The tab bar's colour, fixed: the content never slides under a tinted bar.
+            containerColor = containerColor,
+            scrolledContainerColor = containerColor,
             titleContentColor = colors.fg,
             navigationIconContentColor = colors.fg,
             actionIconContentColor = colors.fg
@@ -54,9 +67,22 @@ fun ZankupTopBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZankupSheet(onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    var closing by remember { mutableStateOf(false) }
+
+    // Close only after the sheet has slid away: removing it on the tap made its exit vanish.
+    fun close() {
+        if (closing) return
+        closing = true
+        scope.launch {
+            state.hide()
+            onDismiss()
+        }
+    }
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        onDismissRequest = { close() },
+        sheetState = state,
         containerColor = ZankupTheme.colors.surface,
         contentColor = ZankupTheme.colors.fg,
         content = content

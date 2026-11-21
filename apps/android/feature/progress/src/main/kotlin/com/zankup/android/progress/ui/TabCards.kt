@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -177,6 +179,7 @@ internal fun VolumeCard(model: ProgressModel, onVolume: (String?) -> Unit) {
                 labels = monthLabels(starts, locale),
                 description = "$last12: ${values.joinToString { format.value(chartMetric, it) }}",
                 cursor = cursor,
+                modifier = Modifier.padding(horizontal = 6.dp),
                 height = 190
             )
             OutlineButton(onClick = { onVolume(sport) }) {
@@ -281,7 +284,23 @@ private fun LogLine(label: String, value: String) {
 @Composable
 private fun Dots(days: List<Pair<LocalDate, List<CalendarActivity>>>, today: LocalDate) {
     val colors = ZankupTheme.colors
-    Row(Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically) {
+    val density = LocalDensity.current
+    val hit = with(density) { 18.dp.toPx() }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+            .ballHaptics(days.size) { at, size ->
+                val slot = size.width / days.size.coerceAtLeast(1)
+                val centreY = size.height / 2f
+                days.indices.firstOrNull { i ->
+                    val dx = at.x - (i + 0.5f) * slot
+                    val dy = at.y - centreY
+                    dx * dx + dy * dy <= hit * hit
+                }
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         days.forEach { (d, activities) ->
             val seconds = activities.sumOf { it.movingS }
             val size = dotSize(seconds, d == today)
@@ -533,12 +552,13 @@ internal fun ZonesCard(model: ProgressModel, onOpen: () -> Unit) {
             Column(Modifier.width(120.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 seconds.indices.reversed().forEach { i ->
                     Row(
+                        Modifier.height(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             if (i == top.index) "Z${i + 1}" else "",
-                            modifier = Modifier.width(18.dp),
+                            modifier = Modifier.width(18.dp).wrapContentHeight(unbounded = true),
                             color = colors.muted,
                             fontSize = 11.sp
                         )
@@ -546,7 +566,7 @@ internal fun ZonesCard(model: ProgressModel, onOpen: () -> Unit) {
                         Box(
                             Modifier
                                 .fillMaxWidth(share)
-                                .height(7.dp)
+                                .height(14.dp)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(if (i == top.index) Color(palette[i]) else colors.surface2)
                         )
@@ -597,7 +617,7 @@ internal fun SkillsCard(model: ProgressModel, onOpen: () -> Unit) {
                 }
             }
             SkillsRadar(
-                150,
+                130,
                 listOf(RadarShape(allBests, RadarAll, weight), RadarShape(recentBests, RadarRecent, weight))
             )
         }

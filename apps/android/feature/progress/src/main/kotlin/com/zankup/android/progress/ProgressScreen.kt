@@ -2,6 +2,7 @@ package com.zankup.android.progress
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +67,8 @@ fun ProgressScreen(
     Scaffold(
         modifier = modifier,
         containerColor = colors.page,
+        // The tab bar already holds the navigation inset; keep the content's end gap like Home's.
+        contentWindowInsets = WindowInsets(0),
         topBar = { ZankupTopBar(stringResource(R.string.progress_nav_progress)) }
     ) { padding ->
         val direction = LocalLayoutDirection.current
@@ -77,10 +80,10 @@ fun ProgressScreen(
             contentPadding = PaddingValues(
                 start = padding.calculateStartPadding(direction),
                 end = padding.calculateEndPadding(direction),
-                top = padding.calculateTopPadding() + spacing.xs,
+                top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding() + spacing.l
             ),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
+            verticalArrangement = Arrangement.spacedBy(spacing.s)
         ) {
             item("volume") { Padded(side) { VolumeCard(model, onVolume) } }
             item("series-log") {

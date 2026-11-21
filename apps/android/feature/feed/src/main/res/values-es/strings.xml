@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feed_title">Actividades</string>
     <string name="feed_sync">Sincronizar</string>
     <string name="feed_calendar">Calendario</string>
     <string name="feed_search">Buscar</string>

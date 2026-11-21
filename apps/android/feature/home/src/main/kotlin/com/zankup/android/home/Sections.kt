@@ -155,7 +155,7 @@ internal fun DayHealthCard(day: HealthDay, modifier: Modifier = Modifier) {
                     colors.sport.ride,
                     stringResource(R.string.home_steps),
                     formatNumber(it.value.roundToInt().toDouble(), locale),
-                    extra = { Ring((it.value / STEPS_GOAL).toFloat().coerceIn(0f, 1f), 34.dp, 4.dp, showTrack = false) }
+                    extra = { Ring((it.value / STEPS_GOAL).toFloat().coerceIn(0f, 1f), 34.dp, 4.dp) }
                 )
             },
             day.restingHr?.let {
