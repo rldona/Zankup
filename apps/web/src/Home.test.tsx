@@ -88,8 +88,10 @@ describe('Home (OS-904)', () => {
     useFixtures([activity(2, 'Evening run', 0), activity(1, 'Morning run', 0)]);
     renderHome();
     expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Evening run/ })).toHaveAttribute('href', '/activities/2');
-    expect(screen.getByRole('link', { name: /Morning run/ })).toBeInTheDocument();
+    // Anchored: the week's dots are links named "<day>: <activity>" too, and a fixed fixture's run can
+    // fall in this week depending on today's date.
+    expect(screen.getByRole('link', { name: /^Evening run/ })).toHaveAttribute('href', '/activities/2');
+    expect(screen.getByRole('link', { name: /^Morning run/ })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Last 7 days' })).toBeInTheDocument();
     expect(screen.getByText('Run · 2')).toBeInTheDocument();
     expect(await screen.findByText('4 W/kg')).toBeInTheDocument(); // 280 W at 70 kg
