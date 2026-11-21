@@ -220,17 +220,21 @@ fun ActivityScreen(
                     if (mapSlot) {
                         item("map") {
                             Box(Modifier.fillMaxWidth().height(MAP + header)) {
-                                if (drawn != null) RouteMap(
-                                    drawn.route,
-                                    cursor,
-                                    section,
-                                    Modifier.fillMaxWidth().height(MAP + header),
-                                    colours = metric?.stops,
-                                    colour = sport.family.color
-                                )
-                                if (drawn != null) metric?.let { chosen ->
-                                    MapControls(drawn.route, cursor, drawn.metrics, chosen, top = header) {
-                                        metric = it
+                                if (drawn != null) {
+                                    RouteMap(
+                                        drawn.route,
+                                        cursor,
+                                        section,
+                                        Modifier.fillMaxWidth().height(MAP + header),
+                                        colours = metric?.stops,
+                                        colour = sport.family.color
+                                    )
+                                }
+                                if (drawn != null) {
+                                    metric?.let { chosen ->
+                                        MapControls(drawn.route, cursor, drawn.metrics, chosen, top = header) {
+                                            metric = it
+                                        }
                                     }
                                 }
                             }

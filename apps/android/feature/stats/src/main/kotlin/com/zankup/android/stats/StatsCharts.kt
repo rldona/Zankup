@@ -260,7 +260,9 @@ internal fun LinesChart(
             val shown = lines.mapNotNull { l -> l.values.getOrNull(at)?.let { l to it } }
             val text = buildList {
                 shown.forEach { (l, v) -> add(if (shown.size > 1) "${l.label} ${format(v)}" else format(v)) }
-                bars?.values?.getOrNull(at)?.let { add(listOf(bars.label, format(it)).filter(String::isNotEmpty).joinToString(" ")) }
+                bars?.values?.getOrNull(at)?.let {
+                    add(listOf(bars.label, format(it)).filter(String::isNotEmpty).joinToString(" "))
+                }
             }.joinToString("  ·  ")
             val tint = shown.firstOrNull()?.first?.color ?: colors.accent
             val many = shown.size + (if (bars?.values?.getOrNull(at) != null) 1 else 0) > 1
@@ -465,7 +467,9 @@ private fun DrawScope.drawBubble(
         TextStyle(color = BUBBLE_TEXT, fontSize = if (compact) 16.sp else 19.sp, fontWeight = FontWeight.Bold),
         constraints = limit
     )
-    val place = where?.let { measurer.measure(it, TextStyle(color = BUBBLE_TEXT, fontSize = 14.sp), constraints = limit) }
+    val place = where?.let {
+        measurer.measure(it, TextStyle(color = BUBBLE_TEXT, fontSize = 14.sp), constraints = limit)
+    }
     val padX = 12.dp.toPx()
     val padY = 8.dp.toPx()
     val w = maxOf(value.size.width, place?.size?.width ?: 0) + padX * 2
