@@ -36,7 +36,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -146,7 +148,7 @@ internal fun TrendChart(
     days: List<String>,
     description: String,
     modifier: Modifier = Modifier,
-    height: Dp = 160.dp,
+    height: Dp = 200.dp,
     legend: Boolean = true,
     legendGap: Dp = 18.dp,
     format: (Double) -> String = { formatNumber(it, java.util.Locale.ROOT, 0, 1) }
@@ -154,6 +156,7 @@ internal fun TrendChart(
     val colors = ZankupTheme.colors
     val locale = LocalFormats.current.locale
     val measurer = rememberTextMeasurer()
+    val haptics = LocalHapticFeedback.current
     val count = days.size
     val picked = remember(count) { mutableIntStateOf(-1) }
     val grow = remember { Animatable(0f) }
@@ -197,7 +200,14 @@ internal fun TrendChart(
                         }
                         picked.intValue = index(drag.position.x).coerceIn(0, count - 1)
                         horizontalDrag(drag.id) { change ->
-                            picked.intValue = index(change.position.x).coerceIn(0, count - 1)
+                            val now = index(change.position.x).coerceIn(0, count - 1)
+                            // A tick at each day the bubble moves to, as the activity's charts.
+                            if (now !=
+                                picked.intValue
+                            ) {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            picked.intValue = now
                             change.consume()
                         }
                     }
@@ -261,6 +271,8 @@ internal fun TrendChart(
                                 drawLine(colors.muted, Offset(axisW, zy), Offset(plotEnd, zy), 1.5f)
                             }
                         }
+                        // The frame first: the bars and the lines go over it.
+                        drawRect(grid, Offset(axisW, top), Size(plot, inner), style = Stroke(1.5f))
                         layers.forEachIndexed { index, layer ->
                             val scale = of[index]
                             when (layer) {
@@ -333,7 +345,6 @@ internal fun TrendChart(
                                 }
                             }
                         }
-                        drawRect(grid, Offset(axisW, top), Size(plot, inner), style = Stroke(1.5f))
                         dayTexts.forEach { (i, text) ->
                             val lx = (
                                 x(

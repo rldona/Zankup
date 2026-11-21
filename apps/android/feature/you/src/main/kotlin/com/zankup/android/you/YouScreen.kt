@@ -86,7 +86,6 @@ import java.time.format.FormatStyle
 fun YouScreen(
     onStats: () -> Unit,
     onEstimates: () -> Unit,
-    onCoach: () -> Unit,
     onGear: () -> Unit,
     onImport: () -> Unit,
     onAccount: () -> Unit,
@@ -100,7 +99,6 @@ fun YouScreen(
     val colors = ZankupTheme.colors
     val me by model.me.collectAsStateWithLifecycle()
     val summary by model.summary.collectAsStateWithLifecycle()
-    val ai by model.ai.collectAsStateWithLifecycle()
     val settings by model.settings.collectAsStateWithLifecycle()
     val hidden by model.physicalHidden.collectAsStateWithLifecycle()
     var editing by rememberSaveable { mutableStateOf(false) }
@@ -166,12 +164,9 @@ fun YouScreen(
                 }
                 item("menu") {
                     Menu(
-                        coach = ai.data?.available == true,
                         onStats = onStats,
                         onEstimates = onEstimates,
-                        onCoach = onCoach,
                         onGear = onGear,
-                        onImport = onImport,
                         modifier = side
                     )
                 }
@@ -191,6 +186,7 @@ fun YouScreen(
             YouBar(
                 solid = solid,
                 onEdit = { editing = true },
+                onImport = onImport,
                 onAccount = onAccount,
                 onSettings = onSettings
             )
@@ -234,7 +230,13 @@ private val YOU_BAR = 56.dp
  * title fading in and the profile's actions on the right.
  */
 @Composable
-private fun YouBar(solid: Float, onEdit: () -> Unit, onAccount: () -> Unit, onSettings: () -> Unit) {
+private fun YouBar(
+    solid: Float,
+    onEdit: () -> Unit,
+    onImport: () -> Unit,
+    onAccount: () -> Unit,
+    onSettings: () -> Unit
+) {
     val colors = ZankupTheme.colors
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Row(
@@ -255,6 +257,9 @@ private fun YouBar(solid: Float, onEdit: () -> Unit, onAccount: () -> Unit, onSe
         )
         IconButton(onClick = onEdit) {
             ZankupIcon(ZIcon.Edit, contentDescription = stringResource(R.string.you_edit), tint = colors.fg)
+        }
+        IconButton(onClick = onImport) {
+            ZankupIcon(ZIcon.Upload, contentDescription = stringResource(R.string.you_import), tint = colors.fg)
         }
         IconButton(onClick = onAccount) {
             ZankupIcon(ZIcon.Account, contentDescription = stringResource(R.string.you_account), tint = colors.fg)
@@ -307,21 +312,11 @@ private fun Header(me: Me, modifier: Modifier = Modifier) {
 // --- the menu --------------------------------------------------------------------------------------
 
 @Composable
-private fun Menu(
-    coach: Boolean,
-    onStats: () -> Unit,
-    onEstimates: () -> Unit,
-    onCoach: () -> Unit,
-    onGear: () -> Unit,
-    onImport: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun Menu(onStats: () -> Unit, onEstimates: () -> Unit, onGear: () -> Unit, modifier: Modifier = Modifier) {
     ZankupCard(modifier) {
         ListRow(stringResource(R.string.you_stats), icon = ZIcon.BarChart, onClick = onStats, divider = true)
         ListRow(stringResource(R.string.you_estimates), icon = ZIcon.Gauge, onClick = onEstimates, divider = true)
-        if (coach) ListRow(stringResource(R.string.you_coach), icon = ZIcon.Coach, onClick = onCoach, divider = true)
-        ListRow(stringResource(R.string.you_gear), icon = ZIcon.Steps, onClick = onGear, divider = true)
-        ListRow(stringResource(R.string.you_import), icon = ZIcon.Upload, onClick = onImport)
+        ListRow(stringResource(R.string.you_gear), icon = ZIcon.Steps, onClick = onGear)
     }
 }
 

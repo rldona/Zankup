@@ -198,8 +198,9 @@ constructor(private val store: Store, private val source: ApiSource) : ViewModel
 // ============================================================================================
 
 /**
- * The scrolling body of a section, under [SettingsSectionScreen]'s top bar: 16 dp around, 12 dp between
- * cards, as the React Native app's screens. Every section (and every slot) draws its content with it.
+ * The scrolling body of a section, under [SettingsSectionScreen]'s top bar, with the tabs' measures: the
+ * side gutter, 8 dp on top and between cards, 24 dp at the end. Every section (and every slot) draws its
+ * content with it.
  */
 @Composable
 fun SettingsBody(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -207,8 +208,13 @@ fun SettingsBody(modifier: Modifier = Modifier, content: @Composable ColumnScope
         modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(ZankupTheme.spacing.m),
-        verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm),
+            .padding(
+                start = ZankupTheme.spacing.gutter,
+                top = ZankupTheme.spacing.s,
+                end = ZankupTheme.spacing.gutter,
+                bottom = ZankupTheme.spacing.l
+            ),
+        verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s),
         content = content
     )
 }

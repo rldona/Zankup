@@ -67,7 +67,8 @@ fun AiSection(onAssistants: () -> Unit, model: AiModel = hiltViewModel()) {
     val keys by model.service.keys.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { model.refresh() }
     val anthropic = keys.data?.firstOrNull { it.name == KeyStatus.Name.ANTHROPIC }
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // The same gap between cards as every screen's.
+    Column(verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)) {
         MoreCard(stringResource(R.string.setm_keys_anthropic)) {
             Note(stringResource(R.string.setm_keys_anthropicHelp))
             when {

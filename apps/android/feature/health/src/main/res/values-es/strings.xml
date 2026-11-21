@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="health_title">Salud</string>
-    <string name="health_sync">Traer ahora</string>
-    <string name="health_syncing">Cargando…</string>
     <string name="health_settings">Salud</string>
     <string name="health_period">Periodo</string>
     <string name="health_period_30">30 días</string>

@@ -110,8 +110,14 @@ fun ReviewScreen(
                 EmptyState(stringResource(R.string.stats_review_empty), Modifier.padding(padding))
             else -> LazyColumn(
                 Modifier.padding(padding),
-                contentPadding = PaddingValues(ZankupTheme.spacing.gutter),
-                verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.sm)
+                contentPadding = PaddingValues(
+                    start = ZankupTheme.spacing.gutter,
+                    top = ZankupTheme.spacing.s,
+                    end = ZankupTheme.spacing.gutter,
+                    bottom = ZankupTheme.spacing.l
+                ),
+                // The same gap between cards as the tabs'.
+                verticalArrangement = Arrangement.spacedBy(ZankupTheme.spacing.s)
             ) { reviewCards(data, f, onOpenActivity) }
         }
     }

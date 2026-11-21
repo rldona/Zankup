@@ -128,7 +128,7 @@ fun LineChart(
                         if (mark != -1 &&
                             now != mark
                         ) {
-                            haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                         mark = now
                     }

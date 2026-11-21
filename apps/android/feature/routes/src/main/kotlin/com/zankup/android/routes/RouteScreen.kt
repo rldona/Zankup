@@ -1,5 +1,7 @@
 package com.zankup.android.routes
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -67,36 +69,35 @@ fun RouteScreen(
                 val cursor = remember { ChartCursor() }
                 val section = remember { ChartSection() }
                 val best = fastest(r.activities.map { it.movingS }) ?: 0.0
-                LazyColumn(Modifier.padding(padding)) {
-                    item {
-                        Text(
-                            pluralStringResource(R.plurals.routes_times, r.count, r.count),
-                            Modifier.padding(16.dp),
-                            color = ZankupTheme.colors.muted,
-                            style = MaterialTheme.typography.bodyMedium
+                // The count and the map stay put; only the times below scroll.
+                Column(Modifier.padding(padding).fillMaxSize()) {
+                    Text(
+                        pluralStringResource(R.plurals.routes_times, r.count, r.count),
+                        Modifier.padding(16.dp),
+                        color = ZankupTheme.colors.muted,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (track != null) {
+                        RouteMap(
+                            track,
+                            cursor,
+                            section,
+                            Modifier.fillMaxWidth().height(260.dp),
+                            colour = sportOf(r.sport).family.color
                         )
                     }
-                    if (track != null) {
-                        item("map") {
-                            RouteMap(
-                                track,
-                                cursor,
-                                section,
-                                Modifier.fillMaxWidth().height(260.dp),
-                                colour = sportOf(r.sport).family.color
-                            )
+                    LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                        items(newestFirst(r.activities), key = { it.id }) { a ->
+                            EffortRow(
+                                Effort(
+                                    a.id.toLong(),
+                                    a.day,
+                                    a.movingS,
+                                    a.distanceM?.let { formats.speedFor(sport, it, a.movingS) }
+                                ),
+                                best
+                            ) { onOpenActivity(a.id.toLong()) }
                         }
-                    }
-                    items(newestFirst(r.activities), key = { it.id }) { a ->
-                        EffortRow(
-                            Effort(
-                                a.id.toLong(),
-                                a.day,
-                                a.movingS,
-                                a.distanceM?.let { formats.speedFor(sport, it, a.movingS) }
-                            ),
-                            best
-                        ) { onOpenActivity(a.id.toLong()) }
                     }
                 }
             }

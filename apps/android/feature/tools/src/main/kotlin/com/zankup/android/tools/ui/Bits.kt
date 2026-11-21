@@ -42,13 +42,17 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-/** A stacked screen of this module: the bar, then its items in a list with the page's gutters. */
+/**
+ * A stacked screen of this module: the bar, then its items in a list with the page's gutters. With
+ * [edgeToEdge] the items reach the screen's edges: no gutter above, below or on the sides.
+ */
 @Composable
 internal fun ToolsScaffold(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
+    edgeToEdge: Boolean = false,
     content: LazyListScope.() -> Unit
 ) {
     val colors = ZankupTheme.colors
@@ -62,12 +66,13 @@ internal fun ToolsScaffold(
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = padding.calculateStartPadding(direction) + spacing.gutter,
-                end = padding.calculateEndPadding(direction) + spacing.gutter,
-                top = padding.calculateTopPadding() + spacing.m,
-                bottom = padding.calculateBottomPadding() + spacing.l
+                start = padding.calculateStartPadding(direction) + if (edgeToEdge) 0.dp else spacing.gutter,
+                end = padding.calculateEndPadding(direction) + if (edgeToEdge) 0.dp else spacing.gutter,
+                top = padding.calculateTopPadding() + if (edgeToEdge) 0.dp else spacing.s,
+                bottom = padding.calculateBottomPadding() + if (edgeToEdge) 0.dp else spacing.l
             ),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            // The same gap between cards as the tabs'.
+            verticalArrangement = if (edgeToEdge) Arrangement.Top else Arrangement.spacedBy(spacing.s),
             content = content
         )
     }

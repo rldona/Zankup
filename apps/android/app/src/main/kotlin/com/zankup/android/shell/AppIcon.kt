@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +19,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,9 +42,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.zankup.android.R
+import com.zankup.android.designsystem.components.ZankupInfoButton
 import com.zankup.android.designsystem.components.ZankupTopBar
 import com.zankup.android.designsystem.theme.ZankupTheme
 
@@ -96,28 +99,39 @@ internal enum class AppIcon(val label: Int, val background: List<Long>, val mark
     }
 }
 
-/** Settings › App icon (OS-1171): the mark on each variant's colours, the one in use ringed. */
+/**
+ * Settings › App icon (OS-1171), as the React Native app's: four to a row, each a rounded square with the
+ * mark in the middle (pride in stripes), the one in use ringed in the accent a little apart.
+ */
 @Composable
 internal fun AppIconScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var current by remember { mutableStateOf(AppIcon.current(context)) }
     val colors = ZankupTheme.colors
+    val tile = RoundedCornerShape(22)
+    val ring = RoundedCornerShape(26)
     Scaffold(
         containerColor = colors.page,
-        topBar = { ZankupTopBar(stringResource(R.string.nav_app_icon), onBack = onBack) }
+        topBar = {
+            ZankupTopBar(stringResource(R.string.nav_app_icon), onBack = onBack) {
+                // The launcher's delay, in the "i" instead of under the icons.
+                ZankupInfoButton(stringResource(R.string.app_icon_note))
+            }
+        }
     ) { padding ->
         LazyVerticalGrid(
-            GridCells.Fixed(3),
+            GridCells.Fixed(4),
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         stringResource(R.string.app_icon_heading),
                         style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
                         color = colors.fg
                     )
                     Text(
@@ -135,19 +149,19 @@ internal fun AppIconScreen(onBack: () -> Unit) {
                         .clickable(role = Role.RadioButton) {
                             AppIcon.use(context, icon)
                             current = icon
-                        }.semantics { selected = chosen }
-                        .padding(4.dp),
+                        }.semantics { selected = chosen },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .border(3.dp, if (chosen) colors.accent else Color.Transparent, CircleShape)
+                            .border(3.dp, if (chosen) colors.accent else Color.Transparent, ring)
                             .padding(6.dp)
-                            .clip(CircleShape)
+                            .clip(tile)
                             .background(Color(icon.background.first()))
+                            // Pride in horizontal stripes, one per colour.
                             .drawBehind {
                                 val band = size.height / icon.background.size
                                 icon.background.forEachIndexed { i, c ->
@@ -160,23 +174,16 @@ internal fun AppIconScreen(onBack: () -> Unit) {
                             painterResource(com.zankup.android.designsystem.R.drawable.zankup_mark),
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(Color(icon.mark)),
-                            modifier = Modifier.fillMaxWidth(0.5f)
+                            modifier = Modifier.fillMaxWidth(0.46f)
                         )
                     }
                     Text(
                         stringResource(icon.label),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (chosen) colors.accent else colors.fg,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = colors.fg,
                         textAlign = TextAlign.Center
                     )
                 }
-            }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    stringResource(R.string.app_icon_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.muted
-                )
             }
         }
     }
