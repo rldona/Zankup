@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-import anthropic
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -211,6 +210,8 @@ class Llm:
         effort: str = "low",
     ) -> Completion:
         """One request without tools, recorded in `llm_calls`."""
+        import anthropic
+
         self.check_budget(db, user_id)
         started = time.monotonic()
         try:
@@ -245,6 +246,10 @@ def build_llm(settings: Settings) -> Llm | None:
     """The process's client, or None when this instance has no key (every AI feature stays hidden)."""
     if settings.anthropic_api_key is None:
         return None
+    # Imported here, not at the top: the SDK costs ~60 MB of RSS and most instances never call it
+    # (the log says `ai=false`). It is paid for only when a request actually needs the model.
+    import anthropic
+
     api = anthropic.Anthropic(
         api_key=settings.anthropic_api_key.get_secret_value(), max_retries=2, timeout=90.0
     )
