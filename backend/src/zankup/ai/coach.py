@@ -11,7 +11,6 @@ import time
 from collections.abc import Iterator
 from typing import Any, Literal
 
-import anthropic
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -63,6 +62,8 @@ def answer(
     today: str,
 ) -> Iterator[dict[str, Any]]:
     """Stream the answer as events: text pieces, tool calls as they happen, then `done` (or `error`)."""
+    import anthropic
+
     if messages[-1].role != "user":
         yield {"type": "error", "message": "the last message must be the question"}
         return

@@ -19,22 +19,6 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
-from webauthn import (
-    generate_authentication_options,
-    generate_registration_options,
-    options_to_json,
-    verify_authentication_response,
-    verify_registration_response,
-)
-from webauthn.helpers import base64url_to_bytes
-from webauthn.helpers.exceptions import InvalidAuthenticationResponse, InvalidRegistrationResponse
-from webauthn.helpers.structs import (
-    AuthenticatorSelectionCriteria,
-    AuthenticatorTransport,
-    PublicKeyCredentialDescriptor,
-    ResidentKeyRequirement,
-    UserVerificationRequirement,
-)
 
 from zankup.auth.deps import AppSettings, CurrentUser, DbSession
 from zankup.auth.rate_limit import limiter
@@ -92,6 +76,8 @@ def _store_challenge(db: DbSession, purpose: str, user_id: int | None) -> bytes:
 
 def _take_challenge(db: DbSession, credential: dict[str, Any], purpose: str) -> WebAuthnChallenge | None:
     """The stored challenge this response answers, removed so it can only be used once."""
+    from webauthn.helpers import base64url_to_bytes
+
     try:
         client_data = json.loads(base64url_to_bytes(credential["response"]["clientDataJSON"]))
         challenge = base64url_to_bytes(client_data["challenge"])
@@ -106,6 +92,8 @@ def _take_challenge(db: DbSession, credential: dict[str, Any], purpose: str) -> 
 
 
 def _options(raw: Any) -> Options:
+    from webauthn import options_to_json
+
     return Options(options=json.loads(options_to_json(raw)))
 
 
@@ -118,6 +106,14 @@ def list_passkeys(db: DbSession, user: CurrentUser) -> list[PasskeyOut]:
 @router.post("/register/options", operation_id="passkeyRegisterOptions")
 def register_options(db: DbSession, user: CurrentUser, settings: AppSettings) -> Options:
     """Step 1 of adding a passkey: options for navigator.credentials.create()."""
+    from webauthn import generate_registration_options
+    from webauthn.helpers.structs import (
+        AuthenticatorSelectionCriteria,
+        PublicKeyCredentialDescriptor,
+        ResidentKeyRequirement,
+        UserVerificationRequirement,
+    )
+
     existing = db.scalars(select(Passkey).where(Passkey.user_id == user.id))
     challenge = _store_challenge(db, "register", user.id)
     return _options(
@@ -140,6 +136,10 @@ def register_options(db: DbSession, user: CurrentUser, settings: AppSettings) ->
 @router.post("/register", status_code=status.HTTP_201_CREATED, operation_id="passkeyRegister")
 def register(body: RegisterRequest, db: DbSession, user: CurrentUser, settings: AppSettings) -> PasskeyOut:
     """Step 2: verify the new credential and keep its public key."""
+    from webauthn import verify_registration_response
+    from webauthn.helpers.exceptions import InvalidRegistrationResponse
+    from webauthn.helpers.structs import AuthenticatorTransport
+
     stored = _take_challenge(db, body.credential, "register")
     if stored is None or stored.user_id != user.id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The request expired, try again")
@@ -185,6 +185,9 @@ def delete_passkey(passkey_id: int, db: DbSession, user: CurrentUser) -> None:
 @router.post("/login/options", operation_id="passkeyLoginOptions")
 def login_options(request: Request, db: DbSession, settings: AppSettings) -> Options:
     """Step 1 of signing in: options for navigator.credentials.get(). No e-mail needed."""
+    from webauthn import generate_authentication_options
+    from webauthn.helpers.structs import UserVerificationRequirement
+
     if wait := limiter.retry_after(f"ip:{_client_ip(request)}"):
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, "Too many attempts", {"Retry-After": str(wait)}
@@ -204,6 +207,10 @@ def login(
     body: LoginRequest, request: Request, response: Response, db: DbSession, settings: AppSettings
 ) -> Me | AppTokens:
     """Step 2: verify the signature and start a session, like password + TOTP would."""
+    from webauthn import verify_authentication_response
+    from webauthn.helpers import base64url_to_bytes
+    from webauthn.helpers.exceptions import InvalidAuthenticationResponse
+
     ip_key = f"ip:{_client_ip(request)}"
     if wait := limiter.retry_after(ip_key):
         raise HTTPException(
